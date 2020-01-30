@@ -1,6 +1,6 @@
 package no.uib.inf273.data
 
-class Vessel(val id: Int, val home: Int, val startTime: Int, val capacity: Int) {
+class Vessel(val id: Int, val homePort: Int, val startTime: Int, val capacity: Int) {
 
     lateinit var compatibleCalls: IntArray
 

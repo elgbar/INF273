@@ -1,6 +1,7 @@
 package no.uib.inf273
 
 import no.uib.inf273.Logger.debug
+import no.uib.inf273.data.VesselCargo
 import no.uib.inf273.input.DataHolder
 import java.io.File
 import java.util.*
@@ -13,6 +14,11 @@ object Main {
      * The element to use as a barrier element.
      */
     const val BARRIER_ELEMENT: Int = -1
+
+    /**
+     * port id of home port (ie lookup when we see this port number)
+     */
+    const val HOME_PORT: Int = 0
 
     lateinit var data: DataHolder
 
@@ -33,8 +39,13 @@ object Main {
 
         println("Parsed file successfully")
 
-//        println("generateStandardSolution() = ${generateStandardSolution().toList()}")
-        println("generateStandardSolution() = ${generateRandomSolution().toList()}")
+        var sol: IntArray = generateRandomSolution()
+        while (!checkFeasibility(sol)) {
+            sol = generateRandomSolution()
+            println("random valid solution = ${sol.toList()}")
+        }
+
+        println("random valid & feasible solution = ${sol.toList()}")
     }
 
     /**
@@ -102,9 +113,11 @@ object Main {
      */
     fun checkValidity(sol: IntArray): Boolean {
         for (sub in splitToSubArray(sol)) {
+            //make sure the sub array actually have an even number of elements
+
             //sets cannot contain duplicate elements so if the size of the set for this subarray is not
             // exactly half size of the original set it contains duplicate elements
-            if (sub.toSet().size * 2 != sub.size) {
+            if (sub.size % 2 != 0 || sub.toHashSet().size * 2 != sub.size) {
                 return false
             }
         }
@@ -143,8 +156,107 @@ object Main {
         }
     }
 
-    fun checkFeasibility() {
-        TODO()
+    fun checkFeasibility(original: IntArray): Boolean {
+
+        val subroutes: Array<IntArray> = splitToSubArray(original)
+
+        for ((index, sub) in subroutes.withIndex()) {
+
+            //skip last array as it is only the tramp transports, and always allowed
+            if (index == subroutes.size - 1) continue
+
+            //false if we are currently picking it up, true if we are delivering
+            val seen = BooleanArray(data.nrOfCargo)
+
+            val vesselId = index + 1
+            val vessel = data.vesselFromId(vesselId)
+            var currWeight = 0
+            var currTime = 0
+            var lastPort = HOME_PORT //vessel start at home port
+
+
+            for (cargoId in sub) {
+                val cargoIndex = cargoId - 1
+                val cargo = data.cargoes[cargoIndex]
+
+                val currPort = if (seen[cargoIndex]) cargo.destPort else cargo.origin_port
+                val vc: VesselCargo = data.vesselCargo[Pair(vesselId, cargoId)] ?: VesselCargo.IncompatibleVesselCargo
+
+                //substitute the dummy home port id with the vessels actual homeport
+                if (lastPort == HOME_PORT) {
+                    lastPort = vessel.homePort
+                }
+
+                //add the sailing time to the current time
+                currTime += data.archs[Triple(vesselId, lastPort, currPort)]!!.time
+
+                if (!seen[cargoIndex]) {
+                    seen[cargoIndex] = true
+
+                    //check compatibility, but only do so for first encounter
+                    if (!vessel.canTakeCargo(cargoId)) {
+                        debug { "Vessel $vesselId is not compatible with $cargoId" }
+                        return false
+                    }
+                    currWeight += cargo.size //first encounter, load the cargo
+
+                    //check for cargo pickup time
+
+                    currTime = checkTime(cargo.lowerPickup, cargo.upperPickup, vc.originPortTime, currTime)
+                    if (currTime < 0) {
+                        debug { "We are trying to pickup the cargo $cargoId after upper pickup time" }
+                    }
+
+                } else {
+                    currWeight -= cargo.size //second encounter, unload the cargo
+
+                    //check for cargo delivery time
+                    currTime = checkTime(cargo.lowerDelivery, cargo.upperDelivery, vc.destPortTime, currTime)
+                    if (currTime < 0) {
+                        debug { "We are trying to deliver the cargo $cargoId after upper delivery time" }
+                    }
+
+                }
+
+                //check that we are not overloaded
+                if (currWeight > vessel.capacity) {
+                    debug { "Invalid as vessel $vesselId is trying to carry more than it has capacity for ($currWeight > ${vessel.capacity})" }
+                    return false
+                }
+
+
+                //update port for next round
+                lastPort = currPort
+            }
+        }
+
+        return true
+    }
+
+
+    /**
+     *
+     *
+     * @return negative number of not valid, new current time if valid
+     */
+    private fun checkTime(lowerTime: Int, upperTime: Int, portTime: Int, currTime: Int): Int {
+        var time = currTime
+        //check for cargo pickup time
+
+        //we must wait for the port to open
+        if (time < lowerTime) {
+            time = lowerTime
+        }
+
+        //then add how long it takes at the port
+        time += portTime
+
+        //check if we are within the upper time window
+        if (time > upperTime) {
+            //well that failed
+            return -1
+        }
+        return time
     }
 
     fun calculateObjectiveFunction(): Int {

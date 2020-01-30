@@ -3,13 +3,13 @@ package no.uib.inf273.data
 class Cargo(
     val index: Int,
     val origin_port: Int,
-    val dest_port: Int,
+    val destPort: Int,
     val size: Int,
-    val nt_cost: Int,
-    val lower_pickup: Int,
-    val upper_pickup: Int,
-    val lower_delivery: Int,
-    val upper_delivery: Int
+    val ntCost: Int,
+    val lowerPickup: Int,
+    val upperPickup: Int,
+    val lowerDelivery: Int,
+    val upperDelivery: Int
 ) {
 
 //    param origin_port {C} >= 0, <= ports;   # Origin port

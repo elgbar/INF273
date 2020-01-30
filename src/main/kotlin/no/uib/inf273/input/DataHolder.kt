@@ -6,7 +6,7 @@ import no.uib.inf273.Logger.trace
 import no.uib.inf273.data.Arch
 import no.uib.inf273.data.Cargo
 import no.uib.inf273.data.Vessel
-import no.uib.inf273.data.VesselCargoCompat
+import no.uib.inf273.data.VesselCargo
 
 class DataHolder(content: String) {
 
@@ -17,7 +17,11 @@ class DataHolder(content: String) {
 
     val vessels: Array<Vessel>
     val cargoes: Array<Cargo>
-    val vesselCargo: Map<Pair<Int, Int>, VesselCargoCompat>
+
+    /**
+     * pair in order: vessel, cargo
+     */
+    val vesselCargo: Map<Pair<Int, Int>, VesselCargo>
 
     /**
      * Triple in order: vessel, origin, destination
@@ -107,7 +111,7 @@ class DataHolder(content: String) {
             "arch: v 2, ori 38, dest 34: \n${archs[Triple(2, 38, 34)]}\nexpecting:\n2,38,34,72,48824"
         }
 
-        val vcmap = HashMap<Pair<Int, Int>, VesselCargoCompat>()
+        val vcmap = HashMap<Pair<Int, Int>, VesselCargo>()
         vesselCargo = vcmap
 
         for (i in 1..(nrOfCargo * nrOfVessels)) {
@@ -119,12 +123,12 @@ class DataHolder(content: String) {
             val otime = line[2]
 
             val vcc = if (otime == -1) {
-                VesselCargoCompat.VesselCargoInCompat
+                VesselCargo.IncompatibleVesselCargo
             } else {
                 val ocost = line[3]
                 val dtime = line[4]
                 val dcost = line[5]
-                VesselCargoCompat(otime, ocost, dtime, dcost)
+                VesselCargo(otime, ocost, dtime, dcost)
             }
             trace { "vcc [$index] = ${line.subList(2, line.size)}" }
             vcmap[index] = vcc
@@ -148,5 +152,9 @@ class DataHolder(content: String) {
 
     fun vesselFromId(id: Int): Vessel {
         return vessels[id - 1]
+    }
+
+    fun cargoFromId(id: Int): Cargo {
+        return cargoes[id - 1]
     }
 }
