@@ -13,12 +13,12 @@ object Main {
     /**
      * The element to use as a barrier element.
      */
-    const val BARRIER_ELEMENT: Int = -1
+    const val BARRIER_ELEMENT: Int = 0
 
     /**
      * port id of home port (ie lookup when we see this port number)
      */
-    const val HOME_PORT: Int = 0
+    const val HOME_PORT: Int = -1
 
     lateinit var data: DataHolder
 
@@ -39,13 +39,22 @@ object Main {
 
         println("Parsed file successfully")
 
-        var sol: IntArray = generateRandomSolution()
-        while (!checkFeasibility(sol)) {
-            sol = generateRandomSolution()
-            println("random valid solution = ${sol.toList()}")
-        }
+        val givenData = intArrayOf(3, 3, 0, 7, 1, 7, 1, 0, 5, 5, 0, 2, 2, 4, 4, 6, 6)
 
-        println("random valid & feasible solution = ${sol.toList()}")
+        val valid = checkValidity(givenData)
+        val feasible = checkFeasibility(givenData)
+        val objFun = calculateObjectiveFunction(givenData)
+
+        print("valid? $valid feasible $feasible objfun $objFun")
+
+//        var sol: IntArray = generateRandomSolution()
+//        while (!checkFeasibility(sol)) {
+//            sol = generateRandomSolution()
+//            println("random valid solution = ${sol.toList()}")
+//        }
+//
+//        println("random valid & feasible solution = ${sol.toList()}")
+//        println("obj fun = ${calculateObjectiveFunction(sol)}")
     }
 
     /**
@@ -100,6 +109,7 @@ object Main {
 
         println("after swap = ${solution.toList()}")
 
+
         return solution
     }
 
@@ -130,7 +140,7 @@ object Main {
             .map { (index, _) -> index }.toIntArray()
         debug { "Found barrier elements at ${barrierIndices.toList()}" }
 
-        check(barrierIndices.size == data.nrOfVessels) { "Number of barriers found does not match the expected amount" }
+        check(barrierIndices.size == data.nrOfVessels) { "Number of barriers found does not match the expected amount. Expected ${data.nrOfVessels} barriers but got ${barrierIndices.size}" }
 
         return Array(data.nrOfVessels + 1) {
             val from = if (it > 0) barrierIndices[it - 1] + 1 else 0 //start at 0 for the first range
@@ -157,7 +167,6 @@ object Main {
     }
 
     fun checkFeasibility(original: IntArray): Boolean {
-
         val subroutes: Array<IntArray> = splitToSubArray(original)
 
         for ((index, sub) in subroutes.withIndex()) {
@@ -259,8 +268,57 @@ object Main {
         return time
     }
 
-    fun calculateObjectiveFunction(): Int {
-        TODO()
+    fun calculateObjectiveFunction(original: IntArray): Int {
+        var value = 0
+
+        val subroutes: Array<IntArray> = splitToSubArray(original)
+
+        for ((index, sub) in subroutes.withIndex()) {
+
+            //skip last array as it is only the tramp transports, and always allowed
+            if (index == subroutes.size - 1) {
+                //for each cargo not transported add the not transport value
+                for (cargoId in sub.toSet()) {
+                    value += data.cargoFromId(cargoId).ntCost
+                }
+                continue
+            }
+
+            //false if we are currently picking it up, true if we are delivering
+            val seen = BooleanArray(data.nrOfCargo)
+
+            val vesselId = index + 1
+            val vessel = data.vesselFromId(vesselId)
+            var lastPort = HOME_PORT //vessel start at home port
+
+            for (cargoId in sub) {
+                val cargoIndex = cargoId - 1
+                val cargo = data.cargoes[cargoIndex]
+
+                val currPort = if (seen[cargoIndex]) cargo.destPort else cargo.origin_port
+                val vc: VesselCargo = data.vesselCargo[Pair(vesselId, cargoId)] ?: VesselCargo.IncompatibleVesselCargo
+
+                //substitute the dummy home port id with the vessels actual home port
+                if (lastPort == HOME_PORT) {
+                    lastPort = vessel.homePort
+                }
+
+                //add the sailing time to the current time
+                value += data.archs[Triple(vesselId, lastPort, currPort)]!!.cost
+
+                if (!seen[cargoIndex]) {
+                    seen[cargoIndex] = true
+                    value += vc.originPortCost
+                } else {
+                    value += vc.destPortCost
+                }
+
+                //update port for next round
+                lastPort = currPort
+            }
+        }
+
+        return value
     }
 
     /**
