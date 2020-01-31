@@ -43,12 +43,16 @@ class SolutionGenerator(val data: DataHolder) {
 
     /**
      * @param swaps How many swaps to do. If negative the number of swaps will be [DataHolder.calculateSolutionLength]
-     * @param rng Random instance to use,
+     * @param rng Random instance to use
+     * @param solution Existing solution to shuffle, if none specified a new solution will be generated with [generateStandardSolution]
      *
-     * @return A random, valid solution
+     * @return [solution], but randomized and valid
      */
-    fun generateRandomSolution(swaps: Int = -1, rng: Random = Random()): Solution {
-        val solution: Solution = generateStandardSolution()
+    fun generateRandomSolution(
+        swaps: Int = -1,
+        rng: Random = Random(),
+        solution: Solution = generateStandardSolution()
+    ): Solution {
         val arrSize = solution.solArr.size
         val swaps0 = if (swaps < 0) arrSize * 2 else swaps
         debug { "swapping $swaps0 times" }

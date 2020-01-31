@@ -6,6 +6,7 @@ import no.uib.inf273.processor.DataHolder
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 import java.io.File
+import java.util.*
 
 
 object Main {
@@ -17,7 +18,7 @@ object Main {
 
     fun init(args: Array<String>) {
 
-        Logger.logLevel = Logger.LOG
+        Logger.logLevel = Logger.TRACE
 
         val content = if (args.isEmpty()) {
             readInternalFile()
@@ -34,19 +35,17 @@ object Main {
 
 //        val givenData = intArrayOf(3, 3, 0, 7, 1, 7, 1, 0, 5, 5, 0, 2, 2, 4, 4, 6, 6)
 //        val sol = Solution(data, givenData)
-//
-//        val valid = sol.isValid(false)
-//        val feasible = sol.isFeasible(modified = false, checkValid = false)
-//        val objFun = sol.objectiveValue(false)
-//
-//        print("valid? $valid feasible $feasible objfun $objFun")
+//        log { "valid?    ${sol.isValid(false)}" }
+//        log { "feasible? ${sol.isFeasible(modified = false, checkValid = false)}" }
+//        log { "obj value ${sol.objectiveValue(false)}" }
 
-        var sol: Solution = solgen.generateRandomSolution()
-        while (!sol.isFeasible(modified = true, checkValid = false)) {
-            sol = solgen.generateRandomSolution()
+        val r = Random()
+
+        val sol: Solution = solgen.generateRandomSolution()
+        while (!sol.isFeasible(checkValid = false)) {
+            solgen.generateRandomSolution(rng = r, solution = sol)
             debug { "random valid solution = $sol" }
         }
-
         log { "random valid & feasible solution = $sol" }
         log { "obj fun = ${sol.objectiveValue(false)}" }
     }
