@@ -2,20 +2,29 @@ package no.uib.inf273
 
 object Logger {
 
+
+    const val TRACE = 2
+    const val DEBUG = 1
+    const val LOG = 0
+    const val NONE = -1
+
     /**
      * How much to log, the higher the number the more will be logged. Log
      */
-    var logLevel: Int = 0
+    var logLevel: Int = LOG
 
 
     fun log(msg: () -> String) {
-        log(msg())
+        if (logLevel >= LOG) {
+            log(msg(), null)
+        }
     }
 
     /**
      * Log something, this will always log
      */
     fun log(msg: String, e: Throwable? = null) {
+        if (logLevel <= NONE) return
         println(msg)
         e?.printStackTrace()
     }
@@ -26,7 +35,7 @@ object Logger {
      * Will only log if `logLevel > 0`
      */
     fun debug(msg: () -> String) {
-        if (logLevel > 0) {
+        if (logLevel >= DEBUG) {
             log(msg(), null)
         }
     }
@@ -37,7 +46,7 @@ object Logger {
      * Will only log if `logLevel > 0`
      */
     fun debug(e: Throwable? = null, msg: () -> String) {
-        if (logLevel > 0) {
+        if (logLevel >= DEBUG) {
             log(msg(), e)
         }
     }
@@ -48,7 +57,7 @@ object Logger {
      * Will only log if `logLevel > 1`
      */
     fun trace(msg: () -> String) {
-        if (logLevel > 1) {
+        if (logLevel >= TRACE) {
             log(msg(), null)
         }
     }
@@ -59,10 +68,8 @@ object Logger {
      * Will only log if `logLevel > 1`
      */
     fun trace(e: Throwable? = null, msg: () -> String) {
-        if (logLevel > 1) {
+        if (logLevel >= TRACE) {
             log(msg(), e)
         }
     }
-
-
 }

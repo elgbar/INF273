@@ -1,4 +1,4 @@
-package no.uib.inf273.input
+package no.uib.inf273.processor
 
 import no.uib.inf273.Logger.debug
 import no.uib.inf273.Logger.log
@@ -139,7 +139,7 @@ class DataHolder(content: String) {
             "Finished loading file, but current line is $currLine while number of lines in the files is ${lines.size}"
         }
 
-        log { "Parsed successfully ${lines.size} lines of data (Comment excluded)" }
+        log { "Successfully parsed ${lines.size} lines of data (Comment excluded)" }
 
     }
 
@@ -156,5 +156,19 @@ class DataHolder(content: String) {
 
     fun cargoFromId(id: Int): Cargo {
         return cargoes[id - 1]
+    }
+
+    /**
+     * Calculate how long the solution array must be to fit the current given data.
+     *
+     * This method returns `data.nrOfCargo * 2 + data.nrOfVessels` elements.
+     *
+     * where `data.nrOfCargo * 2` the number of actual cargoes. multiply by two as the we need to pickup and deliver each cargo.
+     *
+     * and `data.nrOfVessels` is the number of barrier elements. We have one barrier for each vessel, if any cargo is not transported they will be after the last barrier
+     *
+     */
+    fun calculateSolutionLength(): Int {
+        return nrOfCargo * 2 + nrOfVessels
     }
 }
