@@ -1,6 +1,7 @@
 package no.uib.inf273.processor
 
 import no.uib.inf273.Logger
+import no.uib.inf273.Main
 import no.uib.inf273.Main.data
 import no.uib.inf273.data.VesselCargo
 import no.uib.inf273.processor.SolutionGenerator.Companion.BARRIER_ELEMENT
@@ -11,13 +12,14 @@ class Solution(data: DataHolder, val solArr: IntArray) {
     /**
      * Internal array of the current solution split into multiple sub-arrays. This will be updated when calling [splitToSubArray]
      */
-    private var subRoutes: Array<IntArray>
+    private val subRoutes: Array<IntArray>
 
     init {
         require(solArr.size == data.calculateSolutionLength()) {
             "Given solution is not compatible with the given data. Expecting an array of length ${data.calculateSolutionLength()} but got ${solArr.size}"
         }
-        subRoutes = splitToSubArray(true)
+        subRoutes = Array(Main.data.nrOfVessels + 1) { IntArray(0) }
+        splitToSubArray(true)
     }
 
     /**
@@ -239,7 +241,7 @@ class Solution(data: DataHolder, val solArr: IntArray) {
                 "Number of barriers found does not match the expected amount. Expected ${data.nrOfVessels} barriers but got ${barrierIndices.size}"
             }
 
-            subRoutes = Array(data.nrOfVessels + 1) {
+            for (it in 0..data.nrOfVessels) {
                 val from =
                     // This is the first iteration, we must start at zero
                     if (it == 0) 0
@@ -253,7 +255,7 @@ class Solution(data: DataHolder, val solArr: IntArray) {
 
                 val a = solArr.copyOfRange(from, to)
                 Logger.debug { "range from $from to $to: ${a.toList()}" }
-                return@Array a
+                subRoutes[it] = a
             }
         }
         return subRoutes

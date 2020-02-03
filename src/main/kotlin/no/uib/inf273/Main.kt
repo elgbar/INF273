@@ -1,12 +1,8 @@
 package no.uib.inf273
 
-import no.uib.inf273.Logger.debug
-import no.uib.inf273.Logger.log
 import no.uib.inf273.processor.DataHolder
-import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 import java.io.File
-import java.util.*
 
 
 object Main {
@@ -31,23 +27,6 @@ object Main {
 
         data = DataHolder(content)
         solgen = SolutionGenerator(data)
-
-
-//        val givenData = intArrayOf(3, 3, 0, 7, 1, 7, 1, 0, 5, 5, 0, 2, 2, 4, 4, 6, 6)
-//        val sol = Solution(data, givenData)
-//        log { "valid?    ${sol.isValid(false)}" }
-//        log { "feasible? ${sol.isFeasible(modified = false, checkValid = false)}" }
-//        log { "obj value ${sol.objectiveValue(false)}" }
-
-        val r = Random()
-
-        val sol: Solution = solgen.generateRandomSolution()
-        while (!sol.isFeasible(checkValid = false)) {
-            solgen.generateRandomSolution(rng = r, solution = sol)
-            debug { "random valid solution = $sol" }
-        }
-        log { "random valid & feasible solution = $sol" }
-        log { "obj fun = ${sol.objectiveValue(false)}" }
     }
 
 
@@ -56,7 +35,7 @@ object Main {
      *
      * @return The content of the file or `null` if the file cannot be read
      */
-    private fun readInternalFile(path: String = FALLBACK_FILE): String? {
+    fun readInternalFile(path: String = FALLBACK_FILE): String? {
         return Main::class.java.classLoader.getResource(path)?.readText()
     }
 }
