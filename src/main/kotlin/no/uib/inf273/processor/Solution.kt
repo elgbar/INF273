@@ -102,6 +102,7 @@ class Solution(data: DataHolder, val solArr: IntArray) {
                     currTime = checkTime(cargo.lowerPickup, cargo.upperPickup, vc.originPortTime, currTime)
                     if (currTime < 0) {
                         Logger.debug { "We are trying to pickup the cargo $cargoId after upper pickup time" }
+                        return false
                     }
 
                 } else {
@@ -111,6 +112,7 @@ class Solution(data: DataHolder, val solArr: IntArray) {
                     currTime = checkTime(cargo.lowerDelivery, cargo.upperDelivery, vc.destPortTime, currTime)
                     if (currTime < 0) {
                         Logger.debug { "We are trying to deliver the cargo $cargoId after upper delivery time" }
+                        return false
                     }
 
                 }
