@@ -17,7 +17,7 @@ internal class SolutionTest {
         }
     }
 
-    inline private fun assertFeasibility(givenData: IntArray, objVal: Int) {
+    private fun assertFeasibility(givenData: IntArray, objVal: Int) {
 
         val sol = Solution(Main.data, givenData)
         assertTrue(sol.isValid(modified = false))
@@ -48,7 +48,6 @@ internal class SolutionTest {
     }
 
     @Test
-
     fun isFeasible_sol0() {
         val givenData = intArrayOf(0, 7, 7, 3, 3, 0, 5, 5, 0, 1, 1, 2, 2, 4, 4, 6, 6)
         val objVal = 2478319

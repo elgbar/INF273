@@ -1,12 +1,10 @@
 package no.uib.inf273.processor
 
 import no.uib.inf273.Logger
-import no.uib.inf273.Main
-import no.uib.inf273.Main.data
 import no.uib.inf273.data.VesselCargo
 import no.uib.inf273.processor.SolutionGenerator.Companion.BARRIER_ELEMENT
 
-class Solution(data: DataHolder, val solArr: IntArray) {
+class Solution(val data: DataHolder, val solArr: IntArray) {
 
 
     /**
@@ -18,7 +16,7 @@ class Solution(data: DataHolder, val solArr: IntArray) {
         require(solArr.size == data.calculateSolutionLength()) {
             "Given solution is not compatible with the given data. Expecting an array of length ${data.calculateSolutionLength()} but got ${solArr.size}"
         }
-        subRoutes = Array(Main.data.nrOfVessels + 1) { IntArray(0) }
+        subRoutes = Array(data.nrOfVessels + 1) { IntArray(0) }
         splitToSubArray(true)
     }
 

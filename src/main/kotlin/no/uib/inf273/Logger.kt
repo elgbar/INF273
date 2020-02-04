@@ -5,17 +5,17 @@ object Logger {
 
     const val TRACE = 2
     const val DEBUG = 1
-    const val LOG = 0
+    const val INFO = 0
     const val NONE = -1
 
     /**
      * How much to log, the higher the number the more will be logged. Log
      */
-    var logLevel: Int = LOG
+    var logLevel: Int = INFO
 
 
     fun log(msg: () -> String) {
-        if (logLevel >= LOG) {
+        if (logLevel >= INFO) {
             log(msg(), null)
         }
     }
@@ -36,7 +36,7 @@ object Logger {
      */
     fun debug(msg: () -> String) {
         if (logLevel >= DEBUG) {
-            log(msg(), null)
+            log("[DBG] " + msg(), null)
         }
     }
 
@@ -47,7 +47,7 @@ object Logger {
      */
     fun debug(e: Throwable? = null, msg: () -> String) {
         if (logLevel >= DEBUG) {
-            log(msg(), e)
+            log("[DBG] " + msg(), e)
         }
     }
 
@@ -58,7 +58,7 @@ object Logger {
      */
     fun trace(msg: () -> String) {
         if (logLevel >= TRACE) {
-            log(msg(), null)
+            log("[TRC] " + msg(), null)
         }
     }
 
@@ -69,7 +69,7 @@ object Logger {
      */
     fun trace(e: Throwable? = null, msg: () -> String) {
         if (logLevel >= TRACE) {
-            log(msg(), e)
+            log("[TRC] " + msg(), e)
         }
     }
 }

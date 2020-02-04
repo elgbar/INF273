@@ -107,10 +107,6 @@ class DataHolder(content: String) {
             archmap[index] = Arch(vessel, origin, dest, time, cost)
         }
 
-        debug {
-            "arch: v 2, ori 38, dest 34: \n${archs[Triple(2, 38, 34)]}\nexpecting:\n2,38,34,72,48824"
-        }
-
         val vcmap = HashMap<Pair<Int, Int>, VesselCargo>()
         vesselCargo = vcmap
 

@@ -1,27 +1,30 @@
 package no.uib.inf273
 
+import com.xenomachina.argparser.ArgParser
+import com.xenomachina.argparser.default
+import com.xenomachina.argparser.mainBody
 import no.uib.inf273.processor.DataHolder
 import no.uib.inf273.processor.SolutionGenerator
-import java.io.File
 
 
-object Main {
+class Main(parser: ArgParser) {
 
-    const val FALLBACK_FILE = "Call_7_Vehicle_3.txt"
 
-    lateinit var data: DataHolder
-    lateinit var solgen: SolutionGenerator
+    private val logLevel by parser.mapping(
+        "--info" to Logger.INFO,
+        "--debug" to Logger.DEBUG,
+        "--trace" to Logger.TRACE,
+        help = "Logging level"
+    ).default(Logger.INFO)
 
-    fun init(args: Array<String>) {
+    val file by parser.storing("-f", "--file", help = "Name of file to use")
+    val data: DataHolder
+    val solgen: SolutionGenerator
 
-        Logger.logLevel = Logger.TRACE
+    init {
+        Logger.logLevel = logLevel
 
-        val content = if (args.isEmpty()) {
-            readInternalFile()
-        } else {
-            val path = args[0]
-            File(path).readText()
-        }
+        val content = readInternalFile(file)
 
         check(!content.isNullOrEmpty()) { "Failed to read file as it is null or empty" }
 
@@ -35,11 +38,15 @@ object Main {
      *
      * @return The content of the file or `null` if the file cannot be read
      */
-    fun readInternalFile(path: String = FALLBACK_FILE): String? {
+    private fun readInternalFile(path: String): String? {
         return Main::class.java.classLoader.getResource(path)?.readText()
+    }
+
+    companion object {
+        const val FALLBACK_FILE = "Call_7_Vehicle_3.txt"
     }
 }
 
-fun main(args: Array<String>) {
-    Main.init(args)
+fun main(args: Array<String>) = mainBody {
+    ArgParser(args).parseInto(::Main).run { }
 }
