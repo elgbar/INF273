@@ -2,24 +2,15 @@ package no.uib.inf273.processor
 
 import no.uib.inf273.Main
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
 internal class SolutionTest {
 
-
-    companion object {
-
-        @JvmStatic
-        @BeforeAll
-        fun setUp() {
-            Main.init(emptyArray())
-        }
-    }
+    private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
 
     private fun assertFeasibility(givenData: IntArray, objVal: Int) {
 
-        val sol = Solution(Main.data, givenData)
+        val sol = Solution(data, givenData)
         assertTrue(sol.isValid(modified = false))
         assertTrue(sol.isFeasible(modified = false, checkValid = false))
         assertEquals(objVal, sol.objectiveValue(modified = false))
@@ -28,7 +19,7 @@ internal class SolutionTest {
     @Test
     fun isFeasible_CheckInfeasiblePickupAfterDelivery() {
         val givenData = intArrayOf(1, 1, 3, 3, 0, 0, 0, 2, 4, 6, 7, 2, 5, 4, 7, 6, 5)
-        val sol = Solution(Main.data, givenData)
+        val sol = Solution(data, givenData)
         assertTrue(sol.isValid(modified = false))
         assertFalse(sol.isFeasible(modified = false, checkValid = false))
     }

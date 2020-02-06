@@ -4,7 +4,7 @@ import no.uib.inf273.Logger
 import no.uib.inf273.data.VesselCargo
 import no.uib.inf273.processor.SolutionGenerator.Companion.BARRIER_ELEMENT
 
-class Solution(val data: DataHolder, val solArr: IntArray) {
+data class Solution(val data: DataParser, val solArr: IntArray) {
 
 
     /**
@@ -261,5 +261,21 @@ class Solution(val data: DataHolder, val solArr: IntArray) {
 
     override fun toString(): String {
         return solArr.contentToString()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Solution) return false
+
+        if (data != other.data) return false
+        if (!solArr.contentEquals(other.solArr)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = data.hashCode()
+        result = 31 * result + solArr.contentHashCode()
+        return result
     }
 }

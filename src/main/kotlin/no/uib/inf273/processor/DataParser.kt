@@ -8,7 +8,7 @@ import no.uib.inf273.data.Cargo
 import no.uib.inf273.data.Vessel
 import no.uib.inf273.data.VesselCargo
 
-class DataHolder(content: String) {
+class DataParser(content: String) {
 
     val nrOfNodes: Int
     val nrOfCargo: Int

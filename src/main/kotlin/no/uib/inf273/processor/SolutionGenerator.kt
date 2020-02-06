@@ -1,9 +1,10 @@
 package no.uib.inf273.processor;
 
 import no.uib.inf273.Logger.debug
+import no.uib.inf273.operator.Operator
 import java.util.*
 
-class SolutionGenerator(val data: DataHolder) {
+class SolutionGenerator(val data: DataParser) {
 
     companion object {
 
@@ -19,30 +20,31 @@ class SolutionGenerator(val data: DataHolder) {
     }
 
     /**
-     * Generate a non-randomized solution with two elements of each cargo side by side then all barrier elements.
+     * Generate a non-randomized solution with all barrier elements then two elements of each cargo side by side.
      * The returned solution is guaranteed to be valid, but not necessarily feasible
      *
-     * @return A valid solution, duplicate solutions returned each time
+     * @return A valid, feasible solution where all cargoes are handled with freight
      */
     fun generateStandardSolution(): Solution {
         val arr = IntArray(data.calculateSolutionLength())
         debug { "length of solution is ${arr.size}" }
         var index = 0
+
+        for (i in 1..data.nrOfVessels) {
+            arr[index++] = BARRIER_ELEMENT
+        }
         for (i in 1..data.nrOfCargo) {
             arr[index++] = i //pickup
             arr[index++] = i //delivery
         }
-        for (i in 1..data.nrOfVessels) {
-            arr[index++] = BARRIER_ELEMENT
-        }
         check(index == arr.size) { "Failed to generate the standard solution as one or more of the elements is 0" }
         val sol = Solution(data, arr)
-        check(sol.isValid(true)) { "The standard solution is not valid" }
+        check(sol.isFeasible(false)) { "The standard solution is not feasible" }
         return sol
     }
 
     /**
-     * @param swaps How many swaps to do. If negative the number of swaps will be [DataHolder.calculateSolutionLength]
+     * @param swaps How many swaps to do. If negative the number of swaps will be [DataParser.calculateSolutionLength]
      * @param rng Random instance to use
      * @param solution Existing solution to shuffle, if none specified a new solution will be generated with [generateStandardSolution]
      *
@@ -60,11 +62,7 @@ class SolutionGenerator(val data: DataHolder) {
         //randomize the order till the solution is valid
         do {
             for (i in 0..rng.nextInt(swaps0)) {
-                val first = rng.nextInt(arrSize)
-                val second = rng.nextInt(arrSize)
-                //swap the two elements, yes this is kotlin magic
-                solution.solArr[first] =
-                    solution.solArr[second].also { solution.solArr[second] = solution.solArr[first] }
+                Operator.ReinsertOnceOperator.operate(solution)
             }
         } while (!solution.isValid())
 
