@@ -1,27 +1,30 @@
 package no.uib.inf273.operator
 
+import no.uib.inf273.Main.Companion.rand
 import no.uib.inf273.processor.Solution
-import kotlin.random.Random
 
 enum class Operator {
 
     TwoExchangeOperator {
         override fun operate(sol: Solution) {
 
-            val indexOrigin = rand.nextInt(sol.solArr.size)
-            val indexDest = rand.nextInt(sol.solArr.size)
+            val indexOrigin = rand.nextInt(sol.arr.size)
+            val indexDest = rand.nextInt(sol.arr.size)
 
-            //we don't change the solution so do nothing
-            if (indexOrigin == indexDest) return
-
-            //swap the two elements, yes this is kotlin magic
-            sol.solArr[indexOrigin] = sol.solArr[indexDest].also { sol.solArr[indexDest] = sol.solArr[indexOrigin] }
+            sol.arr.exchange(indexOrigin, indexDest)
         }
     },
 
     TreeExchangeOperator {
         override fun operate(sol: Solution) {
-            TODO("not implemented")
+            val indexFirst = rand.nextInt(sol.arr.size)
+            val indexSecond = rand.nextInt(sol.arr.size)
+            val indexThird = rand.nextInt(sol.arr.size)
+
+            //before the order is first, second, third
+            sol.arr.exchange(indexFirst, indexSecond)
+            sol.arr.exchange(indexFirst, indexThird)
+            //after the order is third, first, second
         }
     },
 
@@ -30,7 +33,7 @@ enum class Operator {
      */
     ReinsertOnceOperator {
         override fun operate(sol: Solution) {
-            val arr = sol.solArr
+            val arr = sol.arr
             //move from
             val indexOrg = rand.nextInt(arr.size)
             //move to
@@ -42,24 +45,19 @@ enum class Operator {
             val elem = arr[indexOrg]
 
             if (indexDest > indexOrg) {
-                //move elements backwards
-                arr.copyInto(arr, indexDest + 1, indexDest + 1, indexOrg + 1)
-            } else {
                 //move elements forwards
-                arr.copyInto(arr, indexOrg, indexOrg, indexDest)
+                arr.copyInto(arr, indexOrg, indexOrg + 1, indexDest + 1)
+            } else {
+                //move elements backwards
+                arr.copyInto(arr, indexDest, indexDest + 1, indexOrg)
             }
             arr[indexDest] = elem
 
             //TODO check feasibility
         }
-    };
+    },
 
-
-    /**
-     * Random to be used within the operator
-     */
-    val rand: Random
-        get() = Random.Default
+    ;
 
     /**
      * Run the operation on the given solution.
@@ -70,4 +68,16 @@ enum class Operator {
      */
     abstract fun operate(sol: Solution)
 
+
+    /**
+     * Exchange the elements at the two given indexes.
+     *
+     * No range checking is done for speed.
+     */
+    fun IntArray.exchange(first: Int, second: Int) {
+        //we don't change the solution so do nothing
+        if (first == second) return
+        //swap the two elements, yes this is kotlin magic
+        this[first] = this[second].also { this[second] = this[first] }
+    }
 }

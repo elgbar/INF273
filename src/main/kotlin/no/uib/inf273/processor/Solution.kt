@@ -1,10 +1,10 @@
 package no.uib.inf273.processor
 
-import no.uib.inf273.Logger
+import no.uib.inf273.Logger.debug
 import no.uib.inf273.data.VesselCargo
 import no.uib.inf273.processor.SolutionGenerator.Companion.BARRIER_ELEMENT
 
-data class Solution(val data: DataParser, val solArr: IntArray) {
+data class Solution(val data: DataParser, val arr: IntArray) {
 
 
     /**
@@ -13,8 +13,8 @@ data class Solution(val data: DataParser, val solArr: IntArray) {
     private val subRoutes: Array<IntArray>
 
     init {
-        require(solArr.size == data.calculateSolutionLength()) {
-            "Given solution is not compatible with the given data. Expecting an array of length ${data.calculateSolutionLength()} but got ${solArr.size}"
+        require(arr.size == data.calculateSolutionLength()) {
+            "Given solution is not compatible with the given data. Expecting an array of length ${data.calculateSolutionLength()} but got ${arr.size}"
         }
         subRoutes = Array(data.nrOfVessels + 1) { IntArray(0) }
         splitToSubArray(true)
@@ -35,6 +35,7 @@ data class Solution(val data: DataParser, val solArr: IntArray) {
             //sets cannot contain duplicate elements so if the size of the set for this subarray is not
             // exactly half size of the original set it contains duplicate elements
             if (sub.size % 2 != 0 || sub.toHashSet().size * 2 != sub.size) {
+                debug { "Size of ${sub.toList()} is odd? ${sub.size % 2 != 0} | as set is _not_ half of sub size? ${sub.toHashSet().size * 2 != sub.size}" }
                 return false
             }
         }
@@ -54,6 +55,7 @@ data class Solution(val data: DataParser, val solArr: IntArray) {
         val subroutes: Array<IntArray> = splitToSubArray(modified)
 
         if (checkValid && !isValid(true)) {
+            debug { "Checked validity of solution before feasibility and it is not valid" }
             return false
         }
 
@@ -77,7 +79,8 @@ data class Solution(val data: DataParser, val solArr: IntArray) {
                 val cargo = data.cargoes[cargoIndex]
 
                 val currPort = if (seen[cargoIndex]) cargo.destPort else cargo.origin_port
-                val vc: VesselCargo = data.vesselCargo[Pair(vesselId, cargoId)] ?: VesselCargo.IncompatibleVesselCargo
+                val vc: VesselCargo = data.vesselCargo[Pair(vesselId, cargoId)]
+                    ?: error("Failed to find data connecting vessel $vesselId and cargo $cargoId")
 
                 //substitute the dummy home port id with the vessels actual homeport
                 if (lastPort == SolutionGenerator.HOME_PORT) {
@@ -85,14 +88,15 @@ data class Solution(val data: DataParser, val solArr: IntArray) {
                 }
 
                 //add the sailing time to the current time
-                currTime += data.archs[Triple(vesselId, lastPort, currPort)]!!.time
+                currTime += (data.archs[Triple(vesselId, lastPort, currPort)]
+                    ?: error("Failed to find an arch for vessel $vesselId between the ports $lastPort and $currPort")).time
 
                 if (!seen[cargoIndex]) {
                     seen[cargoIndex] = true
 
                     //check compatibility, but only do so for first encounter
                     if (!vessel.canTakeCargo(cargoId)) {
-                        Logger.debug { "Vessel $vesselId is not compatible with $cargoId" }
+                        debug { "Vessel $vesselId is not compatible with $cargoId" }
                         return false
                     }
                     currWeight += cargo.size //first encounter, load the cargo
@@ -101,7 +105,7 @@ data class Solution(val data: DataParser, val solArr: IntArray) {
 
                     currTime = checkTime(cargo.lowerPickup, cargo.upperPickup, vc.originPortTime, currTime)
                     if (currTime < 0) {
-                        Logger.debug { "We are trying to pickup the cargo $cargoId after upper pickup time" }
+                        debug { "We are trying to pickup the cargo $cargoId after upper pickup time" }
                         return false
                     }
 
@@ -111,15 +115,14 @@ data class Solution(val data: DataParser, val solArr: IntArray) {
                     //check for cargo delivery time
                     currTime = checkTime(cargo.lowerDelivery, cargo.upperDelivery, vc.destPortTime, currTime)
                     if (currTime < 0) {
-                        Logger.debug { "We are trying to deliver the cargo $cargoId after upper delivery time" }
+                        debug { "We are trying to deliver the cargo $cargoId after upper delivery time" }
                         return false
                     }
-
                 }
 
                 //check that we are not overloaded
                 if (currWeight > vessel.capacity) {
-                    Logger.debug { "Invalid as vessel $vesselId is trying to carry more than it has capacity for ($currWeight > ${vessel.capacity})" }
+                    debug { "Invalid as vessel $vesselId is trying to carry more than it has capacity for ($currWeight > ${vessel.capacity})" }
                     return false
                 }
 
@@ -230,10 +233,11 @@ data class Solution(val data: DataParser, val solArr: IntArray) {
     fun splitToSubArray(modified: Boolean): Array<IntArray> {
         if (modified) {
             //get the indices the barrier elements are located at
+            //TODO use a simple loop, predefine a array of size nrofvessels then loop till 0 is found (inc by 2 when a non barrier is found)
             val barrierIndices =
-                solArr.mapIndexed { index, i -> Pair(index, i) }.filter { (_, i) -> i == BARRIER_ELEMENT }
+                arr.mapIndexed { index, i -> Pair(index, i) }.filter { (_, i) -> i == BARRIER_ELEMENT }
                     .map { (index, _) -> index }.toIntArray()
-            Logger.debug { "Found barrier elements at ${barrierIndices.toList()}" }
+            debug { "Found barrier elements at ${barrierIndices.toList()}" }
 
             check(barrierIndices.size == data.nrOfVessels) {
                 "Number of barriers found does not match the expected amount. Expected ${data.nrOfVessels} barriers but got ${barrierIndices.size}"
@@ -247,12 +251,12 @@ data class Solution(val data: DataParser, val solArr: IntArray) {
                     else barrierIndices[it - 1] + 1
                 val to =
                     // This is the last iteration, so last element is the last element of the array
-                    if (it == barrierIndices.size) solArr.size
+                    if (it == barrierIndices.size) arr.size
                     // We end at this barrier element index. This value is excluded so the barrier element is not included
                     else barrierIndices[it]
 
-                val a = solArr.copyOfRange(from, to)
-                Logger.debug { "range from $from to $to: ${a.toList()}" }
+                val a = arr.copyOfRange(from, to)
+                debug { "range from $from to $to: ${a.toList()}" }
                 subRoutes[it] = a
             }
         }
@@ -260,7 +264,7 @@ data class Solution(val data: DataParser, val solArr: IntArray) {
     }
 
     override fun toString(): String {
-        return solArr.contentToString()
+        return arr.contentToString()
     }
 
     override fun equals(other: Any?): Boolean {
@@ -268,14 +272,14 @@ data class Solution(val data: DataParser, val solArr: IntArray) {
         if (other !is Solution) return false
 
         if (data != other.data) return false
-        if (!solArr.contentEquals(other.solArr)) return false
+        if (!arr.contentEquals(other.arr)) return false
 
         return true
     }
 
     override fun hashCode(): Int {
         var result = data.hashCode()
-        result = 31 * result + solArr.contentHashCode()
+        result = 31 * result + arr.contentHashCode()
         return result
     }
 }

@@ -57,7 +57,6 @@ class Main(parser: ArgParser) {
     companion object {
 
         lateinit var rand: Random
-            private set
 
         /**
          * Read an internal file to text

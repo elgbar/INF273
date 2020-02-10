@@ -13,7 +13,7 @@ object LocalSearch : Search {
         require(0 < iterations) { "Iteration must be a positive number" }
 
         //Best known solution
-        val best = Solution(initSolution.data, initSolution.solArr.clone())
+        val best = Solution(initSolution.data, initSolution.arr.clone())
         //objective value of the best known solution
         var bestObjVal = best.objectiveValue(false)
 
@@ -31,7 +31,7 @@ object LocalSearch : Search {
 
             //copy the best solution to the current solution
             // this avoids allocating new objects or memory
-            best.solArr.copyInto(curr.solArr)
+            best.arr.copyInto(curr.arr)
 
             op.operate(curr)
             currObjVal = curr.objectiveValue(false)
@@ -39,7 +39,7 @@ object LocalSearch : Search {
             //update when better
             //TODO do not do the feasibility check here but in the operator
             if (curr.isFeasible() && currObjVal < bestObjVal) {
-                curr.solArr.copyInto(best.solArr)
+                curr.arr.copyInto(best.arr)
                 bestObjVal = currObjVal
             }
         }

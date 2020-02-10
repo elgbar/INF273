@@ -55,7 +55,7 @@ class SolutionGenerator(val data: DataParser) {
         rng: Random = Random(),
         solution: Solution = generateStandardSolution()
     ): Solution {
-        val arrSize = solution.solArr.size
+        val arrSize = solution.arr.size
         val swaps0 = if (swaps < 0) arrSize * 2 else swaps
         debug { "swapping $swaps0 times" }
 
@@ -66,7 +66,7 @@ class SolutionGenerator(val data: DataParser) {
             }
         } while (!solution.isValid())
 
-        debug { "after swap = ${solution.solArr.toList()}" }
+        debug { "after swap = ${solution.arr.toList()}" }
 
         return solution
     }

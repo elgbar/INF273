@@ -1,20 +1,60 @@
 package no.uib.inf273.processor
 
+import no.uib.inf273.Logger
 import no.uib.inf273.Main
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 internal class SolutionTest {
 
-    private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
+    companion object {
+        init {
+            Logger.logLevel = Logger.DEBUG
+        }
 
-    private fun assertFeasibility(givenData: IntArray, objVal: Int) {
+        private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
+        private val data2: DataParser = DataParser(Main.readInternalFile("Call_6_Vehicle_2.txt")!!)
 
-        val sol = Solution(data, givenData)
-        assertTrue(sol.isValid(modified = false))
-        assertTrue(sol.isFeasible(modified = false, checkValid = false))
-        assertEquals(objVal, sol.objectiveValue(modified = false))
+        private fun assertFeasibility(givenData: IntArray, objVal: Int) {
+            val sol = Solution(data, givenData)
+            assertTrue(sol.isValid(modified = false))
+            assertTrue(sol.isFeasible(modified = false, checkValid = false))
+            assertEquals(objVal, sol.objectiveValue(modified = false))
+        }
     }
+
+    ////////////////
+    //  Validity  //
+    ////////////////
+
+    @Test
+    fun isValid() {
+        val givenData = intArrayOf(1, 1, 0, 2, 2, 0, 3, 4, 5, 6, 4, 5, 3, 6)
+        assertTrue(Solution(data2, givenData).isValid())
+    }
+
+    @Test
+    fun isValid_InvalidDiffDeliAndPickup() {
+        val givenData = intArrayOf(1, 1, 2, 0, 2, 0, 3, 4, 5, 6, 4, 5, 3, 6)
+        assertFalse(Solution(data2, givenData).isValid())
+    }
+
+    @Test
+    fun isValid_InvalidDiffDeliAndPickup_butEven() {
+        val givenData = intArrayOf(1, 1, 2, 3, 0, 2, 3, 0, 4, 5, 6, 4, 5, 6)
+        assertFalse(Solution(data2, givenData).isValid())
+    }
+
+    @Test
+    fun isValid_InvalidDiffDeliAndPickup_butAlsoUsingFreight() {
+        val givenData = intArrayOf(1, 1, 2, 2, 0, 2, 0, 4, 5, 6, 4, 5, 6, 3)
+        assertFalse(Solution(data2, givenData).isValid())
+    }
+
+    /////////////////
+    // feasibility //
+    /////////////////
+
 
     @Test
     fun isFeasible_CheckInfeasiblePickupAfterDelivery() {
