@@ -1,14 +1,20 @@
 package no.uib.inf273.processor
 
+import no.uib.inf273.Logger
 import no.uib.inf273.Main
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Test
 
 internal class SolutionGeneratorTest {
 
+    companion object {
+        init {
+            Logger.logLevel = Logger.DEBUG
+        }
 
-    private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
-    private val data2: DataParser = DataParser(Main.readInternalFile("Call_6_Vehicle_2.txt")!!)
+        private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
+        private val data2: DataParser = DataParser(Main.readInternalFile("Call_6_Vehicle_2.txt")!!)
+    }
 
     @Test
     fun generateStandardSolution() {
