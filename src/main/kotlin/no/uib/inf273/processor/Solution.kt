@@ -232,35 +232,52 @@ data class Solution(val data: DataParser, val arr: IntArray) {
      */
     fun splitToSubArray(modified: Boolean): Array<IntArray> {
         if (modified) {
-            //get the indices the barrier elements are located at
-            //TODO use a simple loop, predefine a array of size nrofvessels then loop till 0 is found (inc by 2 when a non barrier is found)
-            val barrierIndices =
-                arr.mapIndexed { index, i -> Pair(index, i) }.filter { (_, i) -> i == BARRIER_ELEMENT }
-                    .map { (index, _) -> index }.toIntArray()
-            debug { "Found barrier elements at ${barrierIndices.toList()}" }
+            val barrierIndices = getVesselRanges()
 
-            check(barrierIndices.size == data.nrOfVessels) {
-                "Number of barriers found does not match the expected amount. Expected ${data.nrOfVessels} barriers but got ${barrierIndices.size}"
-            }
+            for ((i, pair) in barrierIndices.withIndex()) {
+                val (from, to) = pair //cannot do this in the loop
 
-            for (it in 0..data.nrOfVessels) {
-                val from =
-                    // This is the first iteration, we must start at zero
-                    if (it == 0) 0
-                    // We start from the element after last barrier
-                    else barrierIndices[it - 1] + 1
-                val to =
-                    // This is the last iteration, so last element is the last element of the array
-                    if (it == barrierIndices.size) arr.size
-                    // We end at this barrier element index. This value is excluded so the barrier element is not included
-                    else barrierIndices[it]
-
-                val a = arr.copyOfRange(from, to)
-                debug { "range from $from to $to: ${a.toList()}" }
-                subRoutes[it] = a
+                val subArr = arr.copyOfRange(from, to)
+                debug { "range from $from to $to: ${subArr.toList()}" }
+                subRoutes[i] = subArr
             }
         }
         return subRoutes
+    }
+
+    /**
+     * Calculate where the cargoes are for each vessel. The last element are those cargoes who are carried by freights.
+     *
+     * All ranges behave like standard ranges, first element is inclusive while last element is exclusive.
+     *
+     * @return List of ranges
+     */
+    fun getVesselRanges(): List<Pair<Int, Int>> {
+        //TODO use a simple loop, predefine a array of size nrofvessels then loop till 0 is found (inc by 2 when a non barrier is found)
+        val barrierIndices = arr.mapIndexed { index, i -> Pair(index, i) }.filter { (_, i) -> i == BARRIER_ELEMENT }
+            .map { (index, _) -> index }.toIntArray()
+
+        debug {
+            //only do the check while debugging to reduce overhead
+            check(barrierIndices.size == data.nrOfVessels) {
+                "Number of barriers found does not match the expected amount. Expected ${data.nrOfVessels} barriers but got ${barrierIndices.size}"
+            }
+            "Found barrier elements at ${barrierIndices.contentToString()} for solution ${arr.contentToString()}"
+        }
+
+        // map the ranges after we have all indices to allow for referencing last barrier indices
+        val ranges: MutableList<Pair<Int, Int>> = barrierIndices.mapIndexedTo(ArrayList()) { i, barrierIndex ->
+            val from =
+                // This is the first iteration, we must start at zero
+                if (i == 0) 0
+                // We start from the element after last barrier
+                else barrierIndices[i - 1] + 1
+            return@mapIndexedTo from to barrierIndex
+        }
+        //add the cargoes that travel by freight
+        ranges += barrierIndices[barrierIndices.size - 1] + 1 to arr.size
+
+        return ranges
     }
 
     override fun toString(): String {
