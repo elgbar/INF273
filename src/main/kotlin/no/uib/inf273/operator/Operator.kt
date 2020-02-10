@@ -53,6 +53,8 @@ enum class Operator {
             //move to
             val indexDest = rand.nextInt(arr.size)
 
+            debug { "Moving element from $indexOrg to $indexDest" }
+
             //we don't change the solution so do nothing
             if (indexOrg == indexDest) return
 
@@ -62,10 +64,13 @@ enum class Operator {
                 //move elements forwards
                 arr.copyInto(arr, indexOrg, indexOrg + 1, indexDest + 1)
             } else {
-                //move elements backwards
-                arr.copyInto(arr, indexDest, indexDest - 1, indexOrg - 1)
+
+                // indexOrg is strictly greater than indexDest and min value of indexDest is 0
+                assert(indexOrg > 0)
+
+                arr.copyInto(arr, indexDest + 1, indexDest, indexOrg)
             }
-            
+
             arr[indexDest] = elem
 
             //TODO check feasibility

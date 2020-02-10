@@ -1,6 +1,7 @@
 package no.uib.inf273.operator
 
 import no.uib.inf273.Logger
+import no.uib.inf273.Logger.log
 import no.uib.inf273.Main
 import no.uib.inf273.Main.Companion.rand
 import no.uib.inf273.processor.DataParser
@@ -105,5 +106,76 @@ internal class OperatorTest {
         Operator.ReinsertOnceOperator.operate(sol)
 
         assertArrayEquals(intArrayOf(0, 0, 0, 1, 1, 2, 6, 2, 3, 3, 4, 4, 5, 5, 6, 7, 7), sol.arr)
+    }
+
+    @Test
+    internal fun ReinsertOnceOperator_DoesNotFailWhenZeroSize() {
+
+        val sol = SolutionGenerator(data).generateStandardSolution()
+
+        //Find a random seed that result in 0 at first next Int call
+        var s = 0
+        do {
+            rand = Random(++s)
+        } while (rand.nextInt(size) != 0)
+        log("zero seed is $s")
+
+        rand = Random(s)
+        assertEquals(0, rand.nextInt(size)) { "Failed to make sure the next int is 0" }
+        assertEquals(16, s) { "Random seed changed" }
+        rand = Random(s)
+        Operator.ReinsertOnceOperator.operate(sol)
+
+        assertArrayEquals(intArrayOf(0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 0, 5, 5, 6, 6, 7, 7), sol.arr) {
+            sol.arr.contentToString()
+        }
+    }
+
+    @Test
+    internal fun ReinsertOnceOperator_ReinsertLastFirst() {
+
+        val sol = SolutionGenerator(data).generateStandardSolution()
+
+        //Find a random seed that result in 0 at first next Int call
+        var s = 0
+        do {
+            rand = Random(++s)
+        } while (rand.nextInt(size) != size - 1 || rand.nextInt(size) != 0)
+        log("zero seed is $s")
+
+        rand = Random(s)
+        assertEquals(size - 1, rand.nextInt(size)) { "Failed to make sure the next int is 16" }
+        assertEquals(0, rand.nextInt(size)) { "Failed to make sure the next int is 0" }
+        rand = Random(s)
+        Operator.ReinsertOnceOperator.operate(sol)
+
+        val expect = intArrayOf(7, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7)
+        assertArrayEquals(expect, sol.arr) {
+            "expect: \n${expect.contentToString()}\nfound:\n${sol.arr.contentToString()}"
+        }
+    }
+
+    @Test
+    internal fun ReinsertOnceOperator_ReinsertFirstLast() {
+
+        val sol = SolutionGenerator(data).generateStandardSolution()
+
+        //Find a random seed that result in 0 at first next Int call
+        var s = 0
+        do {
+            rand = Random(++s)
+        } while (rand.nextInt(size) != 0 || rand.nextInt(size) != size - 1)
+        log("zero seed is $s")
+
+        rand = Random(s)
+        assertEquals(0, rand.nextInt(size)) { "Failed to make sure the next int is 0" }
+        assertEquals(size - 1, rand.nextInt(size)) { "Failed to make sure the next int is 16" }
+        rand = Random(s)
+        Operator.ReinsertOnceOperator.operate(sol)
+
+        val expect = intArrayOf(0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 0)
+        assertArrayEquals(expect, sol.arr) {
+            "expect: \n${expect.contentToString()}\nfound:\n${sol.arr.contentToString()}"
+        }
     }
 }
