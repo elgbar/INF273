@@ -49,8 +49,9 @@ enum class Operator {
                 arr.copyInto(arr, indexOrg, indexOrg + 1, indexDest + 1)
             } else {
                 //move elements backwards
-                arr.copyInto(arr, indexDest, indexDest + 1, indexOrg)
+                arr.copyInto(arr, indexDest, indexDest - 1, indexOrg - 1)
             }
+            
             arr[indexDest] = elem
 
             //TODO check feasibility
