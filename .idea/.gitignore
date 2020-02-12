@@ -1,3 +1,6 @@
 workspace.xml
 tasks.xml
 usage.statistics.xml
+*
+!.gitignore
+!runConfigurations
