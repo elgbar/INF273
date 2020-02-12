@@ -1,8 +1,8 @@
 package no.uib.inf273.processor;
 
 import no.uib.inf273.Logger.debug
-import no.uib.inf273.operator.Operator
-import java.util.*
+import no.uib.inf273.Main
+import no.uib.inf273.extra.randomizeWithin
 
 class SolutionGenerator(val data: DataParser) {
 
@@ -45,29 +45,27 @@ class SolutionGenerator(val data: DataParser) {
 
     /**
      * @param swaps How many swaps to do. If negative the number of swaps will be [DataParser.calculateSolutionLength]
-     * @param rng Random instance to use
-     * @param solution Existing solution to shuffle, if none specified a new solution will be generated with [generateStandardSolution]
+     * @param sol Existing solution to shuffle, if none specified a new solution will be generated with [generateStandardSolution]
      *
-     * @return [solution], but randomized and valid
+     * @return [sol], but randomized and valid
      */
     fun generateRandomSolution(
         swaps: Int = -1,
-        rng: Random = Random(),
-        solution: Solution = generateStandardSolution()
+        sol: Solution = generateStandardSolution()
     ): Solution {
-        val arrSize = solution.arr.size
-        val swaps0 = if (swaps < 0) arrSize * 2 else swaps
-        debug { "swapping $swaps0 times" }
+        val arrSize = sol.arr.size
+        val nrOfSwaps = if (swaps < 0) arrSize * 2 else swaps
+        debug { "swapping $nrOfSwaps times" }
 
         //randomize the order till the solution is valid
         do {
-            for (i in 0..rng.nextInt(swaps0)) {
-                Operator.ReinsertOnceOperator.operate(solution)
+            for (i in 0 until nrOfSwaps) {
+                sol.arr.randomizeWithin(0, arrSize, Main.rand)
             }
-        } while (!solution.isValid())
+        } while (!sol.isValid())
 
-        debug { "after swap = ${solution.arr.toList()}" }
+        debug { "after swap = ${sol.arr.toList()}" }
 
-        return solution
+        return sol
     }
 }

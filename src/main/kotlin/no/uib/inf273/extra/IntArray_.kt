@@ -10,7 +10,7 @@ import kotlin.random.Random
 fun IntArray.exchange(first: Int, second: Int) {
     //we don't change the array so do nothing
     if (first == second) {
-        Logger.debug { "First is equal to second (both $first), no exchange will happen" }
+        Logger.trace { "First is equal to second (both $first), no exchange will happen" }
         return
     }
     //swap the two elements, yes this is kotlin magic
@@ -25,7 +25,7 @@ fun IntArray.randomizeWithin(from: Int, until: Int, rng: Random = Random.Default
 
     //Cannot randomize an empty array, so we just return
     if (from == until) {
-        Logger.debug { "Range is empty (both $from), no exchange will happen" }
+        Logger.trace { "Range is empty (both $from), no exchange will happen" }
         return
     }
 

@@ -22,7 +22,7 @@ object RandomSearch : Search {
         debug { "Initial obj val is $bestObjVal" }
 
         for (i in 0 until iterations) {
-            gen.generateRandomSolution(swaps, solution = sol)
+            gen.generateRandomSolution(swaps, sol)
             if (sol.isFeasible(modified = false, checkValid = false)) {
                 val newObjVal = sol.objectiveValue(modified = false)
                 if (bestObjVal < newObjVal) {
