@@ -43,13 +43,16 @@ object LocalSearchA3 : Search {
             best.arr.copyInto(curr.arr)
 
             op.operate(curr)
-            currObjVal = curr.objectiveValue(false)
-
             //update when better
-            if ((curr.isFeasible(modified = false, checkValid = false)) && currObjVal < bestObjVal) {
-                debug { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff is  ${currObjVal - bestObjVal} " }
-                curr.arr.copyInto(best.arr)
-                bestObjVal = currObjVal
+            if ((curr.isFeasible(modified = false, checkValid = false))) {
+
+
+                currObjVal = curr.objectiveValue(false)
+                if (currObjVal < bestObjVal) {
+                    debug { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff is  ${currObjVal - bestObjVal} " }
+                    curr.arr.copyInto(best.arr)
+                    bestObjVal = currObjVal
+                }
             }
         }
         return best
