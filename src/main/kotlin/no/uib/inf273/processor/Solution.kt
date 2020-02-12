@@ -44,7 +44,6 @@ data class Solution(val data: DataParser, val arr: IntArray) {
         return true
     }
 
-
     /**
      * Check the feasibility of this solution.
      *

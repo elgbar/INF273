@@ -19,6 +19,7 @@ enum class Operator {
 
             val barriers = sol.getVesselRanges()
             //two indices where the random value between them will always be within a vessel
+            // do not pick the last array as changing that has not impact on the objective value
             val (from, until) = barriers[rand.nextInt(barriers.size - 1)]
 
             sol.arr.randomizeWithin(from, until, rand)
@@ -26,6 +27,7 @@ enum class Operator {
     },
 
     TreeExchangeOperator {
+
         override fun operate(sol: Solution) {
 
             val barriers = sol.getVesselRanges()
@@ -50,6 +52,7 @@ enum class Operator {
      * An operator that picks two unique vessels (including freights) then moves cargo from the origin vessel to the destination vessel.
      */
     ReinsertOnceOperator {
+
         override fun operate(sol: Solution) {
             val sub = sol.splitToSubArray(false)
 
@@ -108,7 +111,6 @@ enum class Operator {
      * This operator is not capable of moving cargoes to empty vessels (such as in the case of [SolutionGenerator]).
      */
     ReinsertOnceOperatorOld {
-
         override fun operate(sol: Solution) {
             val ranges = sol.getVesselRanges(false)
 
@@ -171,16 +173,12 @@ enum class Operator {
 
                 sol.joinToArray(modArr)
             }
-
-            //TODO check feasibility
         }
     },
     ;
 
     /**
-     * Run the operation on the given solution.
-     *
-     * When returning the solution must be [Solution.isValid].
+     * Run the operator on the given solution. When returning the solution is guaranteed to be [Solution.isValid] but not [Solution.isFeasible] unless [guaranteedFeasible] is `true`. Ie there is no point in testing for validity or feasibility when [guaranteedFeasible] is `true`.
      *
      * @param sol A feasible solution.
      *

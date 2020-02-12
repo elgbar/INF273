@@ -30,6 +30,7 @@ class DataParser(content: String) {
 
     init {
 
+        val time = System.currentTimeMillis()
         var currLine = 0
 
         //list of all non-comment lines
@@ -135,7 +136,7 @@ class DataParser(content: String) {
             "Finished loading file, but current line is $currLine while number of lines in the files is ${lines.size}"
         }
 
-        log { "Successfully parsed ${lines.size} lines of data (Comment excluded)" }
+        log { "Successfully parsed ${lines.size} lines of data (comments excluded) in ${System.currentTimeMillis() - time} ms" }
 
     }
 

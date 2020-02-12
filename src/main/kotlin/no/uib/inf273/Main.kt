@@ -22,7 +22,11 @@ class Main(
     // Required arguments //
     ////////////////////////
 
-    val file by parser.storing("-f", "--file", help = "Name of file to use")
+    val filePath: String by parser.storing(
+        "-f",
+        "--file",
+        help = "Name of file to use."
+    )
 
     ////////////////////////
     // Optional arguments //
@@ -59,10 +63,10 @@ class Main(
     init {
         Logger.logLevel = logLevel
 
-        Logger.debug { "Random seed: $seed" }
+        log("Random seed = $seed")
         rand = Random(seed)
 
-        val content = readInternalFile(file)
+        val content = readInternalFile(filePath)
 
         check(!content.isNullOrEmpty()) { "Failed to read file as it is null or empty" }
 
@@ -71,7 +75,7 @@ class Main(
 
         if (benchmark) {
             val result = benchmarkA3()
-            log { "Results for instance $file" }
+            log { "Results for instance $filePath" }
 
             for ((alg, triple) in result) {
                 printResults(alg, triple, true)
@@ -79,8 +83,7 @@ class Main(
         } else {
             require(search != Search.NoSearch) { "Search method must be specified when no other option is selected." }
 
-            log("")
-            printResults(search, runAlgo(search, 10), false)
+            printResults(search, runAlgorithm(search, 10), false)
         }
     }
 
@@ -98,7 +101,7 @@ class Main(
         val repeats = 10
 
         for (search in listOf(RandomSearch, LocalSearchA3, SimulatedAnnealingSearch)) {
-            map[search] = runAlgo(search, repeats)
+            map[search] = runAlgorithm(search, repeats)
         }
         return map
     }
@@ -108,7 +111,7 @@ class Main(
      *
      * @return A triple with values in order: average objective value, best objective value, time takes in milliseconds
      */
-    fun runAlgo(search: Search, samples: Int): Triple<Double, Int, Long> {
+    fun runAlgorithm(search: Search, samples: Int): Triple<Double, Int, Long> {
         log { "Running algorithm ${search.javaClass.simpleName}" }
         var totalObj = 0.0
         var bestObj = Int.MAX_VALUE

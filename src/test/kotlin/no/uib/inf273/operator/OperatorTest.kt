@@ -14,8 +14,6 @@ import kotlin.random.Random
 
 internal class OperatorTest {
 
-    private val size: Int = data.calculateSolutionLength()
-
     companion object {
         init {
             Logger.logLevel = Logger.DEBUG
@@ -52,6 +50,7 @@ internal class OperatorTest {
         assertEquals(sol.arr[secondIndex], solCpy[firstIndex])
     }
 
+
     /////////////////////////////
     //  ThreeExchangeOperator  //
     /////////////////////////////
@@ -81,6 +80,7 @@ internal class OperatorTest {
     /////////////////////////////
     // ReinsertOnceOperatorOld //
     /////////////////////////////
+
 
     //Copy of reinsert once select, must be synced to make sense for the tests
     private fun getIndicesFor(seed: Int, arr: IntArray): Pair<Int, Int> {

@@ -46,8 +46,7 @@ object LocalSearchA3 : Search {
             currObjVal = curr.objectiveValue(false)
 
             //update when better
-            //TODO do not do the feasibility check here but in the operator
-            if (curr.isFeasible() && currObjVal < bestObjVal) {
+            if ((curr.isFeasible(modified = false, checkValid = false)) && currObjVal < bestObjVal) {
                 debug { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff is  ${currObjVal - bestObjVal} " }
                 curr.arr.copyInto(best.arr)
                 bestObjVal = currObjVal

@@ -1,6 +1,5 @@
 package no.uib.inf273.extra
 
-import no.uib.inf273.Logger
 import kotlin.random.Random
 
 
@@ -9,12 +8,10 @@ import kotlin.random.Random
  */
 fun IntArray.exchange(first: Int, second: Int) {
     //we don't change the array so do nothing
-    if (first == second) {
-        Logger.trace { "First is equal to second (both $first), no exchange will happen" }
-        return
+    if (first != second) {
+        //swap the two elements, yes this is kotlin magic
+        this[first] = this[second].also { this[second] = this[first] }
     }
-    //swap the two elements, yes this is kotlin magic
-    this[first] = this[second].also { this[second] = this[first] }
 }
 
 /**
@@ -24,13 +21,11 @@ fun IntArray.randomizeWithin(from: Int, until: Int, rng: Random = Random.Default
     check(from <= until) { "From is strictly greater than until: $from > $until" }
 
     //Cannot randomize an empty array, so we just return
-    if (from == until) {
-        Logger.trace { "Range is empty (both $from), no exchange will happen" }
-        return
-    }
+    if (from != until) {
 
-    //generate two indices within the sub-range then swap them
-    exchange(rng.nextInt(from, until), rng.nextInt(from, until))
+        //generate two indices within the sub-range then swap them
+        exchange(rng.nextInt(from, until), rng.nextInt(from, until))
+    }
 }
 
 /**
