@@ -72,28 +72,15 @@ class Main(
         if (benchmark) {
             val result = benchmarkA3()
             log { "Results for instance $file" }
-            val defaultObjVal = solgen.generateStandardSolution().objectiveValue(false)
+
             for ((alg, triple) in result) {
-                val (avg, best, ms) = triple
-                val improvement = 100 * (defaultObjVal - best) / defaultObjVal
-                log { "${alg.javaClass.simpleName} | $avg | $best | $improvement (%) | $ms ms" }
+                printResults(alg, triple, true)
             }
         } else {
             require(search != Search.NoSearch) { "Search method must be specified when no other option is selected." }
 
-
-            val init = solgen.generateStandardSolution()
-            val sol = search.search(solgen.generateStandardSolution())
-
-            check(sol.isFeasible()) { "returned solution is not feasible: ${sol.arr.contentToString()}" }
-
-            check(init !== sol) { "same solution returned" }
-
             log("")
-            log("Searching with ${search.javaClass}")
-            log("Best solution using local search is ${sol.arr.contentToString()} | init ${init.arr.contentToString()}")
-            log("objective value ${sol.objectiveValue()} | initial obj val ${init.objectiveValue()}")
-            log("Improvement ${100 * (init.objectiveValue() - sol.objectiveValue()) / init.objectiveValue()}%")
+            printResults(search, runAlgo(search, 10), false)
         }
     }
 
@@ -111,24 +98,52 @@ class Main(
         val repeats = 10
 
         for (search in listOf(RandomSearch, LocalSearchA3, SimulatedAnnealingSearch)) {
-            log { "Running algorithm ${search.javaClass.simpleName}" }
-            var totalObj = 0.0
-            var bestObj = Int.MAX_VALUE
+            map[search] = runAlgo(search, repeats)
+        }
+        return map
+    }
 
-            val time = measureTimeMillis {
-                for (i in 1..repeats) {
-                    val sol = search.search(solgen.generateStandardSolution())
-                    val objVal = sol.objectiveValue(modified = false)
-                    totalObj += objVal
-                    if (objVal < bestObj) {
-                        bestObj = objVal
-                    }
+    /**
+     * Run an algorithm [samples] times and report back results.
+     *
+     * @return A triple with values in order: average objective value, best objective value, time takes in milliseconds
+     */
+    fun runAlgo(search: Search, samples: Int): Triple<Double, Int, Long> {
+        log { "Running algorithm ${search.javaClass.simpleName}" }
+        var totalObj = 0.0
+        var bestObj = Int.MAX_VALUE
+
+        val time = measureTimeMillis {
+            for (i in 0 until samples) {
+                val sol = search.search(solgen.generateStandardSolution())
+                check(sol.isFeasible()) { "returned solution is not feasible: ${sol.arr.contentToString()}" }
+                val objVal = sol.objectiveValue(modified = false)
+                totalObj += objVal
+                if (objVal < bestObj) {
+                    bestObj = objVal
                 }
             }
-            map[search] = Triple(totalObj / repeats, bestObj, time)
         }
+        return Triple(totalObj / samples, bestObj, time)
+    }
 
-        return map
+    fun printResults(search: Search, result: Triple<Double, Int, Long>, singleLine: Boolean) {
+
+        val defaultObjVal = solgen.generateStandardSolution().objectiveValue(false)
+        val (avg, best, time) = result
+        val improvement = 100 * (defaultObjVal - best) / defaultObjVal
+
+        if (singleLine) {
+            log { "${search.javaClass.simpleName}, $avg, $best, $improvement%, $time ms" }
+        } else {
+            log("Searching with algorithm ${search.javaClass}")
+            log("initial obj val $defaultObjVal")
+            log("Best obj value  $best")
+            log("avg obj value . $avg")
+            log("Improvement . . $improvement%")
+            log("Time  . . . . . $time ms")
+
+        }
     }
 
     companion object {
