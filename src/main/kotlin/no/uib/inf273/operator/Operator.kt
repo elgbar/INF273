@@ -44,9 +44,29 @@ enum class Operator {
     },
 
     /**
-     * Pick to indices then move the element from the first element to the second index by shuffling all elements between the two elements
+     * An operator capable of move cargoes between vessels
+     *
+     * It picks two random indices within a solutions array. But only accept those who will somehow change the solution:
+     *
+     * * The indices cannot be equal
+     * * Neither of the picked indices can point to a [BARRIER_ELEMENT]
+     *
+     * After the two indices are picked there are two paths this operator takes depending whether the picked indices
+     * is within the same vessel or not
+     *
+     * ## Not same vessel
+     *
+     * In this case the cargo is removed from the origin vessel and placed within the destination vessel.
+     * The cargoes are placed last in the destination vessel.
+     *
+     * ## Same vessel
+     *
+     * The origin cargo is removed from its position in the array and all elements between origin and destination are
+     * shifted to the left or right (depending on whether origin index is less than destination index or visa versa).
+     * And the origin cargo is placed at the destination index.
      */
     ReinsertOnceOperator {
+
         override fun operate(sol: Solution) {
             val ranges = sol.getVesselRanges(false)
 
