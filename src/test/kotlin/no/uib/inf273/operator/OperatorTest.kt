@@ -82,98 +82,143 @@ internal class OperatorTest {
     //  ReinsertOnceOperator  //
     ////////////////////////////
 
+    private fun getIndicesFor(seed: Int, arr: IntArray): Pair<Int, Int> {
 
-    @Test
-    internal fun ReinsertOnceOperator_SwapsElementsDestLssOrg() {
+        rand = Random(seed)
 
-        val sol = SolutionGenerator(data).generateStandardSolution()
-
-        //restore the random to initial state
-        rand = Random(0)
-
-        Operator.ReinsertOnceOperator.operate(sol)
-
-        assertArrayEquals(intArrayOf(0, 0, 0, 1, 1, 2, 2, 3, 4, 4, 5, 5, 6, 6, 7, 3, 7), sol.arr)
-    }
-
-    @Test
-    internal fun ReinsertOnceOperator_SwapsElementsDestGrtOrg() {
-
-        val sol = SolutionGenerator(data).generateStandardSolution()
-
-        //restore the random to initial state
-        rand = Random(1)
-        Operator.ReinsertOnceOperator.operate(sol)
-
-        assertArrayEquals(intArrayOf(0, 0, 0, 1, 1, 2, 6, 2, 3, 3, 4, 4, 5, 5, 6, 7, 7), sol.arr)
-    }
-
-    @Test
-    internal fun ReinsertOnceOperator_DoesNotFailWhenZeroSize() {
-
-        val sol = SolutionGenerator(data).generateStandardSolution()
-
-        //Find a random seed that result in 0 at first next Int call
-        var s = 0
+        var orgIndex: Int
+        var destIndex: Int
         do {
-            rand = Random(++s)
-        } while (rand.nextInt(size) != 0)
-        log("zero seed is $s")
-
-        rand = Random(s)
-        assertEquals(0, rand.nextInt(size)) { "Failed to make sure the next int is 0" }
-        assertEquals(16, s) { "Random seed changed" }
-        rand = Random(s)
-        Operator.ReinsertOnceOperator.operate(sol)
-
-        assertArrayEquals(intArrayOf(0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 0, 5, 5, 6, 6, 7, 7), sol.arr) {
-            sol.arr.contentToString()
-        }
+            orgIndex = rand.nextInt(arr.size)
+            destIndex = rand.nextInt(arr.size)
+        } while (orgIndex == destIndex || arr[orgIndex] == arr[destIndex] || arr[orgIndex] == SolutionGenerator.BARRIER_ELEMENT || arr[destIndex] == SolutionGenerator.BARRIER_ELEMENT)
+        return orgIndex to destIndex
     }
 
     @Test
-    internal fun ReinsertOnceOperator_ReinsertLastFirst() {
+    internal fun ReinsertOnceOperator_MovesCargoesFromOrgToDest_OrgLssDest() {
 
-        val sol = SolutionGenerator(data).generateStandardSolution()
+        val sol = Solution(data, intArrayOf(1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7))
 
-        //Find a random seed that result in 0 at first next Int call
+
         var s = 0
+        var org: Int
+        var dest: Int
         do {
-            rand = Random(++s)
-        } while (rand.nextInt(size) != size - 1 || rand.nextInt(size) != 0)
-        log("zero seed is $s")
+            val indices = getIndicesFor(++s, sol.arr)
+            org = indices.first
+            dest = indices.second
+        } while (org != 0 || dest != 3)
 
-        rand = Random(s)
-        assertEquals(size - 1, rand.nextInt(size)) { "Failed to make sure the next int is 16" }
-        assertEquals(0, rand.nextInt(size)) { "Failed to make sure the next int is 0" }
+        log("Wanted seed is $s")
+
         rand = Random(s)
         Operator.ReinsertOnceOperator.operate(sol)
 
-        val expect = intArrayOf(7, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7)
+        val expect = intArrayOf(0, 2, 2, 1, 1, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {
             "expect: \n${expect.contentToString()}\nfound:\n${sol.arr.contentToString()}"
         }
     }
 
     @Test
-    internal fun ReinsertOnceOperator_ReinsertFirstLast() {
+    internal fun ReinsertOnceOperator_MovesCargoesFromOrgToDest_OrgGrtDest() {
 
-        val sol = SolutionGenerator(data).generateStandardSolution()
+        val sol = Solution(data, intArrayOf(1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7))
 
-        //Find a random seed that result in 0 at first next Int call
+
         var s = 0
+        var org: Int
+        var dest: Int
         do {
-            rand = Random(++s)
-        } while (rand.nextInt(size) != 0 || rand.nextInt(size) != size - 1)
-        log("zero seed is $s")
+            val indices = getIndicesFor(++s, sol.arr)
+            org = indices.first
+            dest = indices.second
+        } while (org != 3 || dest != 1)
 
-        rand = Random(s)
-        assertEquals(0, rand.nextInt(size)) { "Failed to make sure the next int is 0" }
-        assertEquals(size - 1, rand.nextInt(size)) { "Failed to make sure the next int is 16" }
+        log("Wanted seed is $s")
+
         rand = Random(s)
         Operator.ReinsertOnceOperator.operate(sol)
 
-        val expect = intArrayOf(0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 0)
+        val expect = intArrayOf(1, 1, 2, 2, 0, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7)
+        assertArrayEquals(expect, sol.arr) {
+            "expect: \n${expect.contentToString()}\nfound:\n${sol.arr.contentToString()}"
+        }
+    }
+
+    @Test
+    internal fun ReinsertOnceOperator_ReshufflesWhenDiffCargoesWithinVessel_OrgGrtDest() {
+
+        val sol = Solution(data, intArrayOf(0, 2, 1, 1, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7))
+
+
+        var s = 0
+        var org: Int
+        var dest: Int
+        do {
+            val indices = getIndicesFor(++s, sol.arr)
+            org = indices.first
+            dest = indices.second
+        } while (org != 5 || dest != 2)
+
+        log("Wanted seed is $s")
+
+        rand = Random(s)
+        Operator.ReinsertOnceOperator.operate(sol)
+
+        val expect = intArrayOf(0, 2, 2, 1, 1, 3, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7)
+        assertArrayEquals(expect, sol.arr) {
+            "expect: \n${expect.contentToString()}\nfound:\n${sol.arr.contentToString()}"
+        }
+    }
+
+    @Test
+    internal fun ReinsertOnceOperator_ReshufflesWhenDiffCargoesWithinVessel_OrgLssDest() {
+
+        val sol = Solution(data, intArrayOf(0, 2, 1, 1, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7))
+
+        var s = 0
+        var org: Int
+        var dest: Int
+        do {
+            val indices = getIndicesFor(++s, sol.arr)
+            org = indices.first
+            dest = indices.second
+        } while (org != 2 || dest != 5)
+
+        log("Wanted seed is $s")
+
+        rand = Random(s)
+        Operator.ReinsertOnceOperator.operate(sol)
+
+        val expect = intArrayOf(0, 2, 1, 3, 2, 1, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7)
+        assertArrayEquals(expect, sol.arr) {
+            "expect: \n${expect.contentToString()}\nfound:\n${sol.arr.contentToString()}"
+        }
+    }
+
+    @Test
+    internal fun ReinsertOnceOperator_NoReshuffleWhenInFreightArray() {
+
+        val sol = Solution(data, intArrayOf(1, 1, 0, 2, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7))
+
+
+        var s = 0
+        var org: Int
+        var dest: Int
+        do {
+            val indices = getIndicesFor(++s, sol.arr)
+            org = indices.first
+            dest = indices.second
+        } while (org != sol.arr.size - 1 || dest != sol.arr.size - 3)
+
+        log("Wanted seed is $s")
+
+        rand = Random(s)
+        Operator.ReinsertOnceOperator.operate(sol)
+
+        val expect = intArrayOf(1, 1, 0, 2, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {
             "expect: \n${expect.contentToString()}\nfound:\n${sol.arr.contentToString()}"
         }

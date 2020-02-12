@@ -1,6 +1,7 @@
 package no.uib.inf273.processor
 
 import no.uib.inf273.Logger.debug
+import no.uib.inf273.Logger.trace
 import no.uib.inf273.data.VesselCargo
 import no.uib.inf273.processor.SolutionGenerator.Companion.BARRIER_ELEMENT
 
@@ -11,6 +12,7 @@ data class Solution(val data: DataParser, val arr: IntArray) {
      * Internal array of the current solution split into multiple sub-arrays. This will be updated when calling [splitToSubArray]
      */
     private val subRoutes: Array<IntArray>
+    private val ranges: MutableList<Pair<Int, Int>> = ArrayList()
 
     init {
         require(arr.size == data.calculateSolutionLength()) {
@@ -238,12 +240,38 @@ data class Solution(val data: DataParser, val arr: IntArray) {
                 val (from, to) = pair //cannot do this in the loop
 
                 val subArr = arr.copyOfRange(from, to)
-                debug { "range from $from to $to: ${subArr.toList()}" }
+                trace { "range from $from to $to: ${subArr.toList()}" }
                 subRoutes[i] = subArr
             }
         }
         return subRoutes
     }
+
+    fun joinToArray(merge: List<List<Int>>) {
+        joinToArray(merge.map { it.toIntArray() }.toTypedArray())
+    }
+
+    /**
+     * Join a split array back into the original
+     */
+    fun joinToArray(merge: Array<IntArray>) {
+//        require(arr.size == merge.map { it.size }.sum() + data.nrOfVessels) {
+//            "Given array of arrays does not have the total size equal to size of this solution's array. Expected ${arr.size} got ${merge.map { it.size }.sum() + data.nrOfVessels}"
+//        }
+
+        var offset = 0
+        for (vessel in merge) {
+            debug { "current array = ${arr.contentToString()}" }
+            debug { "Appending vessel ${vessel.contentToString()}" }
+            vessel.copyInto(arr, offset)
+            offset += vessel.size
+            if (offset != arr.size) { //after the last array we do not want to add a barrier element
+                arr[offset++] = BARRIER_ELEMENT
+                debug { "not last, appending barrier" }
+            }
+        }
+    }
+
 
     /**
      * Calculate where the cargoes are for each vessel. The last element are those cargoes who are carried by freights.
@@ -252,32 +280,56 @@ data class Solution(val data: DataParser, val arr: IntArray) {
      *
      * @return List of ranges
      */
-    fun getVesselRanges(): List<Pair<Int, Int>> {
-        //TODO use a simple loop, predefine a array of size nrofvessels then loop till 0 is found (inc by 2 when a non barrier is found)
-        val barrierIndices = arr.mapIndexed { index, i -> Pair(index, i) }.filter { (_, i) -> i == BARRIER_ELEMENT }
-            .map { (index, _) -> index }.toIntArray()
+    fun getVesselRanges(modified: Boolean = true): List<Pair<Int, Int>> {
+        if (modified) {
+            ranges.clear()
 
-        debug {
-            //only do the check while debugging to reduce overhead
-            check(barrierIndices.size == data.nrOfVessels) {
-                "Number of barriers found does not match the expected amount. Expected ${data.nrOfVessels} barriers but got ${barrierIndices.size}"
+            //TODO use a simple loop, predefine a array of size nrofvessels then loop till 0 is found (inc by 2 when a non barrier is found)
+            val barrierIndices = arr.mapIndexed { index, i -> Pair(index, i) }.filter { (_, i) -> i == BARRIER_ELEMENT }
+                .map { (index, _) -> index }.toIntArray()
+
+            debug {
+                //only do the check while debugging to reduce overhead
+                check(barrierIndices.size == data.nrOfVessels) {
+                    "Number of barriers found does not match the expected amount. Expected ${data.nrOfVessels} barriers but got ${barrierIndices.size} for solution ${arr.contentToString()}"
+                }
+                "Found barrier elements at ${barrierIndices.contentToString()} for solution ${arr.contentToString()}"
             }
-            "Found barrier elements at ${barrierIndices.contentToString()} for solution ${arr.contentToString()}"
-        }
 
-        // map the ranges after we have all indices to allow for referencing last barrier indices
-        val ranges: MutableList<Pair<Int, Int>> = barrierIndices.mapIndexedTo(ArrayList()) { i, barrierIndex ->
-            val from =
-                // This is the first iteration, we must start at zero
-                if (i == 0) 0
-                // We start from the element after last barrier
-                else barrierIndices[i - 1] + 1
-            return@mapIndexedTo from to barrierIndex
+            // map the ranges after we have all indices to allow for referencing last barrier indices
+            barrierIndices.mapIndexedTo(ranges) { i, barrierIndex ->
+                val from =
+                    // This is the first iteration, we must start at zero
+                    if (i == 0) 0
+                    // We start from the element after last barrier
+                    else barrierIndices[i - 1] + 1
+                return@mapIndexedTo from to barrierIndex
+            }
+            //add the cargoes that travel by freight
+            ranges += barrierIndices[barrierIndices.size - 1] + 1 to arr.size
         }
-        //add the cargoes that travel by freight
-        ranges += barrierIndices[barrierIndices.size - 1] + 1 to arr.size
-
         return ranges
+    }
+
+    /**
+     * Get what vessel (index) the given [index] is within.
+     *
+     * @param index index within [arr] to get the vessel of
+     * @param vesselRange The ranges of vessels, default value is calling [getVesselRanges] with no arguments
+     *
+     * @throws IllegalArgumentException If the vessel is a [BARRIER_ELEMENT] within [arr]
+     */
+    fun getVesselIndex(index: Int, vesselRange: List<Pair<Int, Int>> = getVesselRanges()): Int {
+        //range check is done here implicitly
+        require(arr[index] != BARRIER_ELEMENT) { "Given index corresponds to a barrier element" }
+
+        for ((i, pair) in vesselRange.withIndex()) {
+            val (start, stop) = pair
+            if (index in start until stop) {
+                return i
+            }
+        }
+        throw IllegalStateException("Failed to find a vessel that index $index corresponds to in ${arr.contentToString()}")
     }
 
     override fun toString(): String {

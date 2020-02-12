@@ -144,4 +144,88 @@ internal class SolutionTest {
         val subArrays = listOf(0 to 0, 1 to 1, 2 to 2, 3 to 17)
         assertEquals(subArrays, sol.getVesselRanges())
     }
+
+    ///////////////////////
+    //  objective value  //
+    ///////////////////////
+
+    @Test
+    internal fun objval_std() {
+        val gen = SolutionGenerator(data)
+        assertEquals(3286422, gen.generateStandardSolution().objectiveValue(modified = false))
+    }
+
+    @Test
+    internal fun objval_random() {
+        val gen = SolutionGenerator(data)
+
+        val arr = IntArray(data.calculateSolutionLength())
+        Logger.debug { "length of solution is ${arr.size}" }
+        var index = 0
+
+        for (i in 1..data.nrOfVessels) {
+            arr[index++] = SolutionGenerator.BARRIER_ELEMENT
+        }
+        for (i in 1..data.nrOfCargo) {
+            arr[index++] = i //pickup
+        }
+        for (i in 1..data.nrOfCargo) {
+            arr[index++] = i //pickup
+        }
+
+        val stdObjVal = gen.generateStandardSolution().objectiveValue(modified = false)
+
+        assertEquals(stdObjVal, Solution(data, arr).objectiveValue(false))
+    }
+
+
+    ////////////////////////
+    //   getVesselIndex   //
+    ////////////////////////
+
+    @Test
+    internal fun getVesselIndex_succeedsWhenValid() {
+        val sol = Solution(data, intArrayOf(1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7))
+        val ranges = sol.getVesselRanges(false)
+
+        assertEquals(0, sol.getVesselIndex(0, ranges))
+        assertEquals(0, sol.getVesselIndex(1, ranges))
+
+        assertEquals(1, sol.getVesselIndex(3, ranges))
+        assertEquals(1, sol.getVesselIndex(4, ranges))
+
+        assertEquals(2, sol.getVesselIndex(6, ranges))
+        assertEquals(2, sol.getVesselIndex(7, ranges))
+        for (i in 9 until sol.arr.size)
+            assertEquals(3, sol.getVesselIndex(i, ranges)) { "index $i not vessel 3" }
+    }
+
+    @Test
+    internal fun getVesselIndex_failsWhenBarrierElement() {
+        val sol = SolutionGenerator(data).generateStandardSolution()
+        val ranges = sol.getVesselRanges(false)
+        assertThrows(IllegalArgumentException::class.java) { sol.getVesselIndex(0, ranges) }
+        assertThrows(IllegalArgumentException::class.java) { sol.getVesselIndex(1, ranges) }
+        assertThrows(IllegalArgumentException::class.java) { sol.getVesselIndex(2, ranges) }
+    }
+
+    /////////////////////
+    //   joinToArray   //
+    /////////////////////
+
+    @Test
+    internal fun joinToArray() {
+        val sol = Solution(data, intArrayOf(1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7))
+        val sub = sol.splitToSubArray(false)
+
+        //simulate a two exchange
+        sub[0][0] = 2
+        sub[1][0] = 1
+
+        val expected = intArrayOf(2, 1, 0, 1, 2, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7)
+
+        sol.joinToArray(sub)
+
+        assertArrayEquals(expected, sol.arr)
+    }
 }

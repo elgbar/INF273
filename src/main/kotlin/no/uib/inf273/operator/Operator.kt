@@ -3,6 +3,7 @@ package no.uib.inf273.operator
 import no.uib.inf273.Logger.debug
 import no.uib.inf273.Main.Companion.rand
 import no.uib.inf273.processor.Solution
+import no.uib.inf273.processor.SolutionGenerator.Companion.BARRIER_ELEMENT
 import kotlin.random.Random
 
 enum class Operator {
@@ -47,31 +48,69 @@ enum class Operator {
      */
     ReinsertOnceOperator {
         override fun operate(sol: Solution) {
+            val ranges = sol.getVesselRanges(false)
+
             val arr = sol.arr
-            //move from
-            val indexOrg = rand.nextInt(arr.size)
-            //move to
-            val indexDest = rand.nextInt(arr.size)
 
-            debug { "Moving element from $indexOrg to $indexDest" }
+            //Select two indices that will actually make the solution change in some way.
+            // The selected indices are guaranteed to be different them self, the cargo they denote and not a barrier element
+            var orgIndex: Int
+            var destIndex: Int
+            do {
+                orgIndex = rand.nextInt(arr.size)
+                destIndex = rand.nextInt(arr.size)
+            } while (orgIndex == destIndex || arr[orgIndex] == arr[destIndex] || arr[orgIndex] == BARRIER_ELEMENT || arr[destIndex] == BARRIER_ELEMENT)
 
-            //we don't change the solution so do nothing
-            if (indexOrg == indexDest) return
+            //find the vessel index of origin and destination
+            val orgVesselIndex = sol.getVesselIndex(orgIndex, ranges)
+            val destVesselIndex = sol.getVesselIndex(destIndex, ranges)
 
-            val elem = arr[indexOrg]
+            debug { "Moving element from $orgIndex (vessel $orgVesselIndex) to $destIndex (vessel $destVesselIndex)" }
 
-            if (indexDest > indexOrg) {
-                //move elements forwards
-                arr.copyInto(arr, indexOrg, indexOrg + 1, indexDest + 1)
+            if (orgVesselIndex == destVesselIndex) {
+                //no point in moving around vessels in the freight sub array
+                if (destVesselIndex == ranges.size - 1) {
+                    debug { "Vessel of both org and dest is the freight vessel $destVesselIndex" }
+                    return
+                }
+
+                val elem = arr[orgIndex]
+
+                if (orgIndex < destIndex) {
+                    //move elements forwards
+                    arr.copyInto(arr, orgIndex, orgIndex + 1, destIndex + 1)
+                } else {
+
+                    // indexOrg is strictly greater than indexDest and min value of indexDest is 0
+                    assert(orgIndex > 0)
+
+                    arr.copyInto(arr, destIndex + 1, destIndex, orgIndex)
+                }
+
+                arr[destIndex] = elem
             } else {
 
-                // indexOrg is strictly greater than indexDest and min value of indexDest is 0
-                assert(indexOrg > 0)
+                debug { "Different vessels, moving all cargoes from org to dest vessel" }
 
-                arr.copyInto(arr, indexDest + 1, indexDest, indexOrg)
+                //TODO make this happen without converting array to list
+
+                val elem = arr[orgIndex]
+
+                val modArr: Array<IntArray> = sol.splitToSubArray(false)
+
+                //remove cargo from the original vessel
+                val orgNew = IntArray(modArr[orgVesselIndex].size - 2)
+                modArr[orgVesselIndex].filter(elem, orgNew)
+                modArr[orgVesselIndex] = orgNew
+
+                //then add both randomly to the new vessel
+                val destNew = modArr[destVesselIndex].copyOf(modArr[destVesselIndex].size + 2)
+                destNew[destNew.size - 1] = elem
+                destNew[destNew.size - 2] = elem
+                modArr[destVesselIndex] = destNew
+
+                sol.joinToArray(modArr)
             }
-
-            arr[indexDest] = elem
 
             //TODO check feasibility
         }
@@ -115,5 +154,18 @@ enum class Operator {
 
         //generate two indices within the sub-range then swap them
         exchange(rng.nextInt(from, until), rng.nextInt(from, until))
+    }
+
+    fun IntArray.filter(unwanted: Int, to: IntArray, maxRemoved: Int = Integer.MAX_VALUE) {
+        var index = 0
+        var removed = 0
+        for (e in this) {
+            if (e != unwanted) {
+                to[index++] = e
+                if (++removed == maxRemoved) {
+                    return
+                }
+            }
+        }
     }
 }
