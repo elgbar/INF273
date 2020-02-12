@@ -45,6 +45,38 @@ enum class Operator {
         }
     },
 
+    ReinsertOnceOperator {
+        override fun operate(sol: Solution) {
+            val sub = sol.splitToSubArray(false)
+
+            //select two vessels where the origin vessel have cargoes
+            var orgVesselIndex: Int
+            var destVesselIndex: Int
+            do {
+                orgVesselIndex = rand.nextInt(sub.size)
+                destVesselIndex = rand.nextInt(sub.size)
+            } while (orgVesselIndex == destVesselIndex || sub[orgVesselIndex].isEmpty())
+
+            //pick a random cargo within the origin vessel
+            val cargoIndex = rand.nextInt(sub[orgVesselIndex].size)
+
+            val elem = sub[orgVesselIndex][cargoIndex]
+
+            //remove cargo from the original vessel
+            val orgNew = IntArray(sub[orgVesselIndex].size - 2)
+            sub[orgVesselIndex].filter(elem, orgNew)
+            sub[orgVesselIndex] = orgNew
+
+            //then add both randomly to the new vessel
+            val destNew = sub[destVesselIndex].copyOf(sub[destVesselIndex].size + 2)
+            destNew[destNew.size - 1] = elem
+            destNew[destNew.size - 2] = elem
+            sub[destVesselIndex] = destNew
+
+            sol.joinToArray(sub)
+        }
+    },
+
     /**
      * An operator capable of move cargoes between vessels
      *
@@ -67,7 +99,7 @@ enum class Operator {
      * shifted to the left or right (depending on whether origin index is less than destination index or visa versa).
      * And the origin cargo is placed at the destination index.
      */
-    ReinsertOnceOperator {
+    ReinsertOnceOperatorOld {
 
         override fun operate(sol: Solution) {
             val ranges = sol.getVesselRanges(false)
