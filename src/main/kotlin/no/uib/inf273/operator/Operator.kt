@@ -2,9 +2,11 @@ package no.uib.inf273.operator
 
 import no.uib.inf273.Logger.debug
 import no.uib.inf273.Main.Companion.rand
+import no.uib.inf273.extra.exchange
+import no.uib.inf273.extra.filter
+import no.uib.inf273.extra.randomizeWithin
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator.Companion.BARRIER_ELEMENT
-import kotlin.random.Random
 
 enum class Operator {
 
@@ -133,7 +135,6 @@ enum class Operator {
             //TODO check feasibility
         }
     },
-
     ;
 
     /**
@@ -144,46 +145,4 @@ enum class Operator {
      * @param sol A feasible solution
      */
     abstract fun operate(sol: Solution)
-
-
-    /**
-     * Exchange the elements at the two given indices.
-     *
-     * No range checking is done for speed.
-     */
-    fun IntArray.exchange(first: Int, second: Int) {
-        //we don't change the solution so do nothing
-        if (first == second) {
-            debug { "First is equal to second (both $first), no exchange will happen" }
-            return
-        }
-        //swap the two elements, yes this is kotlin magic
-        this[first] = this[second].also { this[second] = this[first] }
-    }
-
-    fun IntArray.randomizeWithin(from: Int, until: Int, rng: Random = Random.Default) {
-        check(from <= until) { "From is strictly greater than until: $from > $until" }
-
-        //Cannot randomize an empty array, so we just return
-        if (from == until) {
-            debug { "Range is empty (both $from), no exchange will happen" }
-            return
-        }
-
-        //generate two indices within the sub-range then swap them
-        exchange(rng.nextInt(from, until), rng.nextInt(from, until))
-    }
-
-    fun IntArray.filter(unwanted: Int, to: IntArray, maxRemoved: Int = Integer.MAX_VALUE) {
-        var index = 0
-        var removed = 0
-        for (e in this) {
-            if (e != unwanted) {
-                to[index++] = e
-                if (++removed == maxRemoved) {
-                    return
-                }
-            }
-        }
-    }
 }
