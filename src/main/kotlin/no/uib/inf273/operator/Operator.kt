@@ -180,9 +180,10 @@ enum class Operator {
     /**
      * Run the operation on the given solution.
      *
-     * When returning the solution must be [Solution.isFeasible].
+     * When returning the solution must be [Solution.isValid].
      *
-     * @param sol A feasible solution
+     * @param sol A feasible solution.
+     *
      */
     abstract fun operate(sol: Solution)
 }
