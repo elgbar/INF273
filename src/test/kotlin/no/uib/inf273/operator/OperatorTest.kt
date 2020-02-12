@@ -78,9 +78,9 @@ internal class OperatorTest {
     }
 
 
-    ////////////////////////////
-    //  ReinsertOnceOperator  //
-    ////////////////////////////
+    /////////////////////////////
+    // ReinsertOnceOperatorOld //
+    /////////////////////////////
 
     //Copy of reinsert once select, must be synced to make sense for the tests
     private fun getIndicesFor(seed: Int, arr: IntArray): Pair<Int, Int> {
@@ -97,7 +97,7 @@ internal class OperatorTest {
     }
 
     @Test
-    internal fun ReinsertOnceOperator_MovesCargoesFromOrgToDest_OrgLssDest() {
+    internal fun ReinsertOnceOperatorOld_MovesCargoesFromOrgToDest_OrgLssDest() {
 
         val sol = Solution(data, intArrayOf(1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7))
 
@@ -114,7 +114,7 @@ internal class OperatorTest {
         log("Wanted seed is $s")
 
         rand = Random(s)
-        Operator.ReinsertOnceOperator.operate(sol)
+        Operator.ReinsertOnceOperatorOld.operate(sol)
 
         val expect = intArrayOf(0, 2, 2, 1, 1, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {
@@ -123,10 +123,9 @@ internal class OperatorTest {
     }
 
     @Test
-    internal fun ReinsertOnceOperator_MovesCargoesFromOrgToDest_OrgGrtDest() {
+    internal fun ReinsertOnceOperatorOld_MovesCargoesFromOrgToDest_OrgGrtDest() {
 
         val sol = Solution(data, intArrayOf(1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7))
-
 
         var s = 0
         var org: Int
@@ -140,7 +139,7 @@ internal class OperatorTest {
         log("Wanted seed is $s")
 
         rand = Random(s)
-        Operator.ReinsertOnceOperator.operate(sol)
+        Operator.ReinsertOnceOperatorOld.operate(sol)
 
         val expect = intArrayOf(1, 1, 2, 2, 0, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {
@@ -149,7 +148,7 @@ internal class OperatorTest {
     }
 
     @Test
-    internal fun ReinsertOnceOperator_ReshufflesWhenDiffCargoesWithinVessel_OrgGrtDest() {
+    internal fun ReinsertOnceOperatorOld_ReshufflesWhenDiffCargoesWithinVessel_OrgGrtDest() {
 
         val sol = Solution(data, intArrayOf(0, 2, 1, 1, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7))
 
@@ -166,7 +165,7 @@ internal class OperatorTest {
         log("Wanted seed is $s")
 
         rand = Random(s)
-        Operator.ReinsertOnceOperator.operate(sol)
+        Operator.ReinsertOnceOperatorOld.operate(sol)
 
         val expect = intArrayOf(0, 2, 2, 1, 1, 3, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {
@@ -175,7 +174,7 @@ internal class OperatorTest {
     }
 
     @Test
-    internal fun ReinsertOnceOperator_ReshufflesWhenDiffCargoesWithinVessel_OrgLssDest() {
+    internal fun ReinsertOnceOperatorOld_ReshufflesWhenDiffCargoesWithinVessel_OrgLssDest() {
 
         val sol = Solution(data, intArrayOf(0, 2, 1, 1, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7))
 
@@ -191,7 +190,7 @@ internal class OperatorTest {
         log("Wanted seed is $s")
 
         rand = Random(s)
-        Operator.ReinsertOnceOperator.operate(sol)
+        Operator.ReinsertOnceOperatorOld.operate(sol)
 
         val expect = intArrayOf(0, 2, 1, 3, 2, 1, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {
@@ -200,7 +199,7 @@ internal class OperatorTest {
     }
 
     @Test
-    internal fun ReinsertOnceOperator_ReshufflesSameCargoWithinVessel() {
+    internal fun ReinsertOnceOperatorOld_ReshufflesSameCargoWithinVessel() {
 
         val sol = Solution(data, intArrayOf(0, 2, 1, 1, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7))
 
@@ -216,7 +215,7 @@ internal class OperatorTest {
         log("Wanted seed is $s")
 
         rand = Random(s)
-        Operator.ReinsertOnceOperator.operate(sol)
+        Operator.ReinsertOnceOperatorOld.operate(sol)
 
         val expect = intArrayOf(0, 1, 1, 3, 2, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {
@@ -225,7 +224,7 @@ internal class OperatorTest {
     }
 
     @Test
-    internal fun ReinsertOnceOperator_NoReshuffleWhenInFreightArray() {
+    internal fun ReinsertOnceOperatorOld_NoReshuffleWhenInFreightArray() {
 
         val sol = Solution(data, intArrayOf(1, 1, 0, 2, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7))
 
@@ -242,7 +241,7 @@ internal class OperatorTest {
         log("Wanted seed is $s")
 
         rand = Random(s)
-        Operator.ReinsertOnceOperator.operate(sol)
+        Operator.ReinsertOnceOperatorOld.operate(sol)
 
         val expect = intArrayOf(1, 1, 0, 2, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {

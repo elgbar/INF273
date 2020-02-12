@@ -6,6 +6,7 @@ import no.uib.inf273.extra.exchange
 import no.uib.inf273.extra.filter
 import no.uib.inf273.extra.randomizeWithin
 import no.uib.inf273.processor.Solution
+import no.uib.inf273.processor.SolutionGenerator
 import no.uib.inf273.processor.SolutionGenerator.Companion.BARRIER_ELEMENT
 
 enum class Operator {
@@ -45,6 +46,9 @@ enum class Operator {
         }
     },
 
+    /**
+     * An operator that picks two unique vessels (including freights) then moves cargo from the origin vessel to the destination vessel.
+     */
     ReinsertOnceOperator {
         override fun operate(sol: Solution) {
             val sub = sol.splitToSubArray(false)
@@ -78,7 +82,7 @@ enum class Operator {
     },
 
     /**
-     * An operator capable of move cargoes between vessels
+     * An operator capable of move cargoes between vessels (-ish, see `issues` section).
      *
      * It picks two random indices within a solutions array. But only accept those who will somehow change the solution:
      *
@@ -98,6 +102,10 @@ enum class Operator {
      * The origin cargo is removed from its position in the array and all elements between origin and destination are
      * shifted to the left or right (depending on whether origin index is less than destination index or visa versa).
      * And the origin cargo is placed at the destination index.
+     *
+     * ## Issues
+     *
+     * This operator is not capable of moving cargoes to empty vessels (such as in the case of [SolutionGenerator]).
      */
     ReinsertOnceOperatorOld {
 

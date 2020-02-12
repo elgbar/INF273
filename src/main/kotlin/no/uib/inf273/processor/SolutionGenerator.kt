@@ -1,4 +1,4 @@
-package no.uib.inf273.processor;
+package no.uib.inf273.processor
 
 import no.uib.inf273.Logger.debug
 import no.uib.inf273.Main
