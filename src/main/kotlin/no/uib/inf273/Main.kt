@@ -3,16 +3,29 @@ package no.uib.inf273
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
+import no.uib.inf273.Logger.log
 import no.uib.inf273.processor.DataParser
 import no.uib.inf273.processor.SolutionGenerator
-import no.uib.inf273.search.LocalSearch
+import no.uib.inf273.search.LocalSearchA3
 import no.uib.inf273.search.RandomSearch
 import no.uib.inf273.search.Search
 import no.uib.inf273.search.SimulatedAnnealingSearch
 import kotlin.random.Random
 
 
-class Main(parser: ArgParser) {
+class Main(
+    parser: ArgParser
+) {
+
+    ////////////////////////
+    // Required arguments //
+    ////////////////////////
+
+    val file by parser.storing("-f", "--file", help = "Name of file to use")
+
+    ////////////////////////
+    // Optional arguments //
+    ////////////////////////
 
     private val logLevel by parser.mapping(
         "--info" to Logger.INFO,
@@ -21,20 +34,26 @@ class Main(parser: ArgParser) {
         help = "Logging level"
     ).default(Logger.INFO)
 
-    val file by parser.storing("-f", "--file", help = "Name of file to use")
-    val data: DataParser
-    val solgen: SolutionGenerator
     val search: Search by parser.mapping(
-        "--search-local" to LocalSearch,
-        "--sl" to LocalSearch,
-        "--search-random" to RandomSearch,
-        "--sr" to RandomSearch,
-        "--search-sim-ann" to SimulatedAnnealingSearch,
-        "--ssa" to SimulatedAnnealingSearch,
+        "--search-local-a3" to LocalSearchA3,
+        "--sl3" to LocalSearchA3,
+        "--search-random-a3" to RandomSearch,
+        "--sr3" to RandomSearch,
+        "--search-sim-ann-a3" to SimulatedAnnealingSearch,
+        "--ssa3" to SimulatedAnnealingSearch,
         help = "What search method to use"
-    )
+    ).default(Search.NoSearch)
 
     val seed: Long by parser.storing("The random seed to use") { toLong() }.default(Random.nextLong())
+
+    val benchmark: Boolean by parser.flagging(
+        "--benchmark-assignment-3",
+        "-b",
+        help = "Enable benchmarking as specified in Assignment 3. Search option will be ignored."
+    ).default(false)
+
+    val data: DataParser
+    val solgen: SolutionGenerator
 
 
     init {
@@ -50,7 +69,28 @@ class Main(parser: ArgParser) {
         data = DataParser(content)
         solgen = SolutionGenerator(data)
 
-        search.search(solgen.generateStandardSolution())
+        if (benchmark) {
+            benchmarkA3()
+        } else {
+            require(search != Search.NoSearch) { "Search method must be specified when no other option is selected." }
+
+
+            val init = solgen.generateStandardSolution()
+            val sol = search.search(solgen.generateStandardSolution())
+
+            check(sol.isFeasible()) { "returned solution is not feasible: ${sol.arr.contentToString()}" }
+
+            check(init !== sol) { "same solution returned" }
+
+            log("")
+            log("Searching with ${search.javaClass}")
+            log("Best solution using local search is ${sol.arr.contentToString()} | init ${init.arr.contentToString()}")
+            log("objective value ${sol.objectiveValue()} | initial obj val ${init.objectiveValue()}")
+            log("Improvement ${100 * (init.objectiveValue() - sol.objectiveValue()) / init.objectiveValue()}%")
+        }
+    }
+
+    fun benchmarkA3() {
 
     }
 

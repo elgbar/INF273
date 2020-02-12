@@ -1,23 +1,23 @@
 package no.uib.inf273.search
 
 import no.uib.inf273.processor.Solution
-import kotlin.random.Random
 
 interface Search {
 
-
     /**
-     * Random to be used within the search
+     * Search with the given search algorithm, no guarantee is given towards the initial solution [sol] being modified
+     *
+     * @throws IllegalArgumentException If [iterations] is a non-positive number
      */
-    val rand: Random
-        get() = Random.Default
-
     fun search(
-        initSolution: Solution,
-        iterations: Int = 10_000,
-        p1: Float = 0.0f,
-        p2: Float = 0.4f,
-        p3: Float = 1 - p1 - p2
+        sol: Solution,
+        iterations: Int = 10_000
     ): Solution
 
+    object NoSearch : Search {
+
+        override fun search(sol: Solution, iterations: Int): Solution {
+            error("Cannot use the No search object to search. This is just a dummy implementation")
+        }
+    }
 }

@@ -1,33 +1,42 @@
 package no.uib.inf273.search
 
+import no.uib.inf273.Logger.debug
 import no.uib.inf273.operator.Operator
 import no.uib.inf273.processor.Solution
 
-object LocalSearch : Search {
+/**
+ * Modified local search for assignment 3
+ */
+object LocalSearchA3 : Search {
 
+    var p1: Float = 0.0f
+    var p2: Float = 0.4f
+    var p3: Float = 1 - p1 - p2
 
-    override fun search(initSolution: Solution, iterations: Int, p1: Float, p2: Float, p3: Float): Solution {
+    override fun search(sol: Solution, iterations: Int): Solution {
         require(0 <= p1 && p1 < p2 && p2 < p3 && p3 < 1) {
             "Invalid probabilities. They must be in acceding order and in range [0,1). | p1=$p1, p2=$p2, p3=$p3"
         }
         require(0 < iterations) { "Iteration must be a positive number" }
 
         //Best known solution
-        val best = Solution(initSolution.data, initSolution.arr.clone())
+        val best = Solution(sol.data, sol.arr.clone())
         //objective value of the best known solution
         var bestObjVal = best.objectiveValue(false)
 
         //current solution
-        val curr = initSolution
+        val curr = sol
         var currObjVal: Int
 
-        for (i in 1..iterations) {
+        for (i in 0 until iterations) {
             val rsi = -1.0f//rand.nextFloat()
             val op = when {
                 rsi < p1 -> Operator.ReinsertOnceOperator
                 rsi < p1 + p2 -> Operator.TwoExchangeOperator
                 else -> Operator.TreeExchangeOperator
             }
+
+            debug { "Using op ${op.javaClass.simpleName}" }
 
             //copy the best solution to the current solution
             // this avoids allocating new objects or memory
@@ -39,6 +48,7 @@ object LocalSearch : Search {
             //update when better
             //TODO do not do the feasibility check here but in the operator
             if (curr.isFeasible() && currObjVal < bestObjVal) {
+                debug { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff is  ${currObjVal - bestObjVal} " }
                 curr.arr.copyInto(best.arr)
                 bestObjVal = currObjVal
             }
