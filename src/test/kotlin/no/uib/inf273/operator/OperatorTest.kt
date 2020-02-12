@@ -82,6 +82,7 @@ internal class OperatorTest {
     //  ReinsertOnceOperator  //
     ////////////////////////////
 
+    //Copy of reinsert once select, must be synced to make sense for the tests
     private fun getIndicesFor(seed: Int, arr: IntArray): Pair<Int, Int> {
 
         rand = Random(seed)
@@ -91,7 +92,7 @@ internal class OperatorTest {
         do {
             orgIndex = rand.nextInt(arr.size)
             destIndex = rand.nextInt(arr.size)
-        } while (orgIndex == destIndex || arr[orgIndex] == arr[destIndex] || arr[orgIndex] == SolutionGenerator.BARRIER_ELEMENT || arr[destIndex] == SolutionGenerator.BARRIER_ELEMENT)
+        } while (orgIndex == destIndex || arr[orgIndex] == SolutionGenerator.BARRIER_ELEMENT || arr[destIndex] == SolutionGenerator.BARRIER_ELEMENT)
         return orgIndex to destIndex
     }
 
@@ -193,6 +194,31 @@ internal class OperatorTest {
         Operator.ReinsertOnceOperator.operate(sol)
 
         val expect = intArrayOf(0, 2, 1, 3, 2, 1, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7)
+        assertArrayEquals(expect, sol.arr) {
+            "expect: \n${expect.contentToString()}\nfound:\n${sol.arr.contentToString()}"
+        }
+    }
+
+    @Test
+    internal fun ReinsertOnceOperator_ReshufflesSameCargoWithinVessel() {
+
+        val sol = Solution(data, intArrayOf(0, 2, 1, 1, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7))
+
+        var s = 0
+        var org: Int
+        var dest: Int
+        do {
+            val indices = getIndicesFor(++s, sol.arr)
+            org = indices.first
+            dest = indices.second
+        } while (org != 1 || dest != 5)
+
+        log("Wanted seed is $s")
+
+        rand = Random(s)
+        Operator.ReinsertOnceOperator.operate(sol)
+
+        val expect = intArrayOf(0, 1, 1, 3, 2, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {
             "expect: \n${expect.contentToString()}\nfound:\n${sol.arr.contentToString()}"
         }

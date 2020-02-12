@@ -53,13 +53,13 @@ enum class Operator {
             val arr = sol.arr
 
             //Select two indices that will actually make the solution change in some way.
-            // The selected indices are guaranteed to be different them self, the cargo they denote and not a barrier element
+            // The selected indices are guaranteed to be different and not a barrier element
             var orgIndex: Int
             var destIndex: Int
             do {
                 orgIndex = rand.nextInt(arr.size)
                 destIndex = rand.nextInt(arr.size)
-            } while (orgIndex == destIndex || arr[orgIndex] == arr[destIndex] || arr[orgIndex] == BARRIER_ELEMENT || arr[destIndex] == BARRIER_ELEMENT)
+            } while (orgIndex == destIndex || arr[orgIndex] == BARRIER_ELEMENT || arr[destIndex] == BARRIER_ELEMENT)
 
             //find the vessel index of origin and destination
             val orgVesselIndex = sol.getVesselIndex(orgIndex, ranges)
@@ -77,16 +77,14 @@ enum class Operator {
                 val elem = arr[orgIndex]
 
                 if (orgIndex < destIndex) {
+                    debug { "Same vessel, org less than dest. Moving elements between forwards" }
                     //move elements forwards
                     arr.copyInto(arr, orgIndex, orgIndex + 1, destIndex + 1)
                 } else {
-
-                    // indexOrg is strictly greater than indexDest and min value of indexDest is 0
-                    assert(orgIndex > 0)
-
+                    debug { "Same vessel, org greater than dest. Moving elements between backwards" }
+                    //move elements backwards
                     arr.copyInto(arr, destIndex + 1, destIndex, orgIndex)
                 }
-
                 arr[destIndex] = elem
             } else {
 
