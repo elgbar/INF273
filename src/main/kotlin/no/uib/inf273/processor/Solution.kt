@@ -37,7 +37,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
      * @return If this solution is valid
      *
      */
-    fun isValid(modified: Boolean = true): Boolean {
+    fun isValid(modified: Boolean): Boolean {
         for (sub in splitToSubArray(modified)) {
             //make sure the sub array actually have an even number of elements
 
@@ -59,7 +59,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
      *
      * @return Of this solution is both feasible and valid
      */
-    fun isFeasible(modified: Boolean = true, checkValid: Boolean = true): Boolean {
+    fun isFeasible(modified: Boolean, checkValid: Boolean = true): Boolean {
         val subroutes: Array<IntArray> = splitToSubArray(modified)
 
         if (checkValid && !isValid(true)) {
