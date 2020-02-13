@@ -45,6 +45,19 @@ object Logger {
      *
      * Will only log if `logLevel > 0`
      */
+    fun debugs(msgs: () -> List<String>) {
+        if (logLevel >= DEBUG) {
+            for (msg in msgs()) {
+                log("[DBG] $msg", null)
+            }
+        }
+    }
+
+    /**
+     * Log a message lazily, the string will not be computed if debug is disabled
+     *
+     * Will only log if `logLevel > 0`
+     */
     fun debug(e: Throwable? = null, msg: () -> String) {
         if (logLevel >= DEBUG) {
             log("[DBG] " + msg(), e)
