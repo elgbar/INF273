@@ -23,7 +23,7 @@ object SimulatedAnnealingSearchA3 : Search {
     /**
      * How many runs we should do to get an average temperature
      */
-    var testRuns = 100_000
+    var testRuns = 1_000
 
     //////////////////////////
     // Automatic parameters //
