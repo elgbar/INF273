@@ -50,17 +50,15 @@ class SolutionGenerator(val data: DataParser) {
         val list = Array<MutableList<Int>>(data.nrOfVessels + 1) {
             ArrayList()
         }
-
         val sol = Solution(data, IntArray(data.calculateSolutionLength()), split = false)
-        do {
-            list.forEach { it.clear() }
-            for (i in 1..data.nrOfCargo) {
-                val vessel: MutableList<Int> = list.random(Main.rand)
-                vessel += i //pickup
-                vessel += i //delivery
-            }
-            sol.joinToArray(list)
-        } while (!sol.isFeasible(true))
+
+        list.forEach { it.clear() }
+        for (i in 1..data.nrOfCargo) {
+            val vessel: MutableList<Int> = list.random(Main.rand)
+            vessel += i //pickup
+            vessel += i //delivery
+        }
+        sol.joinToArray(list)
 
         return sol
     }
