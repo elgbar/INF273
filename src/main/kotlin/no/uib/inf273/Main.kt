@@ -9,7 +9,7 @@ import no.uib.inf273.processor.SolutionGenerator
 import no.uib.inf273.search.LocalSearchA3
 import no.uib.inf273.search.RandomSearch
 import no.uib.inf273.search.Search
-import no.uib.inf273.search.SimulatedAnnealingSearch
+import no.uib.inf273.search.SimulatedAnnealingSearchA3
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
@@ -44,8 +44,8 @@ class Main(
         "--sl3" to LocalSearchA3,
         "--search-random" to RandomSearch,
         "--sr" to RandomSearch,
-        "--search-sim-ann-a3" to SimulatedAnnealingSearch,
-        "--ssa3" to SimulatedAnnealingSearch,
+        "--search-simulated-annealing-a3" to SimulatedAnnealingSearchA3,
+        "--ssa3" to SimulatedAnnealingSearchA3,
         help = "What search method to use"
     ).default(Search.NoSearch)
 
@@ -98,10 +98,8 @@ class Main(
 
         val map: MutableMap<Search, Triple<Double, Int, Long>> = HashMap()
 
-        val repeats = 10
-
-        for (search in listOf(RandomSearch, LocalSearchA3, SimulatedAnnealingSearch)) {
-            map[search] = runAlgorithm(search, repeats)
+        for (search in listOf(RandomSearch, LocalSearchA3, SimulatedAnnealingSearchA3)) {
+            map[search] = runAlgorithm(search, 10)
         }
         return map
     }
