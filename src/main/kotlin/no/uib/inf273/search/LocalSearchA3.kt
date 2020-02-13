@@ -1,6 +1,7 @@
 package no.uib.inf273.search
 
 import no.uib.inf273.Logger.debug
+import no.uib.inf273.Logger.trace
 import no.uib.inf273.Main.Companion.rand
 import no.uib.inf273.operator.Operator
 import no.uib.inf273.processor.Solution
@@ -36,7 +37,7 @@ object LocalSearchA3 : Search {
                 else -> Operator.ReinsertOnceOperator
             }
 
-            debug { "Using op ${op.javaClass.simpleName}" }
+            trace { "Using op ${op.javaClass.simpleName}" }
 
             //copy the best solution to the current solution
             // this avoids allocating new objects or memory
@@ -46,8 +47,8 @@ object LocalSearchA3 : Search {
             //update when better
             if ((curr.isFeasible(modified = false, checkValid = false))) {
 
-
                 currObjVal = curr.objectiveValue(false)
+
                 if (currObjVal < bestObjVal) {
                     debug { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff is  ${currObjVal - bestObjVal} " }
                     curr.arr.copyInto(best.arr)

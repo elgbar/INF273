@@ -265,10 +265,12 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
 //            "Given array of arrays does not have the total size equal to size of this solution's array. Expected ${arr.size} got ${merge.map { it.size }.sum() + data.nrOfVessels}"
 //        }
 
+        debug { "Merging array ${merge.map { it.contentToString() + "\n" }}" }
+
         var offset = 0
         for (vessel in merge) {
             debug { "current array = ${arr.contentToString()}" }
-            debug { "Appending vessel ${vessel.contentToString()}" }
+            debug { "Appending vessel ${vessel.contentToString()} from offset $offset" }
             vessel.copyInto(arr, offset)
             offset += vessel.size
             if (offset != arr.size) { //after the last array we do not want to add a barrier element

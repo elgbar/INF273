@@ -42,8 +42,8 @@ class Main(
     val search: Search by parser.mapping(
         "--search-local-a3" to LocalSearchA3,
         "--sl3" to LocalSearchA3,
-        "--search-random-a3" to RandomSearch,
-        "--sr3" to RandomSearch,
+        "--search-random" to RandomSearch,
+        "--sr" to RandomSearch,
         "--search-sim-ann-a3" to SimulatedAnnealingSearch,
         "--ssa3" to SimulatedAnnealingSearch,
         help = "What search method to use"

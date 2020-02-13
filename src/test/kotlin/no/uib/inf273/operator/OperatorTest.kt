@@ -29,7 +29,7 @@ internal class OperatorTest {
 
 
     @Test
-    internal fun TwoExchangeOperator_SwapsElements() {
+    internal fun twoExchangeOperator_SwapsElements() {
 
         val sol = Solution(data, intArrayOf(3, 3, 0, 7, 1, 7, 1, 0, 5, 5, 6, 6, 0, 2, 2, 4, 4))
         val solCpy = sol.arr.copyOf()
@@ -57,7 +57,7 @@ internal class OperatorTest {
 
 
     @Test
-    internal fun ThreeExchangeOperator_SwapsElements() {
+    internal fun threeExchangeOperator_SwapsElements() {
 
         val sol = Solution(data, intArrayOf(0, 7, 1, 7, 1, 3, 3, 0, 5, 5, 6, 6, 2, 2, 0, 4, 4))
         val solCpy = sol.arr.copyOf()
@@ -97,7 +97,7 @@ internal class OperatorTest {
     }
 
     @Test
-    internal fun ReinsertOnceOperatorOld_MovesCargoesFromOrgToDest_OrgLssDest() {
+    internal fun reinsertOnceOperatorOld_MovesCargoesFromOrgToDest_OrgLssDest() {
 
         val sol = Solution(data, intArrayOf(1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7))
 
@@ -123,7 +123,7 @@ internal class OperatorTest {
     }
 
     @Test
-    internal fun ReinsertOnceOperatorOld_MovesCargoesFromOrgToDest_OrgGrtDest() {
+    internal fun reinsertOnceOperatorOld_MovesCargoesFromOrgToDest_OrgGrtDest() {
 
         val sol = Solution(data, intArrayOf(1, 1, 0, 2, 2, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7))
 
@@ -148,7 +148,7 @@ internal class OperatorTest {
     }
 
     @Test
-    internal fun ReinsertOnceOperatorOld_ReshufflesWhenDiffCargoesWithinVessel_OrgGrtDest() {
+    internal fun reinsertOnceOperatorOld_ReshufflesWhenDiffCargoesWithinVessel_OrgGrtDest() {
 
         val sol = Solution(data, intArrayOf(0, 2, 1, 1, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7))
 
@@ -174,7 +174,7 @@ internal class OperatorTest {
     }
 
     @Test
-    internal fun ReinsertOnceOperatorOld_ReshufflesWhenDiffCargoesWithinVessel_OrgLssDest() {
+    internal fun reinsertOnceOperatorOld_ReshufflesWhenDiffCargoesWithinVessel_OrgLssDest() {
 
         val sol = Solution(data, intArrayOf(0, 2, 1, 1, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7))
 
@@ -199,7 +199,7 @@ internal class OperatorTest {
     }
 
     @Test
-    internal fun ReinsertOnceOperatorOld_ReshufflesSameCargoWithinVessel() {
+    internal fun reinsertOnceOperatorOld_ReshufflesSameCargoWithinVessel() {
 
         val sol = Solution(data, intArrayOf(0, 2, 1, 1, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7))
 
@@ -224,7 +224,7 @@ internal class OperatorTest {
     }
 
     @Test
-    internal fun ReinsertOnceOperatorOld_NoReshuffleWhenInFreightArray() {
+    internal fun reinsertOnceOperatorOld_NoReshuffleWhenInFreightArray() {
 
         val sol = Solution(data, intArrayOf(1, 1, 0, 2, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7))
 

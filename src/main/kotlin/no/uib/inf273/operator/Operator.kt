@@ -74,7 +74,7 @@ enum class Operator {
             sub[orgVesselIndex].filter(elem, orgNew)
             sub[orgVesselIndex] = orgNew
 
-            //then add both randomly to the new vessel
+            //then add both at the end of the new vessel
             val destNew = sub[destVesselIndex].copyOf(sub[destVesselIndex].size + 2)
             destNew[destNew.size - 1] = elem
             destNew[destNew.size - 2] = elem
@@ -178,7 +178,7 @@ enum class Operator {
     ;
 
     /**
-     * Run the operator on the given solution. When returning the solution is guaranteed to be [Solution.isValid] but not [Solution.isFeasible] unless [guaranteedFeasible] is `true`. Ie there is no point in testing for validity or feasibility when [guaranteedFeasible] is `true`.
+     * Run the operator on the given solution. When returning the solution is guaranteed to be [Solution.isValid].
      *
      * @param sol A feasible solution.
      *
