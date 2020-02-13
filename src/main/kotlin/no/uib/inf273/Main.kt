@@ -119,7 +119,7 @@ class Main(
         val time = measureTimeMillis {
             for (i in 0 until samples) {
                 val sol = search.search(solgen.generateStandardSolution())
-                check(sol.isFeasible()) { "returned solution is not feasible: ${sol.arr.contentToString()}" }
+                check(sol.isFeasible(true)) { "returned solution is not feasible: ${sol.arr.contentToString()}" }
                 val objVal = sol.objectiveValue(modified = false)
                 totalObj += objVal
                 if (objVal < bestObj) {

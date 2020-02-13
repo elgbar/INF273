@@ -2,7 +2,6 @@ package no.uib.inf273.processor
 
 import no.uib.inf273.Logger.debug
 import no.uib.inf273.Main
-import no.uib.inf273.extra.randomizeWithin
 
 class SolutionGenerator(val data: DataParser) {
 
@@ -44,27 +43,24 @@ class SolutionGenerator(val data: DataParser) {
     }
 
     /**
-     * @param swaps How many swaps to do. If negative the number of swaps will be [DataParser.calculateSolutionLength]
-     * @param sol Existing solution to shuffle, if none specified a new solution will be generated with [generateStandardSolution]
-     *
-     * @return [sol], but randomized and valid
+     * @return A random valid solution
      */
-    fun generateRandomSolution(
-        swaps: Int = -1,
-        sol: Solution = generateStandardSolution()
-    ): Solution {
-        val arrSize = sol.arr.size
-        val nrOfSwaps = if (swaps < 0) arrSize * 2 else swaps
-        debug { "swapping $nrOfSwaps times" }
+    fun generateRandomSolution(): Solution {
 
-        //randomize the order till the solution is valid
+        val list = Array<MutableList<Int>>(data.nrOfVessels + 1) {
+            ArrayList()
+        }
+
+        val sol = Solution(data, IntArray(data.calculateSolutionLength()), split = false)
         do {
-            for (i in 0 until nrOfSwaps) {
-                sol.arr.randomizeWithin(0, arrSize, Main.rand)
+            list.forEach { it.clear() }
+            for (i in 1..data.nrOfCargo) {
+                val vessel: MutableList<Int> = list.random(Main.rand)
+                vessel += i //pickup
+                vessel += i //delivery
             }
-        } while (!sol.isValid())
-
-        debug { "after swap = ${sol.arr.toList()}" }
+            sol.joinToArray(list)
+        } while (!sol.isFeasible(true))
 
         return sol
     }

@@ -18,15 +18,19 @@ object RandomSearch : Search {
         //objective value of the best known solution
         var bestObjVal = best.objectiveValue(false)
 
-        debug { "Initial solution is ${best.arr.contentToString()}" }
-        debug { "Initial obj val is $bestObjVal" }
+        debug {
+            "Initial solution is ${best.arr.contentToString()}\n" +
+                    "\"Initial obj val is $bestObjVal\""
+        }
 
         for (i in 0 until iterations) {
-            gen.generateRandomSolution(swaps, sol)
-            if (sol.isFeasible(modified = false, checkValid = false)) {
-                val newObjVal = sol.objectiveValue(modified = false)
+
+            val curr = gen.generateRandomSolution()
+
+            if (curr.isFeasible(modified = false, checkValid = false)) {
+                val newObjVal = curr.objectiveValue(modified = false)
                 if (bestObjVal < newObjVal) {
-                    sol.arr.copyInto(best.arr)
+                    curr.arr.copyInto(best.arr)
                     debug { "New best answer ${best.arr.contentToString()} with objective value $newObjVal. Diff is  ${newObjVal - bestObjVal} " }
                     bestObjVal = newObjVal
                 }

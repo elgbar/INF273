@@ -5,7 +5,12 @@ import no.uib.inf273.Logger.trace
 import no.uib.inf273.data.VesselCargo
 import no.uib.inf273.processor.SolutionGenerator.Companion.BARRIER_ELEMENT
 
-data class Solution(val data: DataParser, val arr: IntArray) {
+/**
+ * @param data The instance to solve
+ * @param arr The raw solution
+ * @param split If we should cache [subRoutes] in constructor. Default value is `true` but can be turned off if you create a solution without real data in [arr]
+ */
+class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
 
 
     /**
@@ -19,7 +24,9 @@ data class Solution(val data: DataParser, val arr: IntArray) {
             "Given solution is not compatible with the given data. Expecting an array of length ${data.calculateSolutionLength()} but got ${arr.size}"
         }
         subRoutes = Array(data.nrOfVessels + 1) { IntArray(0) }
-        splitToSubArray(true)
+        if (split) {
+            splitToSubArray(true)
+        }
     }
 
     /**
@@ -246,7 +253,7 @@ data class Solution(val data: DataParser, val arr: IntArray) {
         return subRoutes
     }
 
-    fun joinToArray(merge: List<List<Int>>) {
+    fun joinToArray(merge: Array<MutableList<Int>>) {
         joinToArray(merge.map { it.toIntArray() }.toTypedArray())
     }
 
