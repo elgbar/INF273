@@ -3,9 +3,12 @@ package no.uib.inf273.search
 import no.uib.inf273.Logger
 import no.uib.inf273.Logger.debug
 import no.uib.inf273.Logger.debugs
+import no.uib.inf273.Logger.log
+import no.uib.inf273.Logger.logs
 import no.uib.inf273.Main
 import no.uib.inf273.operator.Operator
 import no.uib.inf273.processor.Solution
+import no.uib.inf273.processor.SolutionGenerator
 import java.math.BigDecimal
 import kotlin.math.ln
 import kotlin.math.pow
@@ -18,7 +21,7 @@ object SimulatedAnnealingSearchA3 : Search {
     ///////////////////////
 
     var p1: Float = 0.25f
-    var p2: Float = 0.5f
+    var p2: Float = 0.50f
 
     /**
      * How many runs we should do to get an average temperature
@@ -40,9 +43,9 @@ object SimulatedAnnealingSearchA3 : Search {
     /**
      * 𝛼
      */
-    private var coolingFactor: Double = 0.01
+    private var coolingFactor: Double = 0.6
         set(value) {
-            require(0 < value && value < 1) { "The cooling factor must be between 0 and 1" }
+            require(0 < value && value < 1) { "The cooling factor must be between 0 and 1 got $value" }
             field = value
         }
 
@@ -52,6 +55,8 @@ object SimulatedAnnealingSearchA3 : Search {
         }
         require(0 < iterations) { "Iteration must be a positive number" }
         require(sol.isFeasible(true)) { "Initial solution is not feasible" }
+
+        debugs { listOf("Initial temperature $initTemp", "Cooling factor $coolingFactor") }
 
         calculateTemp(sol = sol)
 
@@ -99,6 +104,13 @@ object SimulatedAnnealingSearchA3 : Search {
             incombent.arr.copyInto(curr.arr)
         }
         return best
+    }
+
+    override fun tune(solgen: SolutionGenerator, iterations: Int, report: Boolean) {
+        //Calculate the wanted initial temperature
+        calculateTemp(sol = solgen.generateStandardSolution())
+
+        calcBestCooling(solgen)
     }
 
     /**
@@ -155,9 +167,9 @@ object SimulatedAnnealingSearchA3 : Search {
         val deltaE = solObj - avgObj.toDouble()
         check(deltaE > 0) { "deltaE = $deltaE" }
 
-        initTemp = -deltaE / ln(pMax)
 
         debugs {
+
             listOf(
                 "Calculating temp results",
                 "",
@@ -172,5 +184,52 @@ object SimulatedAnnealingSearchA3 : Search {
                 "pMax = $pMax | pMin = $pMin"
             )
         }
+
+        initTemp = -deltaE / ln(pMax)
+    }
+
+    fun calcBestCooling(solgen: SolutionGenerator) {
+        val inc = 0.1
+        val samples = 10
+
+        var bestAvg: Pair<Double, Triple<Double, Int, Long>> =
+            Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Int.MAX_VALUE, Long.MAX_VALUE))
+        var bestObjVal: Pair<Double, Triple<Double, Int, Long>> =
+            Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Int.MAX_VALUE, Long.MAX_VALUE))
+        var bestTime: Pair<Double, Triple<Double, Int, Long>> =
+            Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Int.MAX_VALUE, Long.MAX_VALUE))
+
+
+        log { "Calculating best cooling factor when initial temperature is $initTemp" }
+
+        log { "Warming up" }
+
+        for (i in 0..5) {
+            Main.runAlgorithm(this, samples, solgen, false)
+        }
+
+        log { "Warm up done" }
+
+        for (i in ((1 - inc) / inc).toInt() downTo 1) {
+            val step = i * inc
+            coolingFactor = step
+
+            log("${((1 - step) * 100).toInt()}% done")
+
+            val triple = Main.runAlgorithm(this, samples, solgen, false)
+            if (triple.first < bestAvg.second.first) bestAvg = Pair(step, triple)
+            if (triple.second < bestObjVal.second.second) bestObjVal = Pair(step, triple)
+            if (triple.third < bestTime.second.third) bestTime = Pair(step, triple)
+        }
+
+        logs {
+            listOf(
+                "Best average objective value. . $bestAvg",
+                "Best absolute objective value . $bestObjVal",
+                "Best total time . . . . . . . . $bestTime"
+            )
+        }
+
+        coolingFactor = bestAvg.first
     }
 }

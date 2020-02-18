@@ -5,6 +5,7 @@ import no.uib.inf273.Logger.trace
 import no.uib.inf273.Main.Companion.rand
 import no.uib.inf273.operator.Operator
 import no.uib.inf273.processor.Solution
+import no.uib.inf273.processor.SolutionGenerator
 
 /**
  * Modified local search for assignment 3
@@ -60,4 +61,7 @@ object LocalSearchA3 : Search {
     }
 
 
+    override fun tune(solgen: SolutionGenerator, iterations: Int, report: Boolean) {
+        //TODO("Tune percentages p1 and p2")
+    }
 }

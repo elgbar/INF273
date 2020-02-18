@@ -38,4 +38,8 @@ object RandomSearch : Search {
         }
         return best
     }
+
+    override fun tune(solgen: SolutionGenerator, iterations: Int, report: Boolean) {
+        //do nothing all is random
+    }
 }

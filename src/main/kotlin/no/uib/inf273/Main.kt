@@ -3,6 +3,7 @@ package no.uib.inf273
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
+import no.uib.inf273.Logger.debug
 import no.uib.inf273.Logger.log
 import no.uib.inf273.processor.DataParser
 import no.uib.inf273.processor.SolutionGenerator
@@ -59,6 +60,10 @@ class Main(
     val data: DataParser
     val solgen: SolutionGenerator
 
+    val tune: Boolean by parser.flagging(
+        "--tune",
+        help = "Use and print the best calculated parameters. Note that a tuning is a VERY heavy operation and will take a long time."
+    )
 
     init {
         Logger.logLevel = logLevel
@@ -83,7 +88,7 @@ class Main(
         } else {
             require(search != Search.NoSearch) { "Search method must be specified when no other option is selected." }
 
-            printResults(search, runAlgorithm(search, 10), false)
+            printResults(search, runAlgorithm(search, 10, solgen, tune), false)
         }
     }
 
@@ -99,33 +104,9 @@ class Main(
         val map: MutableMap<Search, Triple<Double, Int, Long>> = HashMap()
 
         for (search in listOf(RandomSearch, LocalSearchA3, SimulatedAnnealingSearchA3)) {
-            map[search] = runAlgorithm(search, 10)
+            map[search] = runAlgorithm(search, 10, solgen, tune)
         }
         return map
-    }
-
-    /**
-     * Run an algorithm [samples] times and report back results.
-     *
-     * @return A triple with values in order: average objective value, best objective value, time takes in milliseconds
-     */
-    fun runAlgorithm(search: Search, samples: Int): Triple<Double, Int, Long> {
-        log { "Running algorithm ${search.javaClass.simpleName}" }
-        var totalObj = 0.0
-        var bestObj = Int.MAX_VALUE
-
-        val time = measureTimeMillis {
-            for (i in 0 until samples) {
-                val sol = search.search(solgen.generateStandardSolution())
-                check(sol.isFeasible(true)) { "returned solution is not feasible: ${sol.arr.contentToString()}" }
-                val objVal = sol.objectiveValue(modified = false)
-                totalObj += objVal
-                if (objVal < bestObj) {
-                    bestObj = objVal
-                }
-            }
-        }
-        return Triple(totalObj / samples, bestObj, time)
     }
 
     fun printResults(search: Search, result: Triple<Double, Int, Long>, singleLine: Boolean) {
@@ -159,9 +140,45 @@ class Main(
         fun readInternalFile(path: String): String? {
             return Main::class.java.classLoader.getResource(path)?.readText()
         }
+
+
+        /**
+         * Run an algorithm [samples] times and report back results.
+         *
+         * @return A triple with values in order: average objective value, best objective value, time takes in milliseconds
+         */
+        fun runAlgorithm(
+            search: Search,
+            samples: Int,
+            solgen: SolutionGenerator,
+            tune: Boolean
+        ): Triple<Double, Int, Long> {
+            debug { "Running algorithm ${search.javaClass.simpleName}" }
+            var totalObj = 0.0
+            var bestObj = Int.MAX_VALUE
+
+            if (tune) {
+                search.tune(solgen, samples, true)
+            }
+
+            val time = measureTimeMillis {
+                for (i in 0 until samples) {
+                    val sol = search.search(solgen.generateStandardSolution())
+                    check(sol.isFeasible(true)) { "returned solution is not feasible: ${sol.arr.contentToString()}" }
+                    val objVal = sol.objectiveValue(modified = false)
+                    totalObj += objVal
+                    if (objVal < bestObj) {
+                        bestObj = objVal
+                    }
+                }
+            }
+            return Triple(totalObj / samples, bestObj, time)
+        }
     }
 }
 
 fun main(args: Array<String>) = mainBody {
     ArgParser(args).parseInto(::Main).run { }
 }
+
+

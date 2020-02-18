@@ -29,6 +29,12 @@ object Logger {
         e?.printStackTrace()
     }
 
+    fun logs(msgs: () -> List<String>) {
+        for (msg in msgs()) {
+            log(msg, null)
+        }
+    }
+
     /**
      * Log a message lazily, the string will not be computed if debug is disabled
      *
