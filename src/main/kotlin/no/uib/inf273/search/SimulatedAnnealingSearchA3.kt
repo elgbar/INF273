@@ -6,7 +6,9 @@ import no.uib.inf273.Logger.debugs
 import no.uib.inf273.Logger.log
 import no.uib.inf273.Logger.logs
 import no.uib.inf273.Main
-import no.uib.inf273.operator.Operator
+import no.uib.inf273.operator.ReinsertOnceOperator
+import no.uib.inf273.operator.TreeExchangeOperator
+import no.uib.inf273.operator.TwoExchangeOperator
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 import java.math.BigDecimal
@@ -119,9 +121,9 @@ object SimulatedAnnealingSearchA3 : Search {
     private fun change(sol: Solution) {
         val rsi = Main.rand.nextFloat()
         val op = when {
-            rsi < LocalSearchA3.p1 -> Operator.TwoExchangeOperator
-            rsi < LocalSearchA3.p1 + LocalSearchA3.p2 -> Operator.TreeExchangeOperator
-            else -> Operator.ReinsertOnceOperator
+            rsi < LocalSearchA3.p1 -> TwoExchangeOperator
+            rsi < LocalSearchA3.p1 + LocalSearchA3.p2 -> TreeExchangeOperator
+            else -> ReinsertOnceOperator
         }
         Logger.trace { "Using op ${op.javaClass.simpleName}" }
         op.operate(sol)

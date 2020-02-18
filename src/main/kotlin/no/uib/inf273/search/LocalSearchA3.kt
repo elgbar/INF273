@@ -3,7 +3,9 @@ package no.uib.inf273.search
 import no.uib.inf273.Logger.debug
 import no.uib.inf273.Logger.trace
 import no.uib.inf273.Main.Companion.rand
-import no.uib.inf273.operator.Operator
+import no.uib.inf273.operator.ReinsertOnceOperator
+import no.uib.inf273.operator.TreeExchangeOperator
+import no.uib.inf273.operator.TwoExchangeOperator
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 
@@ -33,9 +35,9 @@ object LocalSearchA3 : Search {
         for (i in 0 until iterations) {
             val rsi = rand.nextFloat()
             val op = when {
-                rsi < p1 -> Operator.TwoExchangeOperator
-                rsi < p1 + p2 -> Operator.TreeExchangeOperator
-                else -> Operator.ReinsertOnceOperator
+                rsi < p1 -> TwoExchangeOperator
+                rsi < p1 + p2 -> TreeExchangeOperator
+                else -> ReinsertOnceOperator
             }
 
             trace { "Using op ${op.javaClass.simpleName}" }
