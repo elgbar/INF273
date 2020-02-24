@@ -6,9 +6,9 @@ import no.uib.inf273.Logger.debugs
 import no.uib.inf273.Logger.log
 import no.uib.inf273.Logger.logs
 import no.uib.inf273.Main
-import no.uib.inf273.operator.ReinsertOnceOperator
-import no.uib.inf273.operator.TreeExchangeOperator
-import no.uib.inf273.operator.TwoExchangeOperator
+import no.uib.inf273.operators.ReinsertOnceOperator
+import no.uib.inf273.operators.TreeExchangeOperator
+import no.uib.inf273.operators.TwoExchangeOperator
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 import java.math.BigDecimal

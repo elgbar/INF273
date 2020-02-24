@@ -3,9 +3,9 @@ package no.uib.inf273.search
 import no.uib.inf273.Logger.debug
 import no.uib.inf273.Logger.trace
 import no.uib.inf273.Main.Companion.rand
-import no.uib.inf273.operator.ReinsertOnceOperator
-import no.uib.inf273.operator.TreeExchangeOperator
-import no.uib.inf273.operator.TwoExchangeOperator
+import no.uib.inf273.operators.ReinsertOnceOperator
+import no.uib.inf273.operators.TreeExchangeOperator
+import no.uib.inf273.operators.TwoExchangeOperator
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 

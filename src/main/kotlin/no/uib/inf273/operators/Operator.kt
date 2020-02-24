@@ -1,4 +1,4 @@
-package no.uib.inf273.operator
+package no.uib.inf273.operators
 
 import no.uib.inf273.processor.Solution
 

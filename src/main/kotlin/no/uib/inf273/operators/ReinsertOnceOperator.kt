@@ -1,4 +1,4 @@
-package no.uib.inf273.operator
+package no.uib.inf273.operators
 
 import no.uib.inf273.Main
 import no.uib.inf273.extra.filter
