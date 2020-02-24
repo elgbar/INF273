@@ -37,5 +37,7 @@ object ReinsertOnceOperator : Operator {
         sub[destVesselIndex] = destNew
 
         sol.joinToArray(sub)
+
+        //TODO Ensure the solution is feasible
     }
 }

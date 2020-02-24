@@ -5,9 +5,10 @@ import no.uib.inf273.processor.Solution
 interface Operator {
 
     /**
-     * Run the operator on the given solution. When returning the solution is guaranteed to be [Solution.isValid].
+     * Run the operator on the given solution. When returning the solution is guaranteed to be [Solution.isFeasible].
      *
      * @param sol A feasible solution.
+     *
      *
      */
     fun operate(sol: Solution)

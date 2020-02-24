@@ -98,5 +98,6 @@ object ReinsertOnceOperatorOld : Operator {
 
             sol.joinToArray(modArr)
         }
+        //TODO Ensure the solution is feasible
     }
 }
