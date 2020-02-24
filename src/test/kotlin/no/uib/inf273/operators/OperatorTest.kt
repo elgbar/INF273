@@ -1,4 +1,4 @@
-package no.uib.inf273.operator
+package no.uib.inf273.operators
 
 import no.uib.inf273.Logger
 import no.uib.inf273.Logger.log
@@ -40,7 +40,7 @@ internal class OperatorTest {
         //restore the random to initial state
         rand = Random(7)
 
-        Operator.TwoExchangeOperator.operate(sol)
+        TwoExchangeOperator.operate(sol)
 
         assertEquals(
             sol.arr[firstIndex],
@@ -69,7 +69,7 @@ internal class OperatorTest {
         //restore the random to initial state
         rand = Random(2)
 
-        Operator.TreeExchangeOperator.operate(sol)
+        TreeExchangeOperator.operate(sol)
 
         assertEquals(sol.arr[firstIndex], solCpy[thirdIndex])
         assertEquals(sol.arr[secondIndex], solCpy[firstIndex])
@@ -114,7 +114,7 @@ internal class OperatorTest {
         log("Wanted seed is $s")
 
         rand = Random(s)
-        Operator.ReinsertOnceOperatorOld.operate(sol)
+        ReinsertOnceOperatorOld.operate(sol)
 
         val expect = intArrayOf(0, 2, 2, 1, 1, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {
@@ -139,7 +139,7 @@ internal class OperatorTest {
         log("Wanted seed is $s")
 
         rand = Random(s)
-        Operator.ReinsertOnceOperatorOld.operate(sol)
+        ReinsertOnceOperatorOld.operate(sol)
 
         val expect = intArrayOf(1, 1, 2, 2, 0, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {
@@ -165,7 +165,7 @@ internal class OperatorTest {
         log("Wanted seed is $s")
 
         rand = Random(s)
-        Operator.ReinsertOnceOperatorOld.operate(sol)
+        ReinsertOnceOperatorOld.operate(sol)
 
         val expect = intArrayOf(0, 2, 2, 1, 1, 3, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {
@@ -190,7 +190,7 @@ internal class OperatorTest {
         log("Wanted seed is $s")
 
         rand = Random(s)
-        Operator.ReinsertOnceOperatorOld.operate(sol)
+        ReinsertOnceOperatorOld.operate(sol)
 
         val expect = intArrayOf(0, 2, 1, 3, 2, 1, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {
@@ -215,7 +215,7 @@ internal class OperatorTest {
         log("Wanted seed is $s")
 
         rand = Random(s)
-        Operator.ReinsertOnceOperatorOld.operate(sol)
+        ReinsertOnceOperatorOld.operate(sol)
 
         val expect = intArrayOf(0, 1, 1, 3, 2, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {
@@ -241,7 +241,7 @@ internal class OperatorTest {
         log("Wanted seed is $s")
 
         rand = Random(s)
-        Operator.ReinsertOnceOperatorOld.operate(sol)
+        ReinsertOnceOperatorOld.operate(sol)
 
         val expect = intArrayOf(1, 1, 0, 2, 3, 2, 3, 0, 0, 4, 4, 5, 5, 6, 6, 7, 7)
         assertArrayEquals(expect, sol.arr) {

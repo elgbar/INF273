@@ -30,25 +30,25 @@ internal class SolutionTest {
     @Test
     fun isValid() {
         val givenData = intArrayOf(1, 1, 0, 2, 2, 0, 3, 4, 5, 6, 4, 5, 3, 6)
-        assertTrue(Solution(data2, givenData).isValid())
+        assertTrue(Solution(data2, givenData).isValid(true))
     }
 
     @Test
     fun isValid_InvalidDiffDeliAndPickup() {
         val givenData = intArrayOf(1, 1, 2, 0, 2, 0, 3, 4, 5, 6, 4, 5, 3, 6)
-        assertFalse(Solution(data2, givenData).isValid())
+        assertFalse(Solution(data2, givenData).isValid(true))
     }
 
     @Test
     fun isValid_InvalidDiffDeliAndPickup_butEven() {
         val givenData = intArrayOf(1, 1, 2, 3, 0, 2, 3, 0, 4, 5, 6, 4, 5, 6)
-        assertFalse(Solution(data2, givenData).isValid())
+        assertFalse(Solution(data2, givenData).isValid(true))
     }
 
     @Test
     fun isValid_InvalidDiffDeliAndPickup_butAlsoUsingFreight() {
         val givenData = intArrayOf(1, 1, 2, 2, 0, 2, 0, 4, 5, 6, 4, 5, 6, 3)
-        assertFalse(Solution(data2, givenData).isValid())
+        assertFalse(Solution(data2, givenData).isValid(true))
     }
 
     /////////////////
