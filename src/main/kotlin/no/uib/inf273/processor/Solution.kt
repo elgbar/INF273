@@ -68,78 +68,81 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
         }
 
         for ((index, sub) in subroutes.withIndex()) {
+            if (!isVesselFeasible(index, sub)) return false
+        }
 
-            //skip last array as it is only the tramp transports, and always allowed
-            if (index == subroutes.size - 1) continue
+        return true
+    }
 
-            //false if we are currently picking it up, true if we are delivering
-            val seen = BooleanArray(data.nrOfCargo)
+    /**check if a vessel is feasible*/
+    fun isVesselFeasible(vindex: Int, sub: IntArray): Boolean {
+        //skip last array as it is only the tramp transports, and always allowed
+        if (vindex == data.nrOfVessels) return true
 
-            val vesselId = index + 1
-            val vessel = data.vesselFromId(vesselId)
-            var currWeight = 0
-            var currTime = 0
-            var lastPort = SolutionGenerator.HOME_PORT //vessel start at home port
+        //false if we are currently picking it up, true if we are delivering
+        val seen = BooleanArray(data.nrOfCargo)
 
+        val vesselId = vindex + 1
+        val vessel = data.vesselFromId(vesselId)
+        var currWeight = 0
+        var currTime = 0
+        var lastPort = SolutionGenerator.HOME_PORT //vessel start at home port
+        for (cargoId in sub) {
+            val cargoIndex = cargoId - 1
+            val cargo = data.cargoes[cargoIndex]
 
-            for (cargoId in sub) {
-                val cargoIndex = cargoId - 1
-                val cargo = data.cargoes[cargoIndex]
+            val currPort = if (seen[cargoIndex]) cargo.destPort else cargo.origin_port
+            val vc: VesselCargo = data.vesselCargo[Pair(vesselId, cargoId)]
+                ?: error("Failed to find data connecting vessel $vesselId and cargo $cargoId")
 
-                val currPort = if (seen[cargoIndex]) cargo.destPort else cargo.origin_port
-                val vc: VesselCargo = data.vesselCargo[Pair(vesselId, cargoId)]
-                    ?: error("Failed to find data connecting vessel $vesselId and cargo $cargoId")
+            //substitute the dummy home port id with the vessels actual homeport
+            if (lastPort == SolutionGenerator.HOME_PORT) {
+                lastPort = vessel.homePort
+            }
 
-                //substitute the dummy home port id with the vessels actual homeport
-                if (lastPort == SolutionGenerator.HOME_PORT) {
-                    lastPort = vessel.homePort
+            //add the sailing time to the current time
+            currTime += (data.archs[Triple(vesselId, lastPort, currPort)]
+                ?: error("Failed to find an arch for vessel $vesselId between the ports $lastPort and $currPort")).time
+
+            if (!seen[cargoIndex]) {
+                seen[cargoIndex] = true
+
+                //check compatibility, but only do so for first encounter
+                if (!vessel.canTakeCargo(cargoId)) {
+                    debug { "Vessel $vesselId is not compatible with $cargoId" }
+                    return false
                 }
+                currWeight += cargo.size //first encounter, load the cargo
 
-                //add the sailing time to the current time
-                currTime += (data.archs[Triple(vesselId, lastPort, currPort)]
-                    ?: error("Failed to find an arch for vessel $vesselId between the ports $lastPort and $currPort")).time
+                //check for cargo pickup time
 
-                if (!seen[cargoIndex]) {
-                    seen[cargoIndex] = true
-
-                    //check compatibility, but only do so for first encounter
-                    if (!vessel.canTakeCargo(cargoId)) {
-                        debug { "Vessel $vesselId is not compatible with $cargoId" }
-                        return false
-                    }
-                    currWeight += cargo.size //first encounter, load the cargo
-
-                    //check for cargo pickup time
-
-                    currTime = checkTime(cargo.lowerPickup, cargo.upperPickup, vc.originPortTime, currTime)
-                    if (currTime < 0) {
-                        debug { "We are trying to pickup the cargo $cargoId after upper pickup time" }
-                        return false
-                    }
-
-                } else {
-                    currWeight -= cargo.size //second encounter, unload the cargo
-
-                    //check for cargo delivery time
-                    currTime = checkTime(cargo.lowerDelivery, cargo.upperDelivery, vc.destPortTime, currTime)
-                    if (currTime < 0) {
-                        debug { "We are trying to deliver the cargo $cargoId after upper delivery time" }
-                        return false
-                    }
-                }
-
-                //check that we are not overloaded
-                if (currWeight > vessel.capacity) {
-                    debug { "Invalid as vessel $vesselId is trying to carry more than it has capacity for ($currWeight > ${vessel.capacity})" }
+                currTime = checkTime(cargo.lowerPickup, cargo.upperPickup, vc.originPortTime, currTime)
+                if (currTime < 0) {
+                    debug { "We are trying to pickup the cargo $cargoId after upper pickup time" }
                     return false
                 }
 
+            } else {
+                currWeight -= cargo.size //second encounter, unload the cargo
 
-                //update port for next round
-                lastPort = currPort
+                //check for cargo delivery time
+                currTime = checkTime(cargo.lowerDelivery, cargo.upperDelivery, vc.destPortTime, currTime)
+                if (currTime < 0) {
+                    debug { "We are trying to deliver the cargo $cargoId after upper delivery time" }
+                    return false
+                }
             }
-        }
 
+            //check that we are not overloaded
+            if (currWeight > vessel.capacity) {
+                debug { "Invalid as vessel $vesselId is trying to carry more than it has capacity for ($currWeight > ${vessel.capacity})" }
+                return false
+            }
+
+
+            //update port for next round
+            lastPort = currPort
+        }
         return true
     }
 
