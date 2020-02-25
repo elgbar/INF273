@@ -9,7 +9,7 @@ internal class SolutionTest {
 
     companion object {
         init {
-            Logger.logLevel = Logger.DEBUG
+            Main.log.logLevel = Logger.DEBUG
         }
 
         private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
@@ -160,7 +160,7 @@ internal class SolutionTest {
         val gen = SolutionGenerator(data)
 
         val arr = IntArray(data.calculateSolutionLength())
-        log.debug { "length of solution is ${arr.size}" }
+        Main.log.debug { "length of solution is ${arr.size}" }
         var index = 0
 
         for (i in 1..data.nrOfVessels) {

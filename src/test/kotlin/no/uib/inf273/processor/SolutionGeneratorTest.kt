@@ -9,7 +9,7 @@ internal class SolutionGeneratorTest {
 
     companion object {
         init {
-            Logger.logLevel = Logger.DEBUG
+            Main.log.logLevel = Logger.DEBUG
         }
 
         private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)

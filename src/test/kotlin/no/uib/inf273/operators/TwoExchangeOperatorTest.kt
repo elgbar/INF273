@@ -13,7 +13,8 @@ internal class TwoExchangeOperatorTest {
 
     companion object {
         init {
-            Logger.logLevel = Logger.DEBUG
+            Main.log.logLevel = Logger.DEBUG
+            TwoExchangeOperator.log.logLevel = Logger.TRACE
         }
 
         private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
