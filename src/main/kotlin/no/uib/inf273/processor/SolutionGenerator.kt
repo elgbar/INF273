@@ -38,7 +38,6 @@ class SolutionGenerator(val data: DataParser) {
         }
         check(index == arr.size) { "Failed to generate the standard solution as one or more of the elements is 0" }
         val sol = Solution(data, arr)
-        check(sol.isFeasible(false)) { "The standard solution is not feasible" }
         return sol
     }
 

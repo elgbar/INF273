@@ -48,16 +48,16 @@ object LocalSearchA3 : Search {
 
             op.operate(curr)
             //update when better
-            if ((curr.isFeasible(modified = false, checkValid = false))) {
+//            if ((curr.isFeasible(modified = false, checkValid = false))) {
 
-                currObjVal = curr.objectiveValue(false)
+            currObjVal = curr.objectiveValue(false)
 
-                if (currObjVal < bestObjVal) {
-                    debug { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff is  ${currObjVal - bestObjVal} " }
-                    curr.arr.copyInto(best.arr)
-                    bestObjVal = currObjVal
-                }
+            if (currObjVal < bestObjVal) {
+                debug { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff is  ${currObjVal - bestObjVal} " }
+                curr.arr.copyInto(best.arr)
+                bestObjVal = currObjVal
             }
+//            }
         }
         return best
     }

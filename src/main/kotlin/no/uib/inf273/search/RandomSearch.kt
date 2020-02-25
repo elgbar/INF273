@@ -25,16 +25,18 @@ object RandomSearch : Search {
 
         for (i in 0 until iterations) {
 
-            val curr = gen.generateRandomSolution()
+            var curr: Solution
+            do {
+                curr = gen.generateRandomSolution()
+            } while (curr.isFeasible(true, true))
 
-            if (curr.isFeasible(modified = false, checkValid = false)) {
-                val newObjVal = curr.objectiveValue(modified = false)
-                if (bestObjVal < newObjVal) {
-                    curr.arr.copyInto(best.arr)
-                    debug { "New best answer ${best.arr.contentToString()} with objective value $newObjVal. Diff is  ${newObjVal - bestObjVal} " }
-                    bestObjVal = newObjVal
-                }
+            val newObjVal = curr.objectiveValue(modified = false)
+            if (bestObjVal < newObjVal) {
+                curr.arr.copyInto(best.arr)
+                debug { "New best answer ${best.arr.contentToString()} with objective value $newObjVal. Diff is  ${newObjVal - bestObjVal} " }
+                bestObjVal = newObjVal
             }
+            
         }
         return best
     }
