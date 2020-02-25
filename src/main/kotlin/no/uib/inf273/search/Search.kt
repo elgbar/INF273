@@ -1,9 +1,12 @@
 package no.uib.inf273.search
 
+import no.uib.inf273.Logger
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 
 interface Search {
+    val log: Logger
+        get() = Logger()
 
     /**
      * Search with the given search algorithm, no guarantee is given towards the initial solution [sol] being modified

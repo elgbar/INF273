@@ -1,8 +1,6 @@
 package no.uib.inf273.processor
 
-import no.uib.inf273.Logger.debug
-import no.uib.inf273.Logger.log
-import no.uib.inf273.Logger.trace
+import no.uib.inf273.Logger
 import no.uib.inf273.data.Arch
 import no.uib.inf273.data.Cargo
 import no.uib.inf273.data.Vessel
@@ -37,14 +35,14 @@ class DataParser(content: String) {
         val lines = content.replace("\r", "").split("\n").filter { !it.startsWith('%') }
 
         nrOfNodes = lines[currLine++].toInt()
-        debug { "nrOfNodes= $nrOfNodes" }
+        log.debug { "nrOfNodes= $nrOfNodes" }
 
         nrOfVessels = lines[currLine++].toInt()
-        debug { "nrOfVessels= $nrOfVessels" }
+        log.debug { "nrOfVessels= $nrOfVessels" }
 
         vessels = Array(nrOfVessels) {
             val line = lines[currLine++].split(',').map { it.toInt() }
-            trace { "vessel $it= $line" }
+            log.trace { "vessel $it= $line" }
             val id = line[0]
             val home = checkNodeRange(line[1])
             val start = line[2]
@@ -53,11 +51,11 @@ class DataParser(content: String) {
         }
 
         nrOfCargo = lines[currLine++].toInt()
-        debug { "nrOfCalls= $nrOfCargo" }
+        log.debug { "nrOfCalls= $nrOfCargo" }
 
         for (i in 1..nrOfVessels) {
             val line = lines[currLine++].split(',').map { it.toInt() }
-            trace { "vessel cargo compat $i = $line" }
+            log.trace { "vessel cargo compat $i = $line" }
 
             val vessel = vesselFromId(line[0])
             vessel.compatibleCalls = line.subList(1, line.size).toIntArray()
@@ -65,7 +63,7 @@ class DataParser(content: String) {
 
         cargoes = Array(nrOfCargo) {
             val line = lines[currLine++].split(',').map { it.toInt() }
-            trace { "cargo $it= $line" }
+            log.trace { "cargo $it= $line" }
             val index = line[0]
             val origin = line[1]
             val dest = line[2]
@@ -100,7 +98,7 @@ class DataParser(content: String) {
             val dest = line[2]
             val index = Triple(vessel, origin, dest)
 
-            trace { "arch [$index] = ${line.subList(3, line.size)}" }
+            log.trace { "arch [$index] = ${line.subList(3, line.size)}" }
 
             val time = line[3]
             val cost = line[4]
@@ -127,7 +125,7 @@ class DataParser(content: String) {
                 val dcost = line[5]
                 VesselCargo(otime, ocost, dtime, dcost)
             }
-            trace { "vcc [$index] = ${line.subList(2, line.size)}" }
+            log.trace { "vcc [$index] = ${line.subList(2, line.size)}" }
             vcmap[index] = vcc
         }
 
@@ -136,7 +134,7 @@ class DataParser(content: String) {
             "Finished loading file, but current line is $currLine while number of lines in the files is ${lines.size}"
         }
 
-        log { "Successfully parsed ${lines.size} lines of data (comments excluded) in ${System.currentTimeMillis() - time} ms" }
+        log.log { "Successfully parsed ${lines.size} lines of data (comments excluded) in ${System.currentTimeMillis() - time} ms" }
 
     }
 
@@ -167,5 +165,9 @@ class DataParser(content: String) {
      */
     fun calculateSolutionLength(): Int {
         return nrOfCargo * 2 + nrOfVessels
+    }
+
+    companion object {
+        val log = Logger()
     }
 }

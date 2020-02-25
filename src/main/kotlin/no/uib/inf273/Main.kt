@@ -3,8 +3,6 @@ package no.uib.inf273
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
-import no.uib.inf273.Logger.debug
-import no.uib.inf273.Logger.log
 import no.uib.inf273.processor.DataParser
 import no.uib.inf273.processor.SolutionGenerator
 import no.uib.inf273.search.LocalSearchA3
@@ -67,9 +65,10 @@ class Main(
     )
 
     init {
-        Logger.logLevel = logLevel
+        log.logLevel = logLevel
+        if (!benchmark) search.log.logLevel = logLevel
 
-        log("Random seed = $seed")
+        log.log("Random seed = $seed")
         rand = Random(seed)
 
         val content = readInternalFile(filePath)
@@ -81,7 +80,7 @@ class Main(
 
         if (benchmark) {
             val result = benchmarkA3()
-            log { "Results for instance $filePath" }
+            log.log { "Results for instance $filePath" }
 
             for ((alg, triple) in result) {
                 printResults(alg, triple, true)
@@ -89,7 +88,7 @@ class Main(
         } else {
             require(search != Search.NoSearch) { "Search method must be specified when no other option is selected." }
 
-            printResults(search, runAlgorithm(search, 10, solgen, tune), false)
+            printResults(search, runAlgorithm(search, 1, solgen, tune), false)
         }
     }
 
@@ -101,11 +100,11 @@ class Main(
      * @return A map of the search mapping to average obj value, best obj val, then running time in ms
      */
     fun benchmarkA3(): Map<Search, Triple<Double, Long, Long>> {
-        log { "Benchmark Assignment 3 " }
+        log.log { "Benchmark Assignment 3 " }
         val map: MutableMap<Search, Triple<Double, Long, Long>> = HashMap()
 
         for (search in listOf(RandomSearch, LocalSearchA3, SimulatedAnnealingSearchA3)) {
-            log { "Running ${search.javaClass.simpleName}" }
+            log.log { "Running ${search.javaClass.simpleName}" }
             map[search] = runAlgorithm(search, 10, solgen, tune)
         }
         return map
@@ -118,15 +117,18 @@ class Main(
         val improvement = 100.0.toBigDecimal() * (defaultObjVal - best.toBigDecimal()) / defaultObjVal
 
         if (singleLine) {
-            log { "${search.javaClass.simpleName}, $avg, $best, $improvement%, $time ms" }
+            log.log { "${search.javaClass.simpleName}, $avg, $best, $improvement%, $time ms" }
         } else {
-            log("Searching with algorithm ${search.javaClass}")
-            log("initial obj val $defaultObjVal")
-            log("Best obj value  $best")
-            log("avg obj value . $avg")
-            log("Improvement . . $improvement%")
-            log("Time  . . . . . $time ms")
-
+            log.logs {
+                listOf(
+                    "Searching with algorithm ${search.javaClass}"
+                    , "initial obj val $defaultObjVal"
+                    , "Best obj value  $best"
+                    , "avg obj value . $avg"
+                    , "Improvement . . $improvement%"
+                    , "Time  . . . . . $time ms"
+                )
+            }
         }
     }
 
@@ -154,7 +156,7 @@ class Main(
             solgen: SolutionGenerator,
             tune: Boolean
         ): Triple<Double, Long, Long> {
-            debug { "Running algorithm ${search.javaClass.simpleName}" }
+            log.debug { "Running algorithm ${search.javaClass.simpleName}" }
             var totalObj = BigDecimal.ZERO
             var bestObj = Long.MAX_VALUE
 
@@ -164,9 +166,9 @@ class Main(
 
             val time = measureTimeMillis {
                 for (i in 0 until samples) {
-                    val sol = search.search(solgen.generateStandardSolution(), 1_000_000)
+                    val sol = search.search(solgen.generateStandardSolution())
                     check(sol.isFeasible(true)) { "returned solution is not feasible: ${sol.arr.contentToString()}" }
-                    val objVal = sol.objectiveValue(modified = false)
+                    val objVal = sol.objectiveValue(true)
                     totalObj += objVal.toBigDecimal()
                     if (objVal < bestObj) {
                         bestObj = objVal
@@ -182,5 +184,10 @@ class Main(
 fun main(args: Array<String>) = mainBody {
     ArgParser(args).parseInto(::Main).run { }
 }
+
+/**
+ * Global logger
+ */
+val log = Logger()
 
 

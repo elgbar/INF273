@@ -1,12 +1,15 @@
 package no.uib.inf273
 
-object Logger {
+class Logger {
 
 
-    const val TRACE = 2
-    const val DEBUG = 1
-    const val INFO = 0
-    const val NONE = -1
+    companion object {
+
+        const val TRACE = 2
+        const val DEBUG = 1
+        const val INFO = 0
+        const val NONE = -1
+    }
 
     /**
      * How much to log, the higher the number the more will be logged. Log
@@ -36,7 +39,7 @@ object Logger {
     }
 
     /**
-     * Log a message lazily, the string will not be computed if debug is disabled
+     * Log a message lazily, the string will not be computed if log.debug is disabled
      *
      * Will only log if `logLevel > 0`
      */
@@ -47,7 +50,7 @@ object Logger {
     }
 
     /**
-     * Log a message lazily, the string will not be computed if debug is disabled
+     * Log a message lazily, the string will not be computed if log.debug is disabled
      *
      * Will only log if `logLevel > 0`
      */
@@ -60,7 +63,7 @@ object Logger {
     }
 
     /**
-     * Log a message lazily, the string will not be computed if debug is disabled
+     * Log a message lazily, the string will not be computed if log.debug is disabled
      *
      * Will only log if `logLevel > 0`
      */
@@ -71,7 +74,7 @@ object Logger {
     }
 
     /**
-     * Log a message lazily, the string will not be computed if debug is disabled
+     * Log a message lazily, the string will not be computed if log.debug is disabled
      *
      * Will only log if `logLevel > 1`
      */
@@ -82,7 +85,7 @@ object Logger {
     }
 
     /**
-     * Log a message lazily, the string will not be computed if debug is disabled
+     * Log a message lazily, the string will not be computed if log.debug is disabled
      *
      * Will only log if `logLevel > 1`
      */

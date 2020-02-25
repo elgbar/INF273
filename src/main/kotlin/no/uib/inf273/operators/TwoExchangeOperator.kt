@@ -1,11 +1,14 @@
 package no.uib.inf273.operators
 
+import no.uib.inf273.Logger
 import no.uib.inf273.processor.Solution
 
 /**
  * Swap two elements within a vessel range
  */
 object TwoExchangeOperator : Operator {
+
+    override val log = Logger()
 
     override fun operate(sol: Solution) {
         val (vIndex, from, until) = Operator.findNonEmptyVessel(sol) ?: return

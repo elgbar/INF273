@@ -1,7 +1,5 @@
 package no.uib.inf273.search
 
-import no.uib.inf273.Logger.debug
-import no.uib.inf273.Logger.trace
 import no.uib.inf273.Main.Companion.rand
 import no.uib.inf273.operators.ReinsertOnceOperator
 import no.uib.inf273.operators.TreeExchangeOperator
@@ -32,7 +30,10 @@ object LocalSearchA3 : Search {
         val curr = sol
         var currObjVal: Long
 
+
         for (i in 0 until iterations) {
+
+
             val rsi = rand.nextFloat()
             val op = when {
                 rsi < p1 -> TwoExchangeOperator
@@ -40,7 +41,7 @@ object LocalSearchA3 : Search {
                 else -> ReinsertOnceOperator
             }
 
-            trace { "Using op ${op.javaClass.simpleName}" }
+            log.trace { "Using op ${op.javaClass.simpleName}" }
 
             //copy the best solution to the current solution
             // this avoids allocating new objects or memory
@@ -48,10 +49,12 @@ object LocalSearchA3 : Search {
 
             op.operate(curr)
 
+
+
             currObjVal = curr.objectiveValue(false)
 
             if (currObjVal < bestObjVal) {
-                debug { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff is  ${currObjVal - bestObjVal} " }
+                log.debug { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff is  ${currObjVal - bestObjVal} " }
                 curr.arr.copyInto(best.arr)
                 bestObjVal = currObjVal
             }

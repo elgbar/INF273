@@ -1,11 +1,13 @@
 package no.uib.inf273.processor
 
-import no.uib.inf273.Logger.debug
+import no.uib.inf273.Logger
 import no.uib.inf273.Main
 
 class SolutionGenerator(val data: DataParser) {
 
     companion object {
+
+        private val log = Logger()
 
         /**
          * The element to use as a barrier element.
@@ -26,7 +28,7 @@ class SolutionGenerator(val data: DataParser) {
      */
     fun generateStandardSolution(): Solution {
         val arr = IntArray(data.calculateSolutionLength())
-        debug { "length of solution is ${arr.size}" }
+        log.debug { "length of solution is ${arr.size}" }
         var index = 0
 
         for (i in 1..data.nrOfVessels) {

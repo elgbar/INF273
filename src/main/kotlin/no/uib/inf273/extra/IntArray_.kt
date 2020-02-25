@@ -17,7 +17,7 @@ fun IntArray.exchange(first: Int, second: Int) {
 /**
  * Swap two elements within the given range. Allows [from] to be equal to [until]
  */
-fun IntArray.randomizeWithin(from: Int = 0, until: Int = size, rng: Random = Random.Default) {
+fun IntArray.randomizeExchange(from: Int = 0, until: Int = size, rng: Random = Random.Default) {
     check(from <= until) { "From is strictly greater than until: $from > $until" }
 
     //Cannot randomize an empty array, so we just return

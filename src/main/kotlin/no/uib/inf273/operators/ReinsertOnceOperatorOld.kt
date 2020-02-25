@@ -36,6 +36,8 @@ import no.uib.inf273.processor.SolutionGenerator.Companion.BARRIER_ELEMENT
  */
 object ReinsertOnceOperatorOld : Operator {
 
+    override val log = Logger()
+
     override fun operate(sol: Solution) {
         val ranges = sol.getVesselRanges(false)
 
@@ -54,30 +56,30 @@ object ReinsertOnceOperatorOld : Operator {
         val orgVesselIndex = sol.getVesselIndex(orgIndex, ranges)
         val destVesselIndex = sol.getVesselIndex(destIndex, ranges)
 
-        Logger.debug { "Moving element from $orgIndex (vessel $orgVesselIndex) to $destIndex (vessel $destVesselIndex)" }
+        log.debug { "Moving element from $orgIndex (vessel $orgVesselIndex) to $destIndex (vessel $destVesselIndex)" }
 
         if (orgVesselIndex == destVesselIndex) {
             //no point in moving around vessels in the freight sub array
             if (destVesselIndex == ranges.size - 1) {
-                Logger.debug { "Vessel of both org and dest is the freight vessel $destVesselIndex" }
+                log.debug { "Vessel of both org and dest is the freight vessel $destVesselIndex" }
                 return
             }
 
             val elem = arr[orgIndex]
 
             if (orgIndex < destIndex) {
-                Logger.debug { "Same vessel, org less than dest. Moving elements between forwards" }
+                log.debug { "Same vessel, org less than dest. Moving elements between forwards" }
                 //move elements forwards
                 arr.copyInto(arr, orgIndex, orgIndex + 1, destIndex + 1)
             } else {
-                Logger.debug { "Same vessel, org greater than dest. Moving elements between backwards" }
+                log.debug { "Same vessel, org greater than dest. Moving elements between backwards" }
                 //move elements backwards
                 arr.copyInto(arr, destIndex + 1, destIndex, orgIndex)
             }
             arr[destIndex] = elem
         } else {
 
-            Logger.debug { "Different vessels, moving all cargoes from org to dest vessel" }
+            log.debug { "Different vessels, moving all cargoes from org to dest vessel" }
 
             //TODO make this happen without converting array to list
 

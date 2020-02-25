@@ -10,6 +10,9 @@ import no.uib.inf273.processor.Solution
  */
 object ReinsertOnceOperator : Operator {
 
+
+    override val log = Logger()
+
     override fun operate(sol: Solution) {
         val sub = sol.splitToSubArray(false)
 
@@ -34,7 +37,7 @@ object ReinsertOnceOperator : Operator {
 
         val destFeasible = Operator.exchangeOnceTilFeasible(sol, destVesselIndex, destNew)
         if (!destFeasible) {
-            Logger.trace { "Failed to reinsert $elem from vessel $orgVesselIndex to $destVesselIndex as no feasible arrangement could be found" }
+            log.trace { "Failed to reinsert $elem from vessel $orgVesselIndex to $destVesselIndex as no feasible arrangement could be found" }
             return
         }
         sub[destVesselIndex] = destNew
@@ -46,7 +49,7 @@ object ReinsertOnceOperator : Operator {
 
         val orgFeasible = Operator.exchangeOnceTilFeasible(sol, orgVesselIndex, orgNew)
         if (!orgFeasible) {
-            Logger.trace { "Failed to reinsert $elem from vessel $orgVesselIndex to $orgVesselIndex as no feasible arrangement could be found" }
+            log.trace { "Failed to reinsert $elem from vessel $orgVesselIndex to $orgVesselIndex as no feasible arrangement could be found" }
             return
         }
         sub[orgVesselIndex] = orgNew

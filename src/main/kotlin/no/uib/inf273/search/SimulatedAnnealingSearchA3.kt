@@ -1,10 +1,6 @@
 package no.uib.inf273.search
 
 import no.uib.inf273.Logger
-import no.uib.inf273.Logger.debug
-import no.uib.inf273.Logger.debugs
-import no.uib.inf273.Logger.log
-import no.uib.inf273.Logger.logs
 import no.uib.inf273.Main
 import no.uib.inf273.operators.ReinsertOnceOperator
 import no.uib.inf273.operators.TreeExchangeOperator
@@ -17,6 +13,7 @@ import kotlin.math.pow
 
 object SimulatedAnnealingSearchA3 : Search {
 
+    override val log: Logger = Logger()
 
     ///////////////////////
     // Manual parameters //
@@ -37,7 +34,7 @@ object SimulatedAnnealingSearchA3 : Search {
     /**
      * T0
      */
-    private var initTemp: Double = 10.0
+    private var initTemp: Double = 0.0
         set(value) {
             require(0 < value) { "Temperature must be a positive number" }
             field = value
@@ -45,7 +42,7 @@ object SimulatedAnnealingSearchA3 : Search {
     /**
      * 𝛼
      */
-    private var coolingFactor: Double = 0.995
+    private var coolingFactor: Double = 0.999
         set(value) {
             require(0 < value && value < 1) { "The cooling factor must be between 0 and 1 got $value" }
             field = value
@@ -58,8 +55,8 @@ object SimulatedAnnealingSearchA3 : Search {
         require(0 < iterations) { "Iteration must be a positive number" }
         require(sol.isFeasible(true)) { "Initial solution is not feasible" }
 
-        debugs { listOf("Initial temperature $initTemp", "Cooling factor $coolingFactor") }
         calculateTemp(sol = sol)
+        log.debugs { listOf("Initial temperature $initTemp", "Cooling factor $coolingFactor") }
 
         //Best known solution
         val best = Solution(sol.data, sol.arr.clone())
@@ -74,29 +71,48 @@ object SimulatedAnnealingSearchA3 : Search {
 
         var temp = initTemp
 
-        for (i in 0 until iterations) {
+        var noChange = 0
+        var better = 0
+        var worse = 0
+
+        println("---")
+
+        for (i in 1..iterations) {
             change(curr)
 
-            if (curr.isFeasible(modified = true, checkValid = false)) {
-                currObjVal = curr.objectiveValue(false)
-
-                //update when better, ∆E = currObjVal - incombentObjVal
-                val deltaE = currObjVal - incombentObjVal
-                if (deltaE < 0) {
-
-                    curr.arr.copyInto(incombent.arr)
-                    incombentObjVal = currObjVal
-
-                    if (currObjVal < bestObjVal) {
-                        debug { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff is  ${currObjVal - bestObjVal} " }
-                        curr.arr.copyInto(best.arr)
-                        bestObjVal = currObjVal
-                    }
-                } else if (boltzmannProbability(deltaE, temp)) {
-                    curr.arr.copyInto(incombent.arr)
-                    incombentObjVal = currObjVal
-                }
+            if (i % 1000 == 0) {
+                println("$noChange $better $worse")
+                noChange = 0
+                better = 0
+                worse = 0
             }
+
+            if (curr.arr.contentEquals(best.arr)) {
+                noChange++
+            }
+
+            currObjVal = curr.objectiveValue(true)
+
+            //update when better, ∆E = currObjVal - incombentObjVal
+            val deltaE = currObjVal - incombentObjVal
+            if (deltaE < 0) {
+
+                better++
+
+                curr.arr.copyInto(incombent.arr)
+                incombentObjVal = currObjVal
+
+                if (currObjVal < bestObjVal) {
+                    log.debug { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff is  ${currObjVal - bestObjVal} " }
+                    curr.arr.copyInto(best.arr)
+                    bestObjVal = currObjVal
+                }
+            } else if (boltzmannProbability(deltaE, temp)) {
+                curr.arr.copyInto(incombent.arr)
+                incombentObjVal = currObjVal
+                worse++
+            }
+
             temp *= coolingFactor
 
             //copy the best solution to the current solution
@@ -123,7 +139,7 @@ object SimulatedAnnealingSearchA3 : Search {
             rsi < LocalSearchA3.p1 + LocalSearchA3.p2 -> TreeExchangeOperator
             else -> ReinsertOnceOperator
         }
-        Logger.trace { "Using op ${op.javaClass.simpleName}" }
+        log.trace { "Using op ${op.javaClass.simpleName}" }
         op.operate(sol)
     }
 
@@ -168,7 +184,7 @@ object SimulatedAnnealingSearchA3 : Search {
         check(deltaE > BigDecimal.ZERO) { "deltaE = $deltaE" }
 
 
-        debugs {
+        log.debugs {
 
             listOf(
                 "Calculating temp results",
@@ -178,10 +194,10 @@ object SimulatedAnnealingSearchA3 : Search {
                 "Average objective value $avgObj ($totalObj / $feasibleRuns)",
                 "",
                 "Cooling schedule factor $coolingFactor",
-                "Initial temperature     $initTemp",
                 "",
                 "Test values",
-                "pMax = $pMax | pMin = $pMin"
+                "pMax = $pMax | pMin = $pMin",
+                ""
             )
         }
 
@@ -200,21 +216,21 @@ object SimulatedAnnealingSearchA3 : Search {
             Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
 
 
-        log { "Calculating best cooling factor when initial temperature is $initTemp" }
+        log.log { "Calculating best cooling factor when initial temperature is $initTemp" }
 
-        log { "Warming up" }
+        log.log { "Warming up" }
 
         for (i in 0..5) {
             Main.runAlgorithm(this, samples, solgen, false)
         }
 
-        log { "Warm up done" }
+        log.log { "Warm up done" }
 
         for (i in ((1 - inc) / inc).toInt() downTo 1) {
             val step = i * inc
             coolingFactor = step
 
-            log("${((1 - step) * 100).toInt()}% done")
+            log.log { "${((1 - step) * 100).toInt()}% done" }
 
             val triple = Main.runAlgorithm(this, samples, solgen, false)
             if (triple.first < bestAvg.second.first) bestAvg = Pair(step, triple)
@@ -222,7 +238,7 @@ object SimulatedAnnealingSearchA3 : Search {
             if (triple.third < bestTime.second.third) bestTime = Pair(step, triple)
         }
 
-        logs {
+        log.logs {
             listOf(
                 "Best average objective value. . $bestAvg",
                 "Best absolute objective value . $bestObjVal",

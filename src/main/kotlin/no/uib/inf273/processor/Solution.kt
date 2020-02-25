@@ -1,7 +1,6 @@
 package no.uib.inf273.processor
 
-import no.uib.inf273.Logger.debug
-import no.uib.inf273.Logger.trace
+import no.uib.inf273.Logger
 import no.uib.inf273.data.VesselCargo
 import no.uib.inf273.processor.SolutionGenerator.Companion.BARRIER_ELEMENT
 
@@ -44,7 +43,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
             //sets cannot contain duplicate elements so if the size of the set for this subarray is not
             // exactly half size of the original set it contains duplicate elements
             if (sub.size % 2 != 0 || sub.toHashSet().size * 2 != sub.size) {
-                debug { "Size of ${sub.toList()} is odd? ${sub.size % 2 != 0} | as set is _not_ half of sub size? ${sub.toHashSet().size * 2 != sub.size}" }
+                log.debug { "Size of ${sub.toList()} is odd? ${sub.size % 2 != 0} | as set is _not_ half of sub size? ${sub.toHashSet().size * 2 != sub.size}" }
                 return false
             }
         }
@@ -63,7 +62,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
         val subroutes: Array<IntArray> = splitToSubArray(modified)
 
         if (checkValid && !isValid(true)) {
-            debug { "Checked validity of solution before feasibility and it is not valid" }
+            log.debug { "Checked validity of solution before feasibility and it is not valid" }
             return false
         }
 
@@ -95,7 +94,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
             val vc: VesselCargo = data.vesselCargo[Pair(vesselId, cargoId)]
                 ?: error("Failed to find data connecting vessel $vesselId and cargo $cargoId")
 
-            //substitute the dummy home port id with the vessels actual homeport
+            //substitute the dummy home port id with the vessels actual home port
             if (lastPort == SolutionGenerator.HOME_PORT) {
                 lastPort = vessel.homePort
             }
@@ -109,7 +108,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
 
                 //check compatibility, but only do so for first encounter
                 if (!vessel.canTakeCargo(cargoId)) {
-                    debug { "Vessel $vesselId is not compatible with $cargoId" }
+                    log.debug { "Vessel $vesselId is not compatible with $cargoId" }
                     return false
                 }
                 currWeight += cargo.size //first encounter, load the cargo
@@ -118,7 +117,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
 
                 currTime = checkTime(cargo.lowerPickup, cargo.upperPickup, vc.originPortTime, currTime)
                 if (currTime < 0) {
-                    debug { "We are trying to pickup the cargo $cargoId after upper pickup time" }
+                    log.debug { "We are trying to pickup the cargo $cargoId after upper pickup time" }
                     return false
                 }
 
@@ -128,17 +127,16 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
                 //check for cargo delivery time
                 currTime = checkTime(cargo.lowerDelivery, cargo.upperDelivery, vc.destPortTime, currTime)
                 if (currTime < 0) {
-                    debug { "We are trying to deliver the cargo $cargoId after upper delivery time" }
+                    log.debug { "We are trying to deliver the cargo $cargoId after upper delivery time" }
                     return false
                 }
             }
 
             //check that we are not overloaded
             if (currWeight > vessel.capacity) {
-                debug { "Invalid as vessel $vesselId is trying to carry more than it has capacity for ($currWeight > ${vessel.capacity})" }
+                log.debug { "Invalid as vessel $vesselId is trying to carry more than it has capacity for ($currWeight > ${vessel.capacity})" }
                 return false
             }
-
 
             //update port for next round
             lastPort = currPort
@@ -248,7 +246,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
                 val (from, to) = pair //cannot do this in the loop
 
                 val subArr = arr.copyOfRange(from, to)
-                trace { "range from $from to $to: ${subArr.toList()}" }
+                log.trace { "range from $from to $to: ${subArr.toList()}" }
                 subRoutes[i] = subArr
             }
         }
@@ -267,17 +265,17 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
 //            "Given array of arrays does not have the total size equal to size of this solution's array. Expected ${arr.size} got ${merge.map { it.size }.sum() + data.nrOfVessels}"
 //        }
 
-        trace { "Merging array ${merge.map { it.contentToString() + "\n" }}" }
+        log.trace { "Merging array ${merge.map { it.contentToString() + "\n" }}" }
 
         var offset = 0
         for (vessel in merge) {
-            trace { "current array = ${arr.contentToString()}" }
-            trace { "Appending vessel ${vessel.contentToString()} from offset $offset" }
+            log.trace { "current array = ${arr.contentToString()}" }
+            log.trace { "Appending vessel ${vessel.contentToString()} from offset $offset" }
             vessel.copyInto(arr, offset)
             offset += vessel.size
             if (offset != arr.size) { //after the last array we do not want to add a barrier element
                 arr[offset++] = BARRIER_ELEMENT
-                trace { "not last, appending barrier" }
+                log.trace { "not last, appending barrier" }
             }
         }
     }
@@ -298,8 +296,8 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
             val barrierIndices = arr.mapIndexed { index, i -> Pair(index, i) }.filter { (_, i) -> i == BARRIER_ELEMENT }
                 .map { (index, _) -> index }.toIntArray()
 
-            trace {
-                //only do the check while debugging to reduce overhead
+            log.trace {
+                //only do the check while log.debugging to reduce overhead
                 check(barrierIndices.size == data.nrOfVessels) {
                     "Number of barriers found does not match the expected amount. Expected ${data.nrOfVessels} barriers but got ${barrierIndices.size} for solution ${arr.contentToString()}"
                 }
@@ -360,5 +358,9 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
         var result = data.hashCode()
         result = 31 * result + arr.contentHashCode()
         return result
+    }
+
+    companion object {
+        val log = Logger()
     }
 }

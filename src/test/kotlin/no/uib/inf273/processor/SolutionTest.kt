@@ -160,7 +160,7 @@ internal class SolutionTest {
         val gen = SolutionGenerator(data)
 
         val arr = IntArray(data.calculateSolutionLength())
-        Logger.debug { "length of solution is ${arr.size}" }
+        log.debug { "length of solution is ${arr.size}" }
         var index = 0
 
         for (i in 1..data.nrOfVessels) {
