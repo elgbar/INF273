@@ -45,7 +45,7 @@ object SimulatedAnnealingSearchA3 : Search {
     /**
      * 𝛼
      */
-    private var coolingFactor: Double = 0.6
+    private var coolingFactor: Double = 0.995
         set(value) {
             require(0 < value && value < 1) { "The cooling factor must be between 0 and 1 got $value" }
             field = value
