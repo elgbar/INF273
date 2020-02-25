@@ -30,16 +30,19 @@ fun IntArray.randomizeWithin(from: Int = 0, until: Int = size, rng: Random = Ran
 
 /**
  * Filter out the unwanted integer and print collect all remaining elements in [to]
+ *
+ * @return [to]
  */
-fun IntArray.filter(unwanted: Int, to: IntArray, maxRemoved: Int = Integer.MAX_VALUE) {
+fun IntArray.filter(unwanted: Int, to: IntArray, maxRemoved: Int = Integer.MAX_VALUE): IntArray {
     var index = 0
     var removed = 0
     for (e in this) {
         if (e != unwanted) {
             to[index++] = e
             if (++removed == maxRemoved) {
-                return
+                return to
             }
         }
     }
+    return to
 }
