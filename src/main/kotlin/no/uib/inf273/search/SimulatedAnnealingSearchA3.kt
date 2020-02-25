@@ -19,13 +19,13 @@ object SimulatedAnnealingSearchA3 : Search {
     // Manual parameters //
     ///////////////////////
 
-    var p1: Float = 0.25f
-    var p2: Float = 0.50f
+    var p1: Float = 0.05f
+    var p2: Float = 0.20f
 
     /**
      * How many runs we should do to get an average temperature
      */
-    var testRuns = 1_000
+    var testRuns = 1000
 
     //////////////////////////
     // Automatic parameters //
