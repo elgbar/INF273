@@ -22,40 +22,34 @@ object ReinsertOnceOperator : Operator {
         } while (orgVesselIndex == destVesselIndex || sub[orgVesselIndex].isEmpty())
 
         //pick a random cargo within the origin vessel
-//        val cargoIndex = Main.rand.nextInt(sub[orgVesselIndex].size)
-//        val elem = sub[orgVesselIndex][cargoIndex]
-
         val elem = sub[orgVesselIndex].random(Main.rand)
 
         //add both at the end of the new vessel. Do this first as the new destination vessel might not be feasible
 
-        //Again the destination array needs to be two elements larger to allow the elements from origin to be here
+        //the destination array needs to be two element larger for the new cargo to fit
         val destNew = sub[destVesselIndex].copyOf(sub[destVesselIndex].size + 2)
         //we place the new elements in the back
         destNew[destNew.size - 1] = elem
         destNew[destNew.size - 2] = elem
-        while (!sol.isVesselFeasible(destVesselIndex, destNew)) {
-            //the new vessel is not feasible shuffle it around til it is feasible
-            val feasible = Operator.shuffleVesselTilFeasible(sol, destVesselIndex, destNew)
-            if (!feasible) {
-                Logger.trace { "Failed to reinsert $elem from vessel $orgVesselIndex to $destVesselIndex as no feasible arrangement could be found" }
-            }
+
+        val destFeasible = Operator.exchangeOnceTilFeasible(sol, destVesselIndex, destNew)
+        if (!destFeasible) {
+            Logger.trace { "Failed to reinsert $elem from vessel $orgVesselIndex to $destVesselIndex as no feasible arrangement could be found" }
             return
         }
+        sub[destVesselIndex] = destNew
 
         //remove cargo from the original vessel
 
         //create new array with two less elements as they will no longer be here
-        val orgNew = IntArray(sub[orgVesselIndex].size - 2)
-        sub[orgVesselIndex].filter(elem, orgNew)
+        val orgNew = sub[orgVesselIndex].filter(elem, IntArray(sub[orgVesselIndex].size - 2))
+
+        val orgFeasible = Operator.exchangeOnceTilFeasible(sol, orgVesselIndex, orgNew)
+        if (!orgFeasible) {
+            Logger.trace { "Failed to reinsert $elem from vessel $orgVesselIndex to $orgVesselIndex as no feasible arrangement could be found" }
+            return
+        }
         sub[orgVesselIndex] = orgNew
-
-
-
-        sub[destVesselIndex] = destNew
-
         sol.joinToArray(sub)
-
-        //TODO Ensure the solution is feasible
     }
 }

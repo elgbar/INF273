@@ -28,7 +28,7 @@ object RandomSearch : Search {
             var curr: Solution
             do {
                 curr = gen.generateRandomSolution()
-            } while (curr.isFeasible(true, true))
+            } while (curr.isFeasible(true, checkValid = true))
 
             val newObjVal = curr.objectiveValue(modified = false)
             if (bestObjVal < newObjVal) {
@@ -36,7 +36,7 @@ object RandomSearch : Search {
                 debug { "New best answer ${best.arr.contentToString()} with objective value $newObjVal. Diff is  ${newObjVal - bestObjVal} " }
                 bestObjVal = newObjVal
             }
-            
+
         }
         return best
     }

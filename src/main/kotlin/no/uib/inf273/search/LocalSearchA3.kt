@@ -14,7 +14,7 @@ import no.uib.inf273.processor.SolutionGenerator
  */
 object LocalSearchA3 : Search {
 
-    var p1: Float = 0.25f
+    var p1: Float = 0.4f
     var p2: Float = 0.5f
 
     override fun search(sol: Solution, iterations: Int): Solution {
@@ -47,8 +47,6 @@ object LocalSearchA3 : Search {
             best.arr.copyInto(curr.arr)
 
             op.operate(curr)
-            //update when better
-//            if ((curr.isFeasible(modified = false, checkValid = false))) {
 
             currObjVal = curr.objectiveValue(false)
 
@@ -57,7 +55,6 @@ object LocalSearchA3 : Search {
                 curr.arr.copyInto(best.arr)
                 bestObjVal = currObjVal
             }
-//            }
         }
         return best
     }

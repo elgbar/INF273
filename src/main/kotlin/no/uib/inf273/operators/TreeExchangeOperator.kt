@@ -2,25 +2,26 @@ package no.uib.inf273.operators
 
 import no.uib.inf273.Main
 import no.uib.inf273.extra.exchange
+import no.uib.inf273.operators.Operator.Companion.operateVesselTilFeasible
 import no.uib.inf273.processor.Solution
 
 object TreeExchangeOperator : Operator {
+
     override fun operate(sol: Solution) {
+        val (vIndex, from, until) = Operator.findNonEmptyVessel(sol) ?: return
 
-        val barriers = sol.getVesselRanges()
-        //two indices where the random value between them will always be within a vessel
-        val (to, from) = barriers[Main.rand.nextInt(barriers.size - 1)]
+        val sub = sol.arr.copyOfRange(from, until)
 
-        //Cannot randomize an empty array, so we just return
-        if (to == from) return
+        val feasible = operateVesselTilFeasible(sol, vIndex, sub) {
+            val indexFirst = Main.rand.nextInt(it.size)
+            val indexSecond = Main.rand.nextInt(it.size)
+            val indexThird = Main.rand.nextInt(it.size)
 
-        val indexFirst = Main.rand.nextInt(to, from)
-        val indexSecond = Main.rand.nextInt(to, from)
-        val indexThird = Main.rand.nextInt(to, from)
-
-        //before the order is first, second, third
-        sol.arr.exchange(indexFirst, indexSecond)
-        sol.arr.exchange(indexFirst, indexThird)
-        //after the order is third, first, second
+            //before the order is first, second, third
+            it.exchange(indexFirst, indexSecond)
+            it.exchange(indexFirst, indexThird)
+        }
+        if (feasible)
+            sub.copyInto(sol.arr, from)
     }
 }
