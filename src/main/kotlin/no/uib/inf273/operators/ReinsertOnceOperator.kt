@@ -3,6 +3,7 @@ package no.uib.inf273.operators
 import no.uib.inf273.Logger
 import no.uib.inf273.Main
 import no.uib.inf273.extra.filter
+import no.uib.inf273.extra.insert
 import no.uib.inf273.processor.Solution
 
 /**
@@ -14,7 +15,7 @@ object ReinsertOnceOperator : Operator {
     override val log = Logger()
 
     override fun operate(sol: Solution) {
-        val sub = sol.splitToSubArray(false)
+        val sub = sol.splitToSubArray(true)
 
         //select two vessels where the origin vessel have cargoes
         var orgVesselIndex: Int

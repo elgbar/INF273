@@ -49,8 +49,8 @@ object SimulatedAnnealingSearchA3 : Search {
         }
 
     override fun search(sol: Solution, iterations: Int): Solution {
-        require(0 <= LocalSearchA3.p1 && LocalSearchA3.p1 < LocalSearchA3.p2 && LocalSearchA3.p2 + LocalSearchA3.p1 < 1) {
-            "Invalid probabilities. They must be in acceding order and in range [0,1). | p1=${LocalSearchA3.p1}, p2=${LocalSearchA3.p2}"
+        require(0 <= p1 && p1 < p2 && p2 + p1 < 1) {
+            "Invalid probabilities. They must be in acceding order and in range [0,1). | p1=${p1}, p2=${p2}"
         }
         require(0 < iterations) { "Iteration must be a positive number" }
         require(sol.isFeasible(true)) { "Initial solution is not feasible" }
@@ -135,8 +135,8 @@ object SimulatedAnnealingSearchA3 : Search {
     private fun change(sol: Solution) {
         val rsi = Main.rand.nextFloat()
         val op = when {
-            rsi < LocalSearchA3.p1 -> TwoExchangeOperator
-            rsi < LocalSearchA3.p1 + LocalSearchA3.p2 -> TreeExchangeOperator
+            rsi < p1 -> TwoExchangeOperator
+            rsi < p1 + p2 -> TreeExchangeOperator
             else -> ReinsertOnceOperator
         }
         log.trace { "Using op ${op.javaClass.simpleName}" }

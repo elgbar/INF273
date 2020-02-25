@@ -261,9 +261,9 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
      * Join a split array back into the original
      */
     fun joinToArray(merge: Array<IntArray>) {
-//        require(arr.size == merge.map { it.size }.sum() + data.nrOfVessels) {
-//            "Given array of arrays does not have the total size equal to size of this solution's array. Expected ${arr.size} got ${merge.map { it.size }.sum() + data.nrOfVessels}"
-//        }
+        require(arr.size == merge.map { it.size }.sum() + data.nrOfVessels) {
+            "Given array of arrays does not have the total size equal to size of this solution's array. Expected ${arr.size} got ${merge.map { it.size }.sum() + data.nrOfVessels}"
+        }
 
         log.trace { "Merging array ${merge.map { it.contentToString() + "\n" }}" }
 
