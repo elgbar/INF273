@@ -66,7 +66,7 @@ class Main(
 
     init {
         log.logLevel = logLevel
-        if (!benchmark) search.log.logLevel = logLevel
+        if (!benchmark && logLevel != Logger.INFO) search.log.logLevel = logLevel
 
         log.log("Random seed = $seed")
         rand = Random(seed)
@@ -88,7 +88,7 @@ class Main(
         } else {
             require(search != Search.NoSearch) { "Search method must be specified when no other option is selected." }
 
-            printResults(search, runAlgorithm(search, 1, solgen, tune), false)
+            printResults(search, runAlgorithm(search, 10, solgen, tune), false)
         }
     }
 
@@ -133,6 +133,12 @@ class Main(
     }
 
     companion object {
+
+
+        /**
+         * Global logger
+         */
+        val log = Logger()
 
         lateinit var rand: Random
 
@@ -184,10 +190,5 @@ class Main(
 fun main(args: Array<String>) = mainBody {
     ArgParser(args).parseInto(::Main).run { }
 }
-
-/**
- * Global logger
- */
-val log = Logger()
 
 

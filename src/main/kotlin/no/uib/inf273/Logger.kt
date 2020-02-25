@@ -1,6 +1,6 @@
 package no.uib.inf273
 
-class Logger {
+class Logger(var logLevel: Int = INFO) {
 
 
     companion object {
@@ -10,12 +10,6 @@ class Logger {
         const val INFO = 0
         const val NONE = -1
     }
-
-    /**
-     * How much to log, the higher the number the more will be logged. Log
-     */
-    var logLevel: Int = INFO
-
 
     fun log(msg: () -> String) {
         if (logLevel >= INFO) {

@@ -75,13 +75,13 @@ object SimulatedAnnealingSearchA3 : Search {
         var better = 0
         var worse = 0
 
-        println("---")
+        log.debug { "---" }
 
         for (i in 1..iterations) {
             change(curr)
 
             if (i % 1000 == 0) {
-                println("$noChange $better $worse")
+                log.debug { "$noChange $better $worse" }
                 noChange = 0
                 better = 0
                 worse = 0
@@ -103,7 +103,7 @@ object SimulatedAnnealingSearchA3 : Search {
                 incombentObjVal = currObjVal
 
                 if (currObjVal < bestObjVal) {
-                    log.debug { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff is  ${currObjVal - bestObjVal} " }
+                    log.trace { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff ${currObjVal - bestObjVal} " }
                     curr.arr.copyInto(best.arr)
                     bestObjVal = currObjVal
                 }
@@ -170,7 +170,9 @@ object SimulatedAnnealingSearchA3 : Search {
             do {
                 sol.arr.copyInto(curr.arr)
                 change(curr)
-            } while (!curr.isFeasible(modified = true, checkValid = false) && !curr.arr.contentEquals(sol.arr))
+            } while (curr.arr.contentEquals(sol.arr))
+
+            check(curr.isFeasible(false))
 
             val objVal = curr.objectiveValue(false)
             if (objVal < minObj) minObj = objVal
@@ -200,7 +202,6 @@ object SimulatedAnnealingSearchA3 : Search {
                 ""
             )
         }
-
         initTemp = -deltaE.toDouble() / ln(pMax)
     }
 
@@ -216,9 +217,7 @@ object SimulatedAnnealingSearchA3 : Search {
             Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
 
 
-        log.log { "Calculating best cooling factor when initial temperature is $initTemp" }
-
-        log.log { "Warming up" }
+        log.logs { arrayListOf("Calculating best cooling factor when initial temperature is $initTemp", "Warming up") }
 
         for (i in 0..5) {
             Main.runAlgorithm(this, samples, solgen, false)
