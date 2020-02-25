@@ -46,3 +46,11 @@ fun IntArray.filter(unwanted: Int, to: IntArray, maxRemoved: Int = Integer.MAX_V
     }
     return to
 }
+
+/**
+ * Insert [element] at [index], pushing everything right of [index] to the right. The element at [IntArray.size]` - 1` will be removed
+ */
+fun IntArray.insert(index: Int, element: Int) {
+    this.copyInto(this, index + 1, index, size - 1)
+    this[index] = element
+}
