@@ -11,6 +11,7 @@ import no.uib.inf273.search.LocalSearchA3
 import no.uib.inf273.search.RandomSearch
 import no.uib.inf273.search.Search
 import no.uib.inf273.search.SimulatedAnnealingSearchA3
+import java.math.BigDecimal
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
 
@@ -99,21 +100,22 @@ class Main(
      *
      * @return A map of the search mapping to average obj value, best obj val, then running time in ms
      */
-    fun benchmarkA3(): Map<Search, Triple<Double, Int, Long>> {
-
-        val map: MutableMap<Search, Triple<Double, Int, Long>> = HashMap()
+    fun benchmarkA3(): Map<Search, Triple<Double, Long, Long>> {
+        log { "Benchmark Assignment 3 " }
+        val map: MutableMap<Search, Triple<Double, Long, Long>> = HashMap()
 
         for (search in listOf(RandomSearch, LocalSearchA3, SimulatedAnnealingSearchA3)) {
+            log { "Running ${search.javaClass.simpleName}" }
             map[search] = runAlgorithm(search, 10, solgen, tune)
         }
         return map
     }
 
-    fun printResults(search: Search, result: Triple<Double, Int, Long>, singleLine: Boolean) {
+    fun printResults(search: Search, result: Triple<Double, Long, Long>, singleLine: Boolean) {
 
-        val defaultObjVal = solgen.generateStandardSolution().objectiveValue(false)
+        val defaultObjVal = solgen.generateStandardSolution().objectiveValue(false).toDouble().toBigDecimal()
         val (avg, best, time) = result
-        val improvement = 100 * (defaultObjVal - best) / defaultObjVal
+        val improvement = 100.0.toBigDecimal() * (defaultObjVal - best.toBigDecimal()) / defaultObjVal
 
         if (singleLine) {
             log { "${search.javaClass.simpleName}, $avg, $best, $improvement%, $time ms" }
@@ -141,7 +143,6 @@ class Main(
             return Main::class.java.classLoader.getResource(path)?.readText()
         }
 
-
         /**
          * Run an algorithm [samples] times and report back results.
          *
@@ -152,10 +153,10 @@ class Main(
             samples: Int,
             solgen: SolutionGenerator,
             tune: Boolean
-        ): Triple<Double, Int, Long> {
+        ): Triple<Double, Long, Long> {
             debug { "Running algorithm ${search.javaClass.simpleName}" }
-            var totalObj = 0.0
-            var bestObj = Int.MAX_VALUE
+            var totalObj = BigDecimal.ZERO
+            var bestObj = Long.MAX_VALUE
 
             if (tune) {
                 search.tune(solgen, samples, true)
@@ -163,16 +164,17 @@ class Main(
 
             val time = measureTimeMillis {
                 for (i in 0 until samples) {
-                    val sol = search.search(solgen.generateStandardSolution())
+                    val sol = search.search(solgen.generateStandardSolution(), 1_000_000)
                     check(sol.isFeasible(true)) { "returned solution is not feasible: ${sol.arr.contentToString()}" }
                     val objVal = sol.objectiveValue(modified = false)
-                    totalObj += objVal
+                    totalObj += objVal.toBigDecimal()
                     if (objVal < bestObj) {
                         bestObj = objVal
                     }
                 }
             }
-            return Triple(totalObj / samples, bestObj, time)
+
+            return Triple((totalObj / samples.toBigDecimal()).toDouble(), bestObj, time)
         }
     }
 }

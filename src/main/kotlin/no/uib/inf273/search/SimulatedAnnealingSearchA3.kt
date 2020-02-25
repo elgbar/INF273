@@ -59,7 +59,6 @@ object SimulatedAnnealingSearchA3 : Search {
         require(sol.isFeasible(true)) { "Initial solution is not feasible" }
 
         debugs { listOf("Initial temperature $initTemp", "Cooling factor $coolingFactor") }
-
         calculateTemp(sol = sol)
 
         //Best known solution
@@ -68,10 +67,10 @@ object SimulatedAnnealingSearchA3 : Search {
 
         //current solution
         val curr = Solution(sol.data, sol.arr.clone())
-        var currObjVal: Int
+        var currObjVal: Long
 
         val incombent = Solution(sol.data, sol.arr.clone())
-        var incombentObjVal: Int = incombent.objectiveValue(false)
+        var incombentObjVal = incombent.objectiveValue(false)
 
         var temp = initTemp
 
@@ -79,7 +78,6 @@ object SimulatedAnnealingSearchA3 : Search {
             change(curr)
 
             if (curr.isFeasible(modified = true, checkValid = false)) {
-
                 currObjVal = curr.objectiveValue(false)
 
                 //update when better, ∆E = currObjVal - incombentObjVal
@@ -132,7 +130,7 @@ object SimulatedAnnealingSearchA3 : Search {
     /**
      * Calculate the probability of accepting a worse solution
      */
-    private fun boltzmannProbability(deltaE: Int, temp: Double): Boolean {
+    private fun boltzmannProbability(deltaE: Long, temp: Double): Boolean {
         return Main.rand.nextDouble() < Math.E.pow(-deltaE / temp)
     }
 
@@ -161,13 +159,13 @@ object SimulatedAnnealingSearchA3 : Search {
             val objVal = curr.objectiveValue(false)
             if (objVal < minObj) minObj = objVal
             if (objVal > maxObj) maxObj = objVal
-            totalObj = totalObj.add(objVal.toBigDecimal())
+            totalObj += objVal.toBigDecimal()
             feasibleRuns++
         }
 
-        val avgObj = totalObj.div(feasibleRuns.toBigDecimal())
-        val deltaE = solObj - avgObj.toDouble()
-        check(deltaE > 0) { "deltaE = $deltaE" }
+        val avgObj = totalObj / feasibleRuns.toBigDecimal()
+        val deltaE = solObj.toBigDecimal() - avgObj
+        check(deltaE > BigDecimal.ZERO) { "deltaE = $deltaE" }
 
 
         debugs {
@@ -187,19 +185,19 @@ object SimulatedAnnealingSearchA3 : Search {
             )
         }
 
-        initTemp = -deltaE / ln(pMax)
+        initTemp = -deltaE.toDouble() / ln(pMax)
     }
 
     fun calcBestCooling(solgen: SolutionGenerator) {
         val inc = 0.1
         val samples = 10
 
-        var bestAvg: Pair<Double, Triple<Double, Int, Long>> =
-            Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Int.MAX_VALUE, Long.MAX_VALUE))
-        var bestObjVal: Pair<Double, Triple<Double, Int, Long>> =
-            Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Int.MAX_VALUE, Long.MAX_VALUE))
-        var bestTime: Pair<Double, Triple<Double, Int, Long>> =
-            Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Int.MAX_VALUE, Long.MAX_VALUE))
+        var bestAvg: Pair<Double, Triple<Double, Long, Long>> =
+            Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
+        var bestObjVal: Pair<Double, Triple<Double, Long, Long>> =
+            Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
+        var bestTime: Pair<Double, Triple<Double, Long, Long>> =
+            Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
 
 
         log { "Calculating best cooling factor when initial temperature is $initTemp" }

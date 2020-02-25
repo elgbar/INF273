@@ -178,9 +178,8 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
      * @return The objective value of this solution
      *
      */
-    fun objectiveValue(modified: Boolean = true): Int {
-        var value = 0
-
+    fun objectiveValue(modified: Boolean = true): Long {
+        var value = 0L
         val subroutes: Array<IntArray> = splitToSubArray(modified)
 
         for ((index, sub) in subroutes.withIndex()) {

@@ -30,7 +30,7 @@ object LocalSearchA3 : Search {
 
         //current solution
         val curr = sol
-        var currObjVal: Int
+        var currObjVal: Long
 
         for (i in 0 until iterations) {
             val rsi = rand.nextFloat()
