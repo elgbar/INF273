@@ -165,24 +165,31 @@ class Main(
             log.debug { "Running algorithm ${search.javaClass.simpleName}" }
             var totalObj = BigDecimal.ZERO
             var bestObj = Long.MAX_VALUE
+            var times = 0L
 
             if (tune) {
                 search.tune(solgen, samples, true)
             }
 
-            val time = measureTimeMillis {
-                for (i in 0 until samples) {
-                    val sol = search.search(solgen.generateStandardSolution())
-                    check(sol.isFeasible(true)) { "returned solution is not feasible: ${sol.arr.contentToString()}" }
-                    val objVal = sol.objectiveValue(true)
-                    totalObj += objVal.toBigDecimal()
-                    if (objVal < bestObj) {
-                        bestObj = objVal
-                    }
+            for (i in 0 until samples) {
+                var sol0: Solution? = null
+                val time = measureTimeMillis {
+                    sol0 = search.search(solgen.generateStandardSolution())
+                }
+                val sol: Solution = sol0!!
+                times += time
+
+                check(sol.isFeasible(true)) {
+                    "returned solution (using ${search.javaClass.simpleName}) is not feasible: ${sol.arr.contentToString()}"
+                }
+                val objVal = sol.objectiveValue(true)
+                totalObj += objVal.toBigDecimal()
+                if (objVal < bestObj) {
+                    bestObj = objVal
                 }
             }
 
-            return Triple((totalObj / samples.toBigDecimal()).toDouble(), bestObj, time)
+            return Triple((totalObj / samples.toBigDecimal()).toDouble(), bestObj, times / samples)
         }
     }
 }
