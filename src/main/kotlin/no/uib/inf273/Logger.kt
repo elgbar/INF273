@@ -10,6 +10,10 @@ class Logger(var logLevel: Int = INFO) {
         const val INFO = 0
         const val NONE = -1
     }
+    
+    fun isTraceEnabled(): Boolean = logLevel >= TRACE
+    fun isDebugEnabled(): Boolean = logLevel >= DEBUG
+    fun isInfoEnabled(): Boolean = logLevel >= INFO
 
     fun log(msg: () -> String) {
         if (logLevel >= INFO) {
@@ -86,6 +90,14 @@ class Logger(var logLevel: Int = INFO) {
     fun trace(e: Throwable? = null, msg: () -> String) {
         if (logLevel >= TRACE) {
             log("[TRC] " + msg(), e)
+        }
+    }
+
+    fun traces(msgs: () -> List<String>) {
+        if (logLevel >= TRACE) {
+            for (msg in msgs()) {
+                log("[TRC] $msg", null)
+            }
         }
     }
 }
