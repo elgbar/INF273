@@ -11,7 +11,7 @@ object TreeExchangeOperator : Operator {
     override val log = Logger()
 
     override fun operate(sol: Solution) {
-        val (vIndex, from, until) = Operator.findNonEmptyVessel(sol) ?: return
+        val (vIndex, from, until) = sol.findNonEmptyVessel(true) ?: return
 
         val sub = sol.arr.copyOfRange(from, until)
 

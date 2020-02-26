@@ -10,6 +10,7 @@ import no.uib.inf273.processor.SolutionGenerator
 import java.math.BigDecimal
 import kotlin.math.ln
 import kotlin.math.pow
+import kotlin.random.Random
 
 object SimulatedAnnealingSearchA3 : Search {
 
@@ -19,13 +20,13 @@ object SimulatedAnnealingSearchA3 : Search {
     // Manual parameters //
     ///////////////////////
 
-    var p1: Float = 0.05f
-    var p2: Float = 0.20f
+    var p1 = 0.0
+    var p2 = 0.05
 
     /**
      * How many runs we should do to get an average temperature
      */
-    var testRuns = 1000
+    var testRuns = 10000
 
     //////////////////////////
     // Automatic parameters //
@@ -39,17 +40,18 @@ object SimulatedAnnealingSearchA3 : Search {
             require(0 < value) { "Temperature must be a positive number" }
             field = value
         }
+
     /**
      * 𝛼
      */
-    private var coolingFactor: Double = 0.999
+    private var coolingFactor: Double = 0.995
         set(value) {
             require(0 < value && value < 1) { "The cooling factor must be between 0 and 1 got $value" }
             field = value
         }
 
     override fun search(sol: Solution, iterations: Int): Solution {
-        require(0 <= p1 && p1 < p2 && p2 + p1 < 1) {
+        require(p1 in 0.0..p2 && p2 + p1 < 1) {
             "Invalid probabilities. They must be in acceding order and in range [0,1). | p1=${p1}, p2=${p2}"
         }
         require(0 < iterations) { "Iteration must be a positive number" }
@@ -124,8 +126,15 @@ object SimulatedAnnealingSearchA3 : Search {
 
     override fun tune(solgen: SolutionGenerator, iterations: Int, report: Boolean) {
         //Calculate the wanted initial temperature
-        calculateTemp(sol = solgen.generateStandardSolution())
+        log.log { "Warming up for tuning" }
+        for (i in 0 until 2) {
+            Main.runAlgorithm(this, 10, solgen, false)
+        }
+        log.log { "Warm up done" }
 
+
+        calculateTemp(sol = solgen.generateStandardSolution())
+        calcBestP(solgen)
         calcBestCooling(solgen)
     }
 
@@ -141,6 +150,11 @@ object SimulatedAnnealingSearchA3 : Search {
         }
         log.trace { "Using op ${op.javaClass.simpleName}" }
         op.operate(sol)
+        if (log.isDebugEnabled()) {
+            check(sol.isFeasible(modified = true, checkValid = true)) {
+                "Solution no long feasible after using operator ${op.javaClass.simpleName}"
+            }
+        }
     }
 
     /**
@@ -217,19 +231,16 @@ object SimulatedAnnealingSearchA3 : Search {
             Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
 
 
-        log.logs { arrayListOf("Calculating best cooling factor when initial temperature is $initTemp", "Warming up") }
+        log.log { "Calculating best cooling factor when initial temperature is $initTemp" }
 
-        for (i in 0..5) {
-            Main.runAlgorithm(this, samples, solgen, false)
-        }
 
-        log.log { "Warm up done" }
-
-        for (i in ((1 - inc) / inc).toInt() downTo 1) {
-            val step = i * inc
+        for (step in generateSequence(inc) { if (it + inc < 1.0) it + inc else null }) {
             coolingFactor = step
 
-            log.log { "${((1 - step) * 100).toInt()}% done" }
+            log.log { "Calculating temperature .... ${(step * 100).toInt()}% done" }
+
+            //reset the random seed between each check to make it equal
+            Main.rand = Random(1337)
 
             val triple = Main.runAlgorithm(this, samples, solgen, false)
             if (triple.first < bestAvg.second.first) bestAvg = Pair(step, triple)
@@ -246,5 +257,62 @@ object SimulatedAnnealingSearchA3 : Search {
         }
 
         coolingFactor = bestAvg.first
+    }
+
+    fun calcBestP(solgen: SolutionGenerator) {
+        val inc = 0.05
+        val maxp2 = 0.5
+        val samples = 10
+
+
+        var bestAvg = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
+        var bestObjVal = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
+        var bestTime = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
+
+        log.logs {
+            listOf(
+                "Calculating best probabilities using increments of $inc and values between 0 and $maxp2 with $samples samples per iterations ",
+                "In total around ${(samples * (maxp2 / inc).pow(2)).toInt()} iterations is expected"
+            )
+        }
+
+        var i = 0
+
+        for (np2 in generateSequence(inc) { if (it < maxp2) it + inc else null }) {
+            //np2 is the outer border for p2. It will be a number between 0 and maxp2
+            // when this is set we need to test all possible values of p1 (which will be between 0 and np2)
+
+            for (np1 in generateSequence(0.0) { if (it + inc < np2 && it + inc + np2 < maxp2) it + inc else null }) {
+
+                //For each p1 and p2 we run a benchmark and log those who are best
+//                println("p1 $np1 | p2 $np2")
+                p1 = np1
+                p2 = np2
+
+                //reset the random seed between each check to make it equal
+                Main.rand = Random(1337)
+
+                i += samples
+                val triple = Main.runAlgorithm(this, samples, solgen, false)
+                if (triple.first < bestAvg.second.first) bestAvg = Pair(np1 to np2, triple)
+                if (triple.second < bestObjVal.second.second) bestObjVal = Pair(np1 to np2, triple)
+                if (triple.third < bestTime.second.third) bestTime = Pair(np1 to np2, triple)
+            }
+
+            log.log { "Calculating probabilities .... ${((np2 / maxp2) * 100).toInt()}% done" }
+        }
+
+        log.log { "Used $i iterations" }
+
+        log.logs {
+            listOf(
+                "Best average objective value. . $bestAvg",
+                "Best absolute objective value . $bestObjVal",
+                "Best total time . . . . . . . . $bestTime"
+            )
+        }
+        val (np1, np2) = bestAvg.first
+        p1 = np1
+        p2 = np2
     }
 }

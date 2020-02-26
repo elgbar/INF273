@@ -1,7 +1,9 @@
 package no.uib.inf273.processor
 
 import no.uib.inf273.Logger
+import no.uib.inf273.Main
 import no.uib.inf273.data.VesselCargo
+import no.uib.inf273.operators.Operator
 import no.uib.inf273.processor.SolutionGenerator.Companion.BARRIER_ELEMENT
 
 /**
@@ -15,8 +17,8 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
     /**
      * Internal array of the current solution split into multiple sub-arrays. This will be updated when calling [splitToSubArray]
      */
-    private val subRoutes: Array<IntArray>
-    private val ranges: MutableList<Pair<Int, Int>> = ArrayList()
+    internal val subRoutes: Array<IntArray>
+    internal val ranges: MutableList<Pair<Int, Int>> = ArrayList()
 
     init {
         require(arr.size == data.calculateSolutionLength()) {
@@ -240,7 +242,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
      */
     fun splitToSubArray(modified: Boolean): Array<IntArray> {
         if (modified) {
-            val barrierIndices = getVesselRanges()
+            val barrierIndices = getVesselRanges(modified)
 
             for ((i, pair) in barrierIndices.withIndex()) {
                 val (from, to) = pair //cannot do this in the loop
@@ -258,7 +260,8 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
     }
 
     /**
-     * Join a split array back into the original
+     * Join a split array back into the original.
+     * The caches will be updated so there is no need to use modified after this method
      */
     fun joinToArray(merge: Array<IntArray>) {
         require(arr.size == merge.map { it.size }.sum() + data.nrOfVessels) {
@@ -267,12 +270,24 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
 
         log.trace { "Merging array ${merge.map { it.contentToString() + "\n" }}" }
 
+        ranges.clear()
+
         var offset = 0
-        for (vessel in merge) {
-            log.trace { "current array = ${arr.contentToString()}" }
-            log.trace { "Appending vessel ${vessel.contentToString()} from offset $offset" }
-            vessel.copyInto(arr, offset)
-            offset += vessel.size
+        for ((index, sub) in merge.withIndex()) {
+            log.traces {
+                listOf(
+                    "current array = ${arr.contentToString()}",
+                    "Appending vessel ${sub.contentToString()} from offset $offset"
+                )
+            }
+
+            sub.copyInto(arr, offset)
+
+            //update cache
+            subRoutes[index] = sub
+            ranges.add(offset to offset + sub.size)
+
+            offset += sub.size
             if (offset != arr.size) { //after the last array we do not want to add a barrier element
                 arr[offset++] = BARRIER_ELEMENT
                 log.trace { "not last, appending barrier" }
@@ -288,8 +303,8 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
      *
      * @return List of ranges
      */
-    fun getVesselRanges(modified: Boolean = true): List<Pair<Int, Int>> {
-        if (modified) {
+    fun getVesselRanges(modified: Boolean): List<Pair<Int, Int>> {
+        if (modified || ranges.isEmpty()) {
             ranges.clear()
 
             //TODO use a simple loop, predefine a array of size nrofvessels then loop till 0 is found (inc by 2 when a non barrier is found)
@@ -327,7 +342,10 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
      *
      * @throws IllegalArgumentException If the vessel is a [BARRIER_ELEMENT] within [arr]
      */
-    fun getVesselIndex(index: Int, vesselRange: List<Pair<Int, Int>> = getVesselRanges()): Int {
+    fun getVesselIndex(
+        index: Int,
+        vesselRange: List<Pair<Int, Int>> = getVesselRanges(true)
+    ): Int {
         //range check is done here implicitly
         require(arr[index] != BARRIER_ELEMENT) { "Given index corresponds to a barrier element" }
 
@@ -338,6 +356,25 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
             }
         }
         throw IllegalStateException("Failed to find a vessel that index $index corresponds to in ${arr.contentToString()}")
+    }
+
+
+    /**
+     * Find a vessel within a solution that has at least [min] number of vessels within it.
+     * If none is found `null` will be returned.
+     *
+     * @return vessel index, start of vessel array, end of vessel array in that order or `null` if there is no valid vessel
+     */
+    internal fun findNonEmptyVessel(modified: Boolean, min: Int = 2): Triple<Int, Int, Int>? {
+        require(min > 0) { "Minimum number of vessels must be > 0, got $min" }
+        val validVessels = getVesselRanges(modified).mapIndexed { index, pair ->
+            //Find index of each vessel, this must be done first to get correct indices
+            Triple(index, pair.first, pair.second)
+        }.filter { (index, from, until) ->
+            //remove any instance that is not valid
+            index != data.nrOfVessels && Operator.calculateNumberOfVessels(from, until) >= min
+        }
+        return if (validVessels.isEmpty()) null else validVessels.random(Main.rand)
     }
 
     override fun toString(): String {

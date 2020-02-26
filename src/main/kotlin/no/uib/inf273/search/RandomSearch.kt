@@ -15,23 +15,23 @@ object RandomSearch : Search {
         //objective value of the best known solution
         var bestObjVal = best.objectiveValue(false)
 
-        log.debug {
-            "Initial solution is ${best.arr.contentToString()}\n" +
-                    "\"Initial obj val is $bestObjVal\""
+        log.debugs {
+            listOf(
+                "Initial solution is ${best.arr.contentToString()}",
+                "Initial obj val is $bestObjVal"
+            )
         }
 
         for (i in 0 until iterations) {
 
-            var curr: Solution
-            do {
-                curr = gen.generateRandomSolution()
-            } while (curr.isFeasible(true, checkValid = true))
-
-            val newObjVal = curr.objectiveValue(modified = false)
-            if (bestObjVal < newObjVal) {
-                curr.arr.copyInto(best.arr)
-                log.debug { "New best answer ${best.arr.contentToString()} with objective value $newObjVal. Diff is  ${newObjVal - bestObjVal} " }
-                bestObjVal = newObjVal
+            val curr = gen.generateRandomSolution()
+            if (curr.isFeasible(false)) {
+                val newObjVal = curr.objectiveValue(modified = false)
+                if (bestObjVal < newObjVal) {
+                    curr.arr.copyInto(best.arr)
+                    log.debug { "New best answer ${best.arr.contentToString()} with objective value $newObjVal. Diff is  ${newObjVal - bestObjVal} " }
+                    bestObjVal = newObjVal
+                }
             }
 
         }

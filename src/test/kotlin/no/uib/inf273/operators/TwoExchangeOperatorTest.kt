@@ -19,6 +19,7 @@ internal class TwoExchangeOperatorTest {
 
         private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
     }
+    
 
     @Test
     internal fun twoExchangeOperator_SwapsElements() {

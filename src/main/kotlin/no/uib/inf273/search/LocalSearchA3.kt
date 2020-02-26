@@ -32,8 +32,6 @@ object LocalSearchA3 : Search {
 
 
         for (i in 0 until iterations) {
-
-
             val rsi = rand.nextFloat()
             val op = when {
                 rsi < p1 -> TwoExchangeOperator
@@ -48,8 +46,6 @@ object LocalSearchA3 : Search {
             best.arr.copyInto(curr.arr)
 
             op.operate(curr)
-
-
 
             currObjVal = curr.objectiveValue(false)
 
