@@ -1,8 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="benchmark Call_035_Vehicle_07" type="JetRunConfigurationType" factoryName="Kotlin">
+  <configuration default="false" name="benchmark #2 Call_18_Vehicle_5" type="JetRunConfigurationType" factoryName="Kotlin">
     <module name="INF273-Assignments.main" />
     <option name="VM_PARAMETERS" value="" />
-    <option name="PROGRAM_PARAMETERS" value="--file Call_035_Vehicle_07.txt --benchmark-assignment-3" />
+    <option name="PROGRAM_PARAMETERS" value="--file Call_18_Vehicle_5.txt --benchmark-assignment-3" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" />
     <option name="PASS_PARENT_ENVS" value="true" />

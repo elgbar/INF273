@@ -1,8 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="benchmark Call_080_Vehicle_20" type="JetRunConfigurationType" factoryName="Kotlin">
+  <configuration default="false" name="siman Call_035_Vehicle_07 debug" type="JetRunConfigurationType" factoryName="Kotlin">
     <module name="INF273-Assignments.main" />
     <option name="VM_PARAMETERS" value="" />
-    <option name="PROGRAM_PARAMETERS" value="--file Call_080_Vehicle_20.txt --benchmark-assignment-3" />
+    <option name="PROGRAM_PARAMETERS" value="--file Call_035_Vehicle_07.txt --search-simulated-annealing-a3 --debug" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" />
     <option name="PASS_PARENT_ENVS" value="true" />
