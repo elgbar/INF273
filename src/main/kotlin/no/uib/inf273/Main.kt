@@ -4,6 +4,7 @@ import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
 import no.uib.inf273.processor.DataParser
+import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 import no.uib.inf273.search.LocalSearchA3
 import no.uib.inf273.search.RandomSearch
@@ -100,13 +101,16 @@ class Main(
      * @return A map of the search mapping to average obj value, best obj val, then running time in ms
      */
     fun benchmarkA3(): Map<Search, Triple<Double, Long, Long>> {
-        log.log { "Benchmark Assignment 3 " }
         val map: MutableMap<Search, Triple<Double, Long, Long>> = HashMap()
+        log.log { "Benchmark Assignment 3 " }
 
-        for (search in listOf(RandomSearch, LocalSearchA3, SimulatedAnnealingSearchA3)) {
-            log.log { "Running ${search.javaClass.simpleName}" }
-            map[search] = runAlgorithm(search, 10, solgen, tune)
+        val totalTime = measureTimeMillis {
+            for (search in listOf(RandomSearch, LocalSearchA3, SimulatedAnnealingSearchA3)) {
+                log.log { "Running ${search.javaClass.simpleName}" }
+                map[search] = runAlgorithm(search, 10, solgen, tune)
+            }
         }
+        log.log("Total benchmarking time took $totalTime ms")
         return map
     }
 
@@ -154,7 +158,7 @@ class Main(
         /**
          * Run an algorithm [samples] times and report back results.
          *
-         * @return A triple with values in order: average objective value, best objective value, time takes in milliseconds
+         * @return A triple with values in order: average objective value, best objective value, average time in milliseconds rounded down
          */
         fun runAlgorithm(
             search: Search,
