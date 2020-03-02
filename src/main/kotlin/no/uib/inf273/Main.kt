@@ -57,13 +57,17 @@ class Main(
         help = "Enable benchmarking as specified in Assignment 3. Search option will be ignored."
     ).default(false)
 
-    val data: DataParser
-    val solgen: SolutionGenerator
-
     val tune: Boolean by parser.flagging(
         "--tune",
         help = "Use and print the best calculated parameters. Note that a tuning is a VERY heavy operation and will take a long time."
     )
+
+    val samples: Int by parser.storing("How many samples to take") { toInt() }.default { 10 }
+
+    // Generated variables //
+
+    val data: DataParser
+    val solgen: SolutionGenerator
 
     init {
         log.logLevel = logLevel
@@ -88,8 +92,10 @@ class Main(
             }
         } else {
             require(search != Search.NoSearch) { "Search method must be specified when no other option is selected." }
-
-            printResults(search, runAlgorithm(search, 10, solgen, tune), false)
+            val time = measureTimeMillis {
+                printResults(search, runAlgorithm(search, samples, solgen, tune), false)
+            }
+            log.log("Running $samples samples took in total $time ms")
         }
     }
 
@@ -100,8 +106,8 @@ class Main(
      *
      * @return A map of the search mapping to average obj value, best obj val, then running time in ms
      */
-    fun benchmarkA3(): Map<Search, Triple<Double, Long, Long>> {
-        val map: MutableMap<Search, Triple<Double, Long, Long>> = HashMap()
+    fun benchmarkA3(): Map<Search, Triple<Double, Solution, Long>> {
+        val map: MutableMap<Search, Triple<Double, Solution, Long>> = HashMap()
         log.log { "Benchmark Assignment 3 " }
 
         val totalTime = measureTimeMillis {
@@ -114,20 +120,21 @@ class Main(
         return map
     }
 
-    fun printResults(search: Search, result: Triple<Double, Long, Long>, singleLine: Boolean) {
+    fun printResults(search: Search, result: Triple<Double, Solution, Long>, singleLine: Boolean) {
 
         val defaultObjVal = solgen.generateStandardSolution().objectiveValue(false).toDouble().toBigDecimal()
         val (avg, best, time) = result
-        val improvement = 100.0.toBigDecimal() * (defaultObjVal - best.toBigDecimal()) / defaultObjVal
+        val improvement =
+            100.0.toBigDecimal() * (defaultObjVal - best.objectiveValue(true).toBigDecimal()) / defaultObjVal
 
         if (singleLine) {
-            log.log { "${search.javaClass.simpleName}, $avg, $best, $improvement%, $time ms" }
+            log.log { "${search.javaClass.simpleName}, $avg, ${best.objectiveValue(true)}, $improvement%, $time ms, ${best.arr.contentToString()}" }
         } else {
             log.logs {
                 listOf(
                     "Searching with algorithm ${search.javaClass}"
                     , "initial obj val $defaultObjVal"
-                    , "Best obj value  $best"
+                    , "Best obj value  ${best.objectiveValue(true)}"
                     , "avg obj value . $avg"
                     , "Improvement . . $improvement%"
                     , "Time  . . . . . $time ms"
@@ -158,14 +165,14 @@ class Main(
         /**
          * Run an algorithm [samples] times and report back results.
          *
-         * @return A triple with values in order: average objective value, best objective value, average time in milliseconds rounded down
+         * @return A triple with values in order: average objective value, best solution, average time in milliseconds rounded down
          */
         fun runAlgorithm(
             search: Search,
             samples: Int,
             solgen: SolutionGenerator,
             tune: Boolean
-        ): Triple<Double, Long, Long> {
+        ): Triple<Double, Solution, Long> {
             log.debug { "Running algorithm ${search.javaClass.simpleName}" }
             var totalObj = BigDecimal.ZERO
             var bestObj = Long.MAX_VALUE
@@ -174,6 +181,8 @@ class Main(
             if (tune) {
                 search.tune(solgen, samples, true)
             }
+
+            var best = solgen.generateStandardSolution()
 
             for (i in 0 until samples) {
                 var sol0: Solution? = null
@@ -190,10 +199,15 @@ class Main(
                 totalObj += objVal.toBigDecimal()
                 if (objVal < bestObj) {
                     bestObj = objVal
+                    best = sol
                 }
             }
 
-            return Triple((totalObj / samples.toBigDecimal()).toDouble(), bestObj, times / samples)
+            check(best.isFeasible(true)) {
+                "best not feasible"
+            }
+
+            return Triple((totalObj / samples.toBigDecimal()).toDouble(), best, times / samples)
         }
     }
 }
