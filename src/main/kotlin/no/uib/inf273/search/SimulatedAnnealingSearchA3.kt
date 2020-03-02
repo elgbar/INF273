@@ -2,12 +2,13 @@ package no.uib.inf273.search
 
 import no.uib.inf273.Logger
 import no.uib.inf273.Main
+import no.uib.inf273.operators.MinimizeFreight
 import no.uib.inf273.operators.ReinsertOnceOperator
-import no.uib.inf273.operators.TreeExchangeOperator
 import no.uib.inf273.operators.TwoExchangeOperator
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 import java.math.BigDecimal
+import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.math.pow
 import kotlin.random.Random
@@ -20,8 +21,8 @@ object SimulatedAnnealingSearchA3 : Search {
     // Manual parameters //
     ///////////////////////
 
-    var p1 = 0.0
-    var p2 = 0.05
+    var p1 = 0.05
+    var p2 = 0.50
 
     /**
      * How many runs we should do to get an average temperature
@@ -57,7 +58,7 @@ object SimulatedAnnealingSearchA3 : Search {
         require(0 < iterations) { "Iteration must be a positive number" }
         require(sol.isFeasible(true)) { "Initial solution is not feasible" }
 
-        calculateTemp(sol = sol)
+        calculateTemp(sol = sol, iterations = iterations)
         log.debugs { listOf("Initial temperature $initTemp", "Cooling factor $coolingFactor") }
 
         //Best known solution
@@ -91,6 +92,7 @@ object SimulatedAnnealingSearchA3 : Search {
 
             if (curr.arr.contentEquals(best.arr)) {
                 noChange++
+                continue
             }
 
             currObjVal = curr.objectiveValue(true)
@@ -133,9 +135,8 @@ object SimulatedAnnealingSearchA3 : Search {
         log.log { "Warm up done" }
 
 
-        calculateTemp(sol = solgen.generateStandardSolution())
+        calculateTemp(sol = solgen.generateStandardSolution(), iterations = iterations, tune = true)
         calcBestP(solgen)
-        calcBestCooling(solgen)
     }
 
     /**
@@ -145,7 +146,7 @@ object SimulatedAnnealingSearchA3 : Search {
         val rsi = Main.rand.nextFloat()
         val op = when {
             rsi < p1 -> TwoExchangeOperator
-            rsi < p1 + p2 -> TreeExchangeOperator
+            rsi < p1 + p2 -> MinimizeFreight
             else -> ReinsertOnceOperator
         }
         log.trace { "Using op ${op.javaClass.simpleName}" }
@@ -161,14 +162,20 @@ object SimulatedAnnealingSearchA3 : Search {
      * Calculate the probability of accepting a worse solution
      */
     private fun boltzmannProbability(deltaE: Long, temp: Double): Boolean {
-        return Main.rand.nextDouble() < Math.E.pow(-deltaE / temp)
+        return Main.rand.nextDouble() < exp(-deltaE / temp)
     }
 
     /**
      * @param pMin Minimum temperature in range `[0, `[pMax]`)`
      * @param pMax Maximum temperature in range `(`[pMin]`, 1]`
      */
-    fun calculateTemp(pMin: Double = 0.01, pMax: Double = 0.8, sol: Solution) {
+    fun calculateTemp(
+        pMin: Double = 0.01,
+        pMax: Double = 0.80,
+        sol: Solution,
+        iterations: Int,
+        tune: Boolean = false
+    ) {
         require(0 < pMin && pMin < pMax)
         require(pMax <= 1)
 
@@ -200,6 +207,55 @@ object SimulatedAnnealingSearchA3 : Search {
         check(deltaE > BigDecimal.ZERO) { "deltaE = $deltaE" }
 
 
+        initTemp = -deltaE.toDouble() / ln(pMax)
+        val endTemp = -deltaE.toDouble() / ln(pMin)
+
+
+        fun calcCoolingFac(div: Int): Double {
+            return exp((ln(endTemp) - ln(initTemp)) / (iterations / div))
+        }
+        coolingFactor = calcCoolingFac(8)
+
+
+        if (tune) {
+
+
+            log.log { "Calculating best cooling factor when initial temperature is $initTemp" }
+
+            val solgen = SolutionGenerator(sol.data)
+
+            var bestAvg =
+                Pair(Int.MAX_VALUE, Triple(Double.MAX_VALUE, solgen.generateStandardSolution(), Long.MAX_VALUE))
+            var bestObjVal =
+                Pair(Int.MAX_VALUE, Triple(Double.MAX_VALUE, solgen.generateStandardSolution(), Long.MAX_VALUE))
+            var bestTime =
+                Pair(Int.MAX_VALUE, Triple(Double.MAX_VALUE, solgen.generateStandardSolution(), Long.MAX_VALUE))
+
+            for (step in 1..10) {
+                coolingFactor = calcCoolingFac(step)
+
+                log.log { "Calculating temperature .... ${(step / 10)}% done" }
+
+                //reset the random seed between each check to make it equal
+                Main.rand = Random(1337)
+
+                val triple = Main.runAlgorithm(this, 10, solgen, false)
+                if (triple.first < bestAvg.second.first) bestAvg = Pair(step, triple)
+                if (triple.second.objectiveValue(true) < bestObjVal.second.second.objectiveValue(false)) bestObjVal =
+                    Pair(step, triple)
+                if (triple.third < bestTime.second.third) bestTime = Pair(step, triple)
+            }
+
+            //report the findings
+            log.logs {
+                listOf(
+                    "Best average objective value. . $bestAvg",
+                    "Best absolute objective value . $bestObjVal",
+                    "Best total time . . . . . . . . $bestTime"
+                )
+            }
+            coolingFactor = calcCoolingFac(bestAvg.first)
+        }
         log.debugs {
 
             listOf(
@@ -216,58 +272,23 @@ object SimulatedAnnealingSearchA3 : Search {
                 ""
             )
         }
-        initTemp = -deltaE.toDouble() / ln(pMax)
     }
 
     fun calcBestCooling(solgen: SolutionGenerator) {
-        val inc = 0.1
+        val inc = 0.05
         val samples = 10
 
-        var bestAvg: Pair<Double, Triple<Double, Long, Long>> =
-            Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
-        var bestObjVal: Pair<Double, Triple<Double, Long, Long>> =
-            Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
-        var bestTime: Pair<Double, Triple<Double, Long, Long>> =
-            Pair(Double.MAX_VALUE, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
-
-
-        log.log { "Calculating best cooling factor when initial temperature is $initTemp" }
-
-
-        for (step in generateSequence(inc) { if (it + inc < 1.0) it + inc else null }) {
-            coolingFactor = step
-
-            log.log { "Calculating temperature .... ${(step * 100).toInt()}% done" }
-
-            //reset the random seed between each check to make it equal
-            Main.rand = Random(1337)
-
-            val triple = Main.runAlgorithm(this, samples, solgen, false)
-            if (triple.first < bestAvg.second.first) bestAvg = Pair(step, triple)
-            if (triple.second < bestObjVal.second.second) bestObjVal = Pair(step, triple)
-            if (triple.third < bestTime.second.third) bestTime = Pair(step, triple)
-        }
-
-        log.logs {
-            listOf(
-                "Best average objective value. . $bestAvg",
-                "Best absolute objective value . $bestObjVal",
-                "Best total time . . . . . . . . $bestTime"
-            )
-        }
-
-        coolingFactor = bestAvg.first
     }
 
     fun calcBestP(solgen: SolutionGenerator) {
-        val inc = 0.05
+        val inc = 0.025
         val maxp2 = 0.5
         val samples = 10
 
 
-        var bestAvg = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
-        var bestObjVal = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
-        var bestTime = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE))
+        var bestAvg = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, solgen.generateStandardSolution(), Long.MAX_VALUE))
+        var bestObjVal = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, solgen.generateStandardSolution(), Long.MAX_VALUE))
+        var bestTime = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, solgen.generateStandardSolution(), Long.MAX_VALUE))
 
         log.logs {
             listOf(
@@ -295,7 +316,8 @@ object SimulatedAnnealingSearchA3 : Search {
                 i += samples
                 val triple = Main.runAlgorithm(this, samples, solgen, false)
                 if (triple.first < bestAvg.second.first) bestAvg = Pair(np1 to np2, triple)
-                if (triple.second < bestObjVal.second.second) bestObjVal = Pair(np1 to np2, triple)
+                if (triple.second.objectiveValue(true) < bestObjVal.second.second.objectiveValue(false)) bestObjVal =
+                    Pair(np1 to np2, triple)
                 if (triple.third < bestTime.second.third) bestTime = Pair(np1 to np2, triple)
             }
 

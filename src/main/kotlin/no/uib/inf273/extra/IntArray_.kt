@@ -28,6 +28,14 @@ fun IntArray.randomizeExchange(from: Int = 0, until: Int = size, rng: Random = R
     }
 }
 
+
+/**
+ * Remove exactly [amount] from this array
+ */
+fun IntArray.filter(unwanted: Int, amount: Int): IntArray {
+    return filter(unwanted, IntArray(size - amount), amount)
+}
+
 /**
  * Filter out the unwanted integer and print collect all remaining elements in [to]
  *
