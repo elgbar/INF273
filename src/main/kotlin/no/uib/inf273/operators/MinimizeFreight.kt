@@ -1,15 +1,14 @@
 package no.uib.inf273.operators
 
-import no.uib.inf273.Logger
 import no.uib.inf273.Main
-import no.uib.inf273.operators.Operator.Companion.moveCargo
 import no.uib.inf273.processor.Solution
 
 /**
- * Minimize the number of cargoes we use freight to transport
+ * Minimize the number of cargoes we use freight to transport.
+ * Cost of not transporting is very high compared to even the worst route!
+ * If we minimize number of cargoes we do not transport the cost will (hopefully) go down
  */
-object MinimizeFreight : Operator {
-    override val log: Logger = Logger()
+object MinimizeFreight : Operator() {
 
     override fun operate(sol: Solution) {
         val subs = sol.splitToSubArray(true)
@@ -24,6 +23,5 @@ object MinimizeFreight : Operator {
 
         //move the cargo to the new vessel
         moveCargo(sol, subs, orgIndex, destIndex, cargo)
-
     }
 }
