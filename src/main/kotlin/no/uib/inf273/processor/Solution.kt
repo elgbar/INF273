@@ -116,7 +116,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
         val vesselId = vindex + 1
         val vessel = data.vesselFromId(vesselId)
         var currWeight = 0
-        var currTime = 0
+        var currTime = vessel.startTime
         var lastPort = SolutionGenerator.HOME_PORT //vessel start at home port
         for ((index, cargoId) in sub.withIndex()) {
             val cargoIndex = cargoId - 1
