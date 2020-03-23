@@ -6,11 +6,11 @@ import com.xenomachina.argparser.mainBody
 import no.uib.inf273.processor.DataParser
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
-import no.uib.inf273.search.LocalSearchA3
-import no.uib.inf273.search.RandomSearch
-import no.uib.inf273.search.Search
-import no.uib.inf273.search.simulatedAnnealing.SimulatedAnnealingSearchA3
-import no.uib.inf273.search.simulatedAnnealing.SimulatedAnnealingSearchA4
+import no.uib.inf273.search.Algorithm
+import no.uib.inf273.search.given.LocalAlgorithmA3
+import no.uib.inf273.search.given.RandomAlgorithm
+import no.uib.inf273.search.given.simulatedAnnealing.SimulatedAnnealingAlgorithmA3
+import no.uib.inf273.search.given.simulatedAnnealing.SimulatedAnnealingAlgorithmA4
 import java.math.BigDecimal
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
@@ -41,17 +41,17 @@ class Main(
         help = "Logging level"
     ).default(Logger.INFO)
 
-    private val search: Search by parser.mapping(
-        "--search-local-a3" to LocalSearchA3,
-        "--sl3" to LocalSearchA3,
-        "--search-random" to RandomSearch,
-        "--sr" to RandomSearch,
-        "--search-simulated-annealing-a3" to SimulatedAnnealingSearchA3,
-        "--ssa3" to SimulatedAnnealingSearchA3,
-        "--search-simulated-annealing-a4" to SimulatedAnnealingSearchA4,
-        "--ssa4" to SimulatedAnnealingSearchA4,
+    private val algorithm: Algorithm by parser.mapping(
+        "--search-local-a3" to LocalAlgorithmA3,
+        "--sl3" to LocalAlgorithmA3,
+        "--search-random" to RandomAlgorithm,
+        "--sr" to RandomAlgorithm,
+        "--search-simulated-annealing-a3" to SimulatedAnnealingAlgorithmA3,
+        "--ssa3" to SimulatedAnnealingAlgorithmA3,
+        "--search-simulated-annealing-a4" to SimulatedAnnealingAlgorithmA4,
+        "--ssa4" to SimulatedAnnealingAlgorithmA4,
         help = "What search method to use"
-    ).default(Search.NoSearch)
+    ).default(Algorithm.NoAlgorithm)
 
     private val seed: Long by parser.storing("The random seed to use") { toLong() }.default(Random.nextLong())
 
@@ -74,7 +74,7 @@ class Main(
 
     init {
         log.logLevel = logLevel
-        if (!benchmark && logLevel != Logger.INFO) search.log.logLevel = logLevel
+        if (!benchmark && logLevel != Logger.INFO) algorithm.log.logLevel = logLevel
 
         log.log("Random seed = $seed")
         rand = Random(seed)
@@ -94,9 +94,9 @@ class Main(
                 printResults(alg, triple, true)
             }
         } else {
-            require(search != Search.NoSearch) { "Search method must be specified when no other option is selected." }
+            require(algorithm != Algorithm.NoAlgorithm) { "Search method must be specified when no other option is selected." }
             val time = measureTimeMillis {
-                printResults(search, runAlgorithm(search, samples, solgen, tune), false)
+                printResults(algorithm, runAlgorithm(algorithm, samples, solgen, tune), false)
             }
             log.log("Running $samples samples took in total $time ms")
         }
@@ -109,24 +109,24 @@ class Main(
      *
      * @return A map of the search mapping to average obj value, best obj val, then running time in ms
      */
-    private fun benchmarkA3(): Map<Search, Triple<Double, Solution, Long>> {
-        val map: MutableMap<Search, Triple<Double, Solution, Long>> = HashMap()
+    private fun benchmarkA3(): Map<Algorithm, Triple<Double, Solution, Long>> {
+        val map: MutableMap<Algorithm, Triple<Double, Solution, Long>> = HashMap()
         log.log { "Benchmark Assignment 3 " }
 
         val totalTime = measureTimeMillis {
-            for (search in listOf(
-                RandomSearch, LocalSearchA3,
-                SimulatedAnnealingSearchA3
+            for (algorithm in listOf(
+                RandomAlgorithm, LocalAlgorithmA3,
+                SimulatedAnnealingAlgorithmA3
             )) {
-                log.log { "Running ${search.javaClass.simpleName}" }
-                map[search] = runAlgorithm(search, 10, solgen, tune)
+                log.log { "Running ${algorithm.javaClass.simpleName}" }
+                map[algorithm] = runAlgorithm(algorithm, 10, solgen, tune)
             }
         }
         log.log("Total benchmarking time took $totalTime ms")
         return map
     }
 
-    private fun printResults(search: Search, result: Triple<Double, Solution, Long>, singleLine: Boolean) {
+    private fun printResults(algorithm: Algorithm, result: Triple<Double, Solution, Long>, singleLine: Boolean) {
 
         val defaultObjVal = solgen.generateStandardSolution().objectiveValue(false).toDouble().toBigDecimal()
         val (avg, best, time) = result
@@ -134,11 +134,11 @@ class Main(
             100.0.toBigDecimal() * (defaultObjVal - best.objectiveValue(true).toBigDecimal()) / defaultObjVal
 
         if (singleLine) {
-            log.log { "${search.javaClass.simpleName}, $avg, ${best.objectiveValue(true)}, $improvement%, $time ms, ${best.arr.contentToString()}" }
+            log.log { "${algorithm.javaClass.simpleName}, $avg, ${best.objectiveValue(true)}, $improvement%, $time ms, ${best.arr.contentToString()}" }
         } else {
             log.logs {
                 listOf(
-                    "Searching with algorithm $search"
+                    "Searching with algorithm $algorithm"
                     , "initial obj val $defaultObjVal"
                     , "Best obj value  ${best.objectiveValue(true)}"
                     , "avg obj value . $avg"
@@ -174,18 +174,18 @@ class Main(
          * @return A triple with values in order: average objective value, best solution, average time in milliseconds rounded down
          */
         fun runAlgorithm(
-            search: Search,
+            algorithm: Algorithm,
             samples: Int,
             solgen: SolutionGenerator,
             tune: Boolean
         ): Triple<Double, Solution, Long> {
-            log.debug { "Running algorithm ${search.javaClass.simpleName}" }
+            log.debug { "Running algorithm ${algorithm.javaClass.simpleName}" }
             var totalObj = BigDecimal.ZERO
             var bestObj = Long.MAX_VALUE
             var times = 0L
 
             if (tune) {
-                search.tune(solgen, samples, true)
+                algorithm.tune(solgen, samples, true)
             }
 
             var best = solgen.generateStandardSolution()
@@ -193,13 +193,13 @@ class Main(
             for (i in 0 until samples) {
                 var sol0: Solution? = null
                 val time = measureTimeMillis {
-                    sol0 = search.search(solgen.generateStandardSolution())
+                    sol0 = algorithm.search(solgen.generateStandardSolution())
                 }
                 val sol: Solution = sol0!!
                 times += time
 
                 check(sol.isFeasible(true)) {
-                    "returned solution (using ${search.javaClass.simpleName}) is not feasible: ${sol.arr.contentToString()}"
+                    "returned solution (using ${algorithm.javaClass.simpleName}) is not feasible: ${sol.arr.contentToString()}"
                 }
                 val objVal = sol.objectiveValue(true)
                 totalObj += objVal.toBigDecimal()

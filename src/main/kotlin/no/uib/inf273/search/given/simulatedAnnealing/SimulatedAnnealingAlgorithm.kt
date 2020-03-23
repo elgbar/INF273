@@ -1,11 +1,11 @@
-package no.uib.inf273.search.simulatedAnnealing
+package no.uib.inf273.search.given.simulatedAnnealing
 
 import no.uib.inf273.Logger
 import no.uib.inf273.Main
 import no.uib.inf273.operators.Operator
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
-import no.uib.inf273.search.Search
+import no.uib.inf273.search.Algorithm
 import java.math.BigDecimal
 import kotlin.math.exp
 import kotlin.math.ln
@@ -14,10 +14,10 @@ import kotlin.random.Random
 /**
  * @author Elg
  */
-abstract class SimulatedAnnealingSearch(
+abstract class SimulatedAnnealingAlgorithm(
     private vararg val ops: Pair<Double, Operator>,
     private val fallbackOp: Operator
-) : Search() {
+) : Algorithm() {
 
     init {
         var lastProp = 0.0
@@ -58,9 +58,9 @@ abstract class SimulatedAnnealingSearch(
 
     fun change(sol: Solution) {
         val op = findOperator()
-        SimulatedAnnealingSearchA4.log.trace { "Using op ${op.javaClass.simpleName}" }
+        SimulatedAnnealingAlgorithmA4.log.trace { "Using op ${op.javaClass.simpleName}" }
         op.operate(sol)
-        if (SimulatedAnnealingSearchA4.log.isDebugEnabled()) {
+        if (SimulatedAnnealingAlgorithmA4.log.isDebugEnabled()) {
             check(sol.isFeasible(modified = true, checkValid = true)) {
                 "Solution no long feasible after using operator ${op.javaClass.simpleName}"
             }

@@ -1,9 +1,10 @@
-package no.uib.inf273.search
+package no.uib.inf273.search.given
 
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
+import no.uib.inf273.search.Algorithm
 
-object RandomSearch : Search() {
+object RandomAlgorithm : Algorithm() {
 
     override fun search(sol: Solution, iterations: Int): Solution {
 

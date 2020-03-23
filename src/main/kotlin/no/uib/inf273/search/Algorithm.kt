@@ -4,7 +4,7 @@ import no.uib.inf273.Logger
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 
-abstract class Search {
+abstract class Algorithm {
     open val log: Logger = Logger()
 
     /**
@@ -20,19 +20,19 @@ abstract class Search {
      * If [report] is `true` this method will print out extra information about the tuned parameters
      */
     abstract fun tune(solgen: SolutionGenerator, iterations: Int, report: Boolean)
-    
+
     override fun toString(): String {
         return this::class.java.simpleName
     }
 
-    object NoSearch : Search() {
+    object NoAlgorithm : Algorithm() {
 
         override fun search(sol: Solution, iterations: Int): Solution {
-            error("Cannot use the No Search object to search. This is just a dummy implementation")
+            error("Cannot use the No Algorithm object to search. This is just a dummy implementation")
         }
 
         override fun tune(solgen: SolutionGenerator, iterations: Int, report: Boolean) {
-            error("Cannot use the No Search object to search. This is just a dummy implementation")
+            error("Cannot use the No Algorithm object to search. This is just a dummy implementation")
         }
     }
 }

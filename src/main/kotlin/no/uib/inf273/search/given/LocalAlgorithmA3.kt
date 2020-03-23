@@ -1,4 +1,4 @@
-package no.uib.inf273.search
+package no.uib.inf273.search.given
 
 import no.uib.inf273.Main.Companion.rand
 import no.uib.inf273.operators.given.ReinsertOnceOperator
@@ -6,11 +6,12 @@ import no.uib.inf273.operators.given.ThreeExchangeOperator
 import no.uib.inf273.operators.given.TwoExchangeOperator
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
+import no.uib.inf273.search.Algorithm
 
 /**
  * Modified local search for assignment 3
  */
-object LocalSearchA3 : Search() {
+object LocalAlgorithmA3 : Algorithm() {
 
     var p1: Float = 0.4f
     var p2: Float = 0.5f
