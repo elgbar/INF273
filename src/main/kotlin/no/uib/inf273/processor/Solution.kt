@@ -30,7 +30,43 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
         }
     }
 
+    /**
+     * Give metadata on how a vessel is doing for this solution
+     */
+    data class VesselRouteMetadata(
+        /**
+         * The vessel used
+         */
+        val vesselIndex: Int,
+        /**
+         * If this route is valid
+         */
+        val valid: Boolean,
+        /**
+         * How long the vessel waited at each port. A value of zero indicate that no waiting was done (value cannot be negative)
+         */
+        val portTardiness: IntArray
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is VesselRouteMetadata) return false
 
+            if (vesselIndex != other.vesselIndex) return false
+            if (valid != other.valid) return false
+            if (!portTardiness.contentEquals(other.portTardiness)) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = vesselIndex
+            result = 31 * result + valid.hashCode()
+            result = 31 * result + portTardiness.contentHashCode()
+            return result
+        }
+
+
+    }
 
     /**
      * @return a deep copy of this solution
@@ -38,6 +74,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
     fun copy(): Solution {
         return Solution(data, arr.clone())
     }
+
     /**
      * Check if a solution is valid (but not necessarily feasible). A solution is valid if for each subsection (split by [BARRIER_ELEMENT]) there are two of each number. This assumes that the given array does not have more than two identical numbers (excluding [BARRIER_ELEMENT])
      *
@@ -87,7 +124,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
      * @param modified If the solution array have been modified since last time we called any function in this class. If you're unsure the default is `true`
      * @param checkValid If we should check if this solution is valid, otherwise this is just assumed
      *
-     * @return Of this solution is both feasible and valid
+     * @return If this solution is both feasible (and valid if [checkValid] is `true`)
      */
     fun isFeasible(modified: Boolean, checkValid: Boolean = true): Boolean {
         val subroutes: Array<IntArray> = splitToSubArray(modified)
@@ -104,24 +141,30 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
         return true
     }
 
-    /**check if a vessel is feasible*/
-    fun isVesselFeasible(vindex: Int, sub: IntArray): Boolean {
-        return isVesselFeasible0(vindex, sub).first
+    /**
+     * check if a vessel is feasible
+     * */
+    fun isVesselFeasible(vIndex: Int, sub: IntArray): Boolean {
+        return generateVesselRouteMetadata(vIndex, sub).valid
     }
 
-
     /**
-     * @return pair of feasibility and list of wait times for each
+     * Generate metadata of the vessel route [sub] for index [vIndex]
      */
-    fun isVesselFeasible0(vindex: Int, sub: IntArray): Pair<Boolean, IntArray> {
-        val waitTimes = IntArray(sub.size) { -1 }
+    fun generateVesselRouteMetadata(vIndex: Int, sub: IntArray): VesselRouteMetadata {
+        val portTardiness = IntArray(sub.size) { -1 }
+
+        fun createMetadata(valid: Boolean): VesselRouteMetadata {
+            return VesselRouteMetadata(vIndex, valid, portTardiness)
+        }
+
         //skip last array as it is only the tramp transports, and always allowed
-        if (vindex == data.nrOfVessels) return true to waitTimes
+        if (vIndex == data.nrOfVessels) return createMetadata(true)
 
         //false if we are currently picking it up, true if we are delivering
         val seen = BooleanArray(data.nrOfCargo)
 
-        val vesselId = vindex + 1
+        val vesselId = vIndex + 1
         val vessel = data.vesselFromId(vesselId)
         var currWeight = 0
         var currTime = vessel.startTime
@@ -147,17 +190,11 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
             /**
              * @return negative number of not valid, new current time if valid
              */
-            fun checkTime(
-                index: Int,
-                lowerTime: Int,
-                upperTime: Int,
-                portTime: Int,
-                currTime: Int
-            ): Int {
+            fun checkTime(index: Int, lowerTime: Int, upperTime: Int, portTime: Int, currTime: Int): Int {
                 var time = currTime
-                //check for cargo pickup time
 
-                waitTimes[index] = lowerTime - time
+                //How long we are we waiting for the port to open?
+                portTardiness[index] = (lowerTime - time).coerceAtLeast(0)
 
                 //we must wait for the port to open
                 if (time < lowerTime) {
@@ -181,7 +218,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
                 //check compatibility, but only do so for first encounter
                 if (!vessel.canTakeCargo(cargoId)) {
                     log.debug { "Vessel $vesselId is not compatible with $cargoId" }
-                    return false to waitTimes
+                    return createMetadata(false)
                 }
                 currWeight += cargo.size //first encounter, load the cargo
 
@@ -190,7 +227,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
                 currTime = checkTime(index, cargo.lowerPickup, cargo.upperPickup, vc.originPortTime, currTime)
                 if (currTime < 0) {
                     log.debug { "We are trying to pickup the cargo $cargoId after upper pickup time" }
-                    return false to waitTimes
+                    return createMetadata(false)
                 }
 
             } else {
@@ -200,20 +237,20 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
                 currTime = checkTime(index, cargo.lowerDelivery, cargo.upperDelivery, vc.destPortTime, currTime)
                 if (currTime < 0) {
                     log.debug { "We are trying to deliver the cargo $cargoId after upper delivery time" }
-                    return false to waitTimes
+                    return createMetadata(false)
                 }
             }
 
             //check that we are not overloaded
             if (currWeight > vessel.capacity) {
                 log.debug { "Invalid as vessel $vesselId is trying to carry more than it has capacity for ($currWeight > ${vessel.capacity})" }
-                return false to waitTimes
+                return createMetadata(false)
             }
 
             //update port for next round
             lastPort = currPort
         }
-        return true to waitTimes
+        return createMetadata(true)
     }
 
 
@@ -260,7 +297,8 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
                 }
 
                 //add the sailing time to the current time
-                value += data.archs[Triple(vesselId, lastPort, currPort)]!!.cost
+                value += (data.archs[Triple(vesselId, lastPort, currPort)]
+                    ?: error("Failed to find arch for vessel $vesselId from $lastPort to $currPort")).cost
 
                 if (!seen[cargoIndex]) {
                     seen[cargoIndex] = true
@@ -293,7 +331,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
             for ((i, pair) in barrierIndices.withIndex()) {
                 val (from, to) = pair //cannot do this in the loop
 
-                val subArr = arr.copyOfRange(from, to)
+                val subArr = if (to != from) arr.copyOfRange(from, to) else EMPTY_SUB
                 log.trace { "range from $from to $to: ${subArr.toList()}" }
                 subRoutes[i] = subArr
             }
@@ -446,5 +484,6 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
 
     companion object {
         val log = Logger()
+        private val EMPTY_SUB = IntArray(0)
     }
 }
