@@ -5,6 +5,7 @@ import no.uib.inf273.Main
 import no.uib.inf273.processor.DataParser
 import no.uib.inf273.processor.Solution
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
@@ -19,8 +20,9 @@ internal class TwoExchangeOperatorTest {
 
         private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
     }
-    
 
+
+    @Disabled
     @Test
     internal fun twoExchangeOperator_SwapsElements() {
 

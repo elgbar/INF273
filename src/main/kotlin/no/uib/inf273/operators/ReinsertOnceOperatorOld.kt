@@ -34,7 +34,7 @@ import no.uib.inf273.processor.SolutionGenerator.Companion.BARRIER_ELEMENT
  *
  * This operator is not capable of moving cargoes to empty vessels (such as in the case of [SolutionGenerator]).
  */
-object ReinsertOnceOperatorOld : Operator {
+object ReinsertOnceOperatorOld : Operator() {
 
     override val log = Logger()
 

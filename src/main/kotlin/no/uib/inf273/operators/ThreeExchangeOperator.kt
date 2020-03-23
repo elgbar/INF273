@@ -3,10 +3,9 @@ package no.uib.inf273.operators
 import no.uib.inf273.Logger
 import no.uib.inf273.Main
 import no.uib.inf273.extra.exchange
-import no.uib.inf273.operators.Operator.Companion.operateVesselTilFeasible
 import no.uib.inf273.processor.Solution
 
-object TreeExchangeOperator : Operator {
+object ThreeExchangeOperator : Operator() {
 
     override val log = Logger()
 

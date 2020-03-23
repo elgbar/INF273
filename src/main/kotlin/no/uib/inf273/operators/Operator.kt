@@ -7,10 +7,10 @@ import no.uib.inf273.extra.insert
 import no.uib.inf273.extra.randomizeExchange
 import no.uib.inf273.processor.Solution
 
-interface Operator {
+abstract class Operator {
 
 
-    val log: Logger
+    open val log: Logger = Logger()
 
     /**
      * Run the operator on the given solution. When returning the solution is guaranteed to be [Solution.isFeasible].
@@ -19,7 +19,11 @@ interface Operator {
      *
      *
      */
-    fun operate(sol: Solution)
+    abstract fun operate(sol: Solution)
+
+    override fun toString(): String {
+        return this::class.java.simpleName
+    }
 
     companion object {
 

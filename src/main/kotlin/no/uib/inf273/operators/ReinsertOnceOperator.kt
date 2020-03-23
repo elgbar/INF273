@@ -2,14 +2,12 @@ package no.uib.inf273.operators
 
 import no.uib.inf273.Logger
 import no.uib.inf273.Main
-import no.uib.inf273.operators.Operator.Companion.moveCargo
-import no.uib.inf273.operators.Operator.Companion.selectTwoRandomVessels
 import no.uib.inf273.processor.Solution
 
 /**
  * An operator that picks two unique vessels (including freights) then moves cargo from the origin vessel to the destination vessel.
  */
-object ReinsertOnceOperator : Operator {
+object ReinsertOnceOperator : Operator() {
 
 
     override val log = Logger()

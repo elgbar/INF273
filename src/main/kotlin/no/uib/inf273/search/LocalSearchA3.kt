@@ -2,7 +2,7 @@ package no.uib.inf273.search
 
 import no.uib.inf273.Main.Companion.rand
 import no.uib.inf273.operators.ReinsertOnceOperator
-import no.uib.inf273.operators.TreeExchangeOperator
+import no.uib.inf273.operators.ThreeExchangeOperator
 import no.uib.inf273.operators.TwoExchangeOperator
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
@@ -10,7 +10,7 @@ import no.uib.inf273.processor.SolutionGenerator
 /**
  * Modified local search for assignment 3
  */
-object LocalSearchA3 : Search {
+object LocalSearchA3 : Search() {
 
     var p1: Float = 0.4f
     var p2: Float = 0.5f
@@ -35,7 +35,7 @@ object LocalSearchA3 : Search {
             val rsi = rand.nextFloat()
             val op = when {
                 rsi < p1 -> TwoExchangeOperator
-                rsi < p1 + p2 -> TreeExchangeOperator
+                rsi < p1 + p2 -> ThreeExchangeOperator
                 else -> ReinsertOnceOperator
             }
 

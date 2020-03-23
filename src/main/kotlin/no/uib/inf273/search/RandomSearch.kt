@@ -3,7 +3,7 @@ package no.uib.inf273.search
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 
-object RandomSearch : Search {
+object RandomSearch : Search() {
 
     override fun search(sol: Solution, iterations: Int): Solution {
 

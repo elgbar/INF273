@@ -6,7 +6,7 @@ import no.uib.inf273.processor.Solution
 /**
  * Swap two elements within a vessel range
  */
-object TwoExchangeOperator : Operator {
+object TwoExchangeOperator : Operator() {
 
     override val log = Logger()
 

@@ -5,21 +5,23 @@ import no.uib.inf273.Main
 import no.uib.inf273.processor.DataParser
 import no.uib.inf273.processor.Solution
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
-internal class TreeExchangeOperatorTest {
+internal class ThreeExchangeOperatorTest {
 
 
     companion object {
         init {
             Main.log.logLevel = Logger.DEBUG
-            TreeExchangeOperator.log.logLevel = Logger.TRACE
+            ThreeExchangeOperator.log.logLevel = Logger.TRACE
         }
 
         private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
     }
 
+    @Disabled
     @Test
     internal fun threeExchangeOperator_SwapsElements() {
 
@@ -33,7 +35,7 @@ internal class TreeExchangeOperatorTest {
         //restore the random to initial state
         Main.rand = Random(2)
 
-        TreeExchangeOperator.operate(sol)
+        ThreeExchangeOperator.operate(sol)
 
         assertEquals(sol.arr[firstIndex], solCpy[thirdIndex])
         assertEquals(sol.arr[secondIndex], solCpy[firstIndex])
