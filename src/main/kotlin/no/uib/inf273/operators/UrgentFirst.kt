@@ -14,7 +14,11 @@ object UrgentFirst : Operator() {
     override fun operate(sol: Solution) {
 
         val subs = sol.splitToSubArray(true)
-        val vessel = selectRandomVessel(subs, 2, allowFreight = false)
+        val vessel = selectRandomVessel(
+            subs,
+            2,
+            allowFreight = false
+        )
         if (vessel == INVALID_VESSEL) return
 
         //find what cargo is waiting the longest

@@ -41,6 +41,7 @@ abstract class Operator {
             return (until - from + 1) / 2
         }
 
+
         /**
          * Move cargoes around within a vessel in an solution. No change is done to [sol]s [Solution.arr].
          * Note that this method only guarantees that the vessel subarray is feasible, not the whole solution
@@ -173,11 +174,11 @@ abstract class Operator {
 
             val destFeasible = exchangeOnceTilFeasible(sol, destVesselIndex, destNew, true)
             if (!destFeasible) {
-                ReinsertOnceOperator.log.trace { "Failed to add cargo $cargoId to vessel $destVesselIndex as no feasible arrangement could be found" }
+                Main.log.trace { "Failed to add cargo $cargoId to vessel $destVesselIndex as no feasible arrangement could be found" }
                 return null
             }
 
-            if (ReinsertOnceOperator.log.isDebugEnabled()) {
+            if (Main.log.isDebugEnabled()) {
                 check(sol.isVesselFeasible(destVesselIndex, destNew)) {
                     "Destination vessel $destVesselIndex not feasible"
                 }
@@ -234,5 +235,6 @@ abstract class Operator {
             } while (invalidSize(sub[vesselIndex]))
             return vesselIndex
         }
+
     }
 }

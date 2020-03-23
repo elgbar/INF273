@@ -1,6 +1,7 @@
-package no.uib.inf273.operators
+package no.uib.inf273.operators.given
 
 import no.uib.inf273.Logger
+import no.uib.inf273.operators.Operator
 import no.uib.inf273.processor.Solution
 
 /**
@@ -13,7 +14,8 @@ object TwoExchangeOperator : Operator() {
     override fun operate(sol: Solution) {
         val (vIndex, from, until) = sol.findNonEmptyVessel(true) ?: return
         val sub = sol.arr.copyOfRange(from, until)
-        val feasible = Operator.exchangeOnceTilFeasible(sol, vIndex, sub)
+        val feasible =
+            exchangeOnceTilFeasible(sol, vIndex, sub)
         if (feasible)
             sub.copyInto(sol.arr, from)
     }

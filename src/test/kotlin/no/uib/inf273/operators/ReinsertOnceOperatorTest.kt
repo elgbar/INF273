@@ -2,6 +2,7 @@ package no.uib.inf273.operators
 
 import no.uib.inf273.Logger
 import no.uib.inf273.Main
+import no.uib.inf273.operators.given.ReinsertOnceOperator
 import no.uib.inf273.processor.DataParser
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
