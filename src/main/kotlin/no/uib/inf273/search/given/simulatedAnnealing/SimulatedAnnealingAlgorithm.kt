@@ -81,14 +81,14 @@ abstract class SimulatedAnnealingAlgorithm(
         }
 
         //Best known solution
-        val best = Solution(sol.data, sol.arr.clone())
+        val best = sol.copy()
         var bestObjVal = best.objectiveValue(false) //objective value of the best known solution
 
         //current solution
-        val curr = Solution(sol.data, sol.arr.clone())
+        val curr = sol.copy()
         var currObjVal: Long
 
-        val incombent = Solution(sol.data, sol.arr.clone())
+        val incombent = sol.copy()
         var incombentObjVal = incombent.objectiveValue(false)
 
         var temp = initTemp
@@ -193,7 +193,7 @@ abstract class SimulatedAnnealingAlgorithm(
         var totalObj: BigDecimal = BigDecimal.ZERO
         var feasibleRuns = 0
 
-        val curr = Solution(sol.data, sol.arr.copyOf())
+        val curr = sol.copy()
 
         for (i in 0 until testRuns) {
             do {

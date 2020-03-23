@@ -30,6 +30,14 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
         }
     }
 
+
+
+    /**
+     * @return a deep copy of this solution
+     */
+    fun copy(): Solution {
+        return Solution(data, arr.clone())
+    }
     /**
      * Check if a solution is valid (but not necessarily feasible). A solution is valid if for each subsection (split by [BARRIER_ELEMENT]) there are two of each number. This assumes that the given array does not have more than two identical numbers (excluding [BARRIER_ELEMENT])
      *
