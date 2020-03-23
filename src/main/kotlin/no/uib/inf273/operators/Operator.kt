@@ -24,6 +24,7 @@ interface Operator {
     companion object {
 
         const val MAX_TRIES = 10
+        const val INVALID_VESSEL = -1
 
         internal fun calculateNumberOfVessels(from: Int, until: Int): Int {
             return (until - from + 1) / 2
@@ -119,8 +120,6 @@ interface Operator {
             destVesselIndex: Int,
             cargoId: Int
         ) {
-
-
             val orgNew = removeCargo(sol, sub, orgVesselIndex, cargoId) ?: return
             sub[orgVesselIndex] = orgNew
 
@@ -177,7 +176,7 @@ interface Operator {
         }
 
         //visible in a function for testing
-        internal fun getRandomVesselIndices(sub: Array<IntArray>): Pair<Int, Int> {
+        internal fun selectTwoRandomVessels(sub: Array<IntArray>): Pair<Int, Int> {
             var orgVesselIndex: Int
             var destVesselIndex: Int
             do {
@@ -185,6 +184,33 @@ interface Operator {
                 destVesselIndex = Main.rand.nextInt(sub.size)
             } while (orgVesselIndex == destVesselIndex || sub[orgVesselIndex].isEmpty())
             return orgVesselIndex to destVesselIndex
+        }
+
+        /**
+         * Return the index of a random vessel within [sub]. If [allowFreight] and [minCargo]` > 0` are both `true` this
+         * might return [INVALID_VESSEL]` as no valid vessel could ever be selected. There should not be any need to test for this if either is `false`
+         *
+         *@param minCargo The minimum number of cargoes that must exist in the given
+         *
+         */
+        fun selectRandomVessel(sub: Array<IntArray>, minCargo: Int, allowFreight: Boolean): Int {
+            require(minCargo >= 0) { "Minimum number of cargoes must be a non-negative number" }
+            val size = sub.size - if (allowFreight) 0 else 1
+
+            fun invalidSize(arr: IntArray): Boolean {
+                return arr.size / 2 < minCargo
+            }
+
+            if (minCargo > 0 && !allowFreight && sub.toList().subList(0, size).all { invalidSize(it) }) {
+                //can never select any valid vessel (probably every cargo is in freight)
+                return INVALID_VESSEL
+            }
+
+            var vesselIndex: Int
+            do {
+                vesselIndex = Main.rand.nextInt(size)
+            } while (invalidSize(sub[vesselIndex]))
+            return vesselIndex
         }
     }
 }

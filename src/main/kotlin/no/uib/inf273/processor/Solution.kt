@@ -77,8 +77,17 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
 
     /**check if a vessel is feasible*/
     fun isVesselFeasible(vindex: Int, sub: IntArray): Boolean {
+        return isVesselFeasible0(vindex, sub).first
+    }
+
+
+    /**
+     * @return pair of feasibility and list of wait times for each
+     */
+    fun isVesselFeasible0(vindex: Int, sub: IntArray): Pair<Boolean, IntArray> {
+        val waitTimes = IntArray(sub.size) { -1 }
         //skip last array as it is only the tramp transports, and always allowed
-        if (vindex == data.nrOfVessels) return true
+        if (vindex == data.nrOfVessels) return true to waitTimes
 
         //false if we are currently picking it up, true if we are delivering
         val seen = BooleanArray(data.nrOfCargo)
@@ -88,7 +97,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
         var currWeight = 0
         var currTime = 0
         var lastPort = SolutionGenerator.HOME_PORT //vessel start at home port
-        for (cargoId in sub) {
+        for ((index, cargoId) in sub.withIndex()) {
             val cargoIndex = cargoId - 1
             val cargo = data.cargoes[cargoIndex]
 
@@ -105,70 +114,79 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
             currTime += (data.archs[Triple(vesselId, lastPort, currPort)]
                 ?: error("Failed to find an arch for vessel $vesselId between the ports $lastPort and $currPort")).time
 
+
+            /**
+             * @return negative number of not valid, new current time if valid
+             */
+            fun checkTime(
+                index: Int,
+                lowerTime: Int,
+                upperTime: Int,
+                portTime: Int,
+                currTime: Int
+            ): Int {
+                var time = currTime
+                //check for cargo pickup time
+
+                waitTimes[index] = lowerTime - time
+
+                //we must wait for the port to open
+                if (time < lowerTime) {
+                    time = lowerTime
+                }
+
+                //then add how long it takes at the port
+                time += portTime
+
+                //check if we are within the upper time window
+                if (time > upperTime) {
+                    //well that failed
+                    return -1
+                }
+                return time
+            }
+
             if (!seen[cargoIndex]) {
                 seen[cargoIndex] = true
 
                 //check compatibility, but only do so for first encounter
                 if (!vessel.canTakeCargo(cargoId)) {
                     log.debug { "Vessel $vesselId is not compatible with $cargoId" }
-                    return false
+                    return false to waitTimes
                 }
                 currWeight += cargo.size //first encounter, load the cargo
 
                 //check for cargo pickup time
 
-                currTime = checkTime(cargo.lowerPickup, cargo.upperPickup, vc.originPortTime, currTime)
+                currTime = checkTime(index, cargo.lowerPickup, cargo.upperPickup, vc.originPortTime, currTime)
                 if (currTime < 0) {
                     log.debug { "We are trying to pickup the cargo $cargoId after upper pickup time" }
-                    return false
+                    return false to waitTimes
                 }
 
             } else {
                 currWeight -= cargo.size //second encounter, unload the cargo
 
                 //check for cargo delivery time
-                currTime = checkTime(cargo.lowerDelivery, cargo.upperDelivery, vc.destPortTime, currTime)
+                currTime = checkTime(index, cargo.lowerDelivery, cargo.upperDelivery, vc.destPortTime, currTime)
                 if (currTime < 0) {
                     log.debug { "We are trying to deliver the cargo $cargoId after upper delivery time" }
-                    return false
+                    return false to waitTimes
                 }
             }
 
             //check that we are not overloaded
             if (currWeight > vessel.capacity) {
                 log.debug { "Invalid as vessel $vesselId is trying to carry more than it has capacity for ($currWeight > ${vessel.capacity})" }
-                return false
+                return false to waitTimes
             }
 
             //update port for next round
             lastPort = currPort
         }
-        return true
+        return true to waitTimes
     }
 
-
-    /**
-     * @return negative number of not valid, new current time if valid
-     */
-    private fun checkTime(lowerTime: Int, upperTime: Int, portTime: Int, currTime: Int): Int {
-        var time = currTime
-        //check for cargo pickup time
-
-        //we must wait for the port to open
-        if (time < lowerTime) {
-            time = lowerTime
-        }
-
-        //then add how long it takes at the port
-        time += portTime
-
-        //check if we are within the upper time window
-        if (time > upperTime) {
-            //well that failed
-            return -1
-        }
-        return time
-    }
 
     /**
      * Calculate the objective value. result is not cached.
@@ -182,6 +200,9 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
         var value = 0L
         val subroutes: Array<IntArray> = splitToSubArray(modified)
 
+        //false if we are currently picking it up, true if we are delivering
+        val seen = BooleanArray(data.nrOfCargo)
+
         for ((index, sub) in subroutes.withIndex()) {
 
             //skip last array as it is only the tramp transports, and always allowed
@@ -190,11 +211,8 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
                 for (cargoId in sub.toSet()) {
                     value += data.cargoFromId(cargoId).ntCost
                 }
-                continue
+                return value
             }
-
-            //false if we are currently picking it up, true if we are delivering
-            val seen = BooleanArray(data.nrOfCargo)
 
             val vesselId = index + 1
             val vessel = data.vesselFromId(vesselId)
@@ -226,8 +244,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
                 lastPort = currPort
             }
         }
-
-        return value
+        error("Unexpected exit from objective value function")
     }
 
 
@@ -265,7 +282,8 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
      */
     fun joinToArray(merge: Array<IntArray>) {
         require(arr.size == merge.map { it.size }.sum() + data.nrOfVessels) {
-            "Given array of arrays does not have the total size equal to size of this solution's array. Expected ${arr.size} got ${merge.map { it.size }.sum() + data.nrOfVessels}"
+            "Given array of arrays does not have the total size equal to size of this solution's array. Expected ${arr.size} got ${merge.map { it.size }
+                .sum() + data.nrOfVessels}"
         }
 
         log.trace { "Merging array ${merge.map { it.contentToString() + "\n" }}" }

@@ -33,7 +33,7 @@ internal class ReinsertOnceOperatorTest {
         do {
             s++
             Main.rand = Random(s)
-            val indices = ReinsertOnceOperator.getRandomVesselIndices(sub)
+            val indices = Operator.selectTwoRandomVessels(sub)
             org = indices.first
             dest = indices.second
         } while (org != 0 || dest != 3)
@@ -64,7 +64,7 @@ internal class ReinsertOnceOperatorTest {
         do {
             s++
             Main.rand = Random(s)
-            val indices = ReinsertOnceOperator.getRandomVesselIndices(sub)
+            val indices = Operator.selectTwoRandomVessels(sub)
             org = indices.first
             dest = indices.second
             moveVessel = sub[org].random(Main.rand)
@@ -97,7 +97,7 @@ internal class ReinsertOnceOperatorTest {
         do {
             s++
             Main.rand = Random(s)
-            val indices = ReinsertOnceOperator.getRandomVesselIndices(sub)
+            val indices = Operator.selectTwoRandomVessels(sub)
             org = indices.first
             dest = indices.second
             moveVessel = sub[org].random(Main.rand)

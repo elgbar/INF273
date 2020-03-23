@@ -1,6 +1,7 @@
 package no.uib.inf273.operators
 
 import no.uib.inf273.Logger
+import no.uib.inf273.operators.Operator.Companion.INVALID_VESSEL
 import no.uib.inf273.processor.Solution
 
 /**
@@ -11,6 +12,14 @@ object UrgentFirst : Operator {
     override val log: Logger = Logger()
 
     override fun operate(sol: Solution) {
+
+        val subs = sol.splitToSubArray(true)
+        val vessel = Operator.selectRandomVessel(subs, 2, allowFreight = false)
+        if (vessel == INVALID_VESSEL) return
+
+        //find what cargo is waiting the longest
+
         
+        //then try and minimize the waiting time
     }
 }

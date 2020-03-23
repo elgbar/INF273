@@ -2,8 +2,8 @@ package no.uib.inf273.operators
 
 import no.uib.inf273.Logger
 import no.uib.inf273.Main
-import no.uib.inf273.operators.Operator.Companion.getRandomVesselIndices
 import no.uib.inf273.operators.Operator.Companion.moveCargo
+import no.uib.inf273.operators.Operator.Companion.selectTwoRandomVessels
 import no.uib.inf273.processor.Solution
 
 /**
@@ -18,7 +18,7 @@ object ReinsertOnceOperator : Operator {
         val sub = sol.splitToSubArray(true)
 
         //select two vessels where the origin vessel have cargoes
-        val (orgVesselIndex, destVesselIndex) = getRandomVesselIndices(sub)
+        val (orgVesselIndex, destVesselIndex) = selectTwoRandomVessels(sub)
 
         //pick a random cargo within the origin vessel
         val cargo = sub[orgVesselIndex].random(Main.rand)

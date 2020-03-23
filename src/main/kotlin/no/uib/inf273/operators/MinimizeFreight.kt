@@ -20,7 +20,7 @@ object MinimizeFreight : Operator {
 
         //subtract one from the available vessels to not select the freight array
         val destIndex = Main.rand.nextInt(subs.size - 1)
-        val orgIndex = subs.size - 1
+        val orgIndex = subs.size - 1 //origin is always dummy vessel
 
         //move the cargo to the new vessel
         moveCargo(sol, subs, orgIndex, destIndex, cargo)
