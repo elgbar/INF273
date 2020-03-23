@@ -27,7 +27,14 @@ abstract class Operator {
 
     companion object {
 
-        const val MAX_TRIES = 10
+        /**
+         * Number of times to try and change the solution till it's valid
+         */
+        private const val MAX_TRIES = 10
+
+        /**
+         * Vessel id returned if no valid vessel could be found
+         */
         const val INVALID_VESSEL = -1
 
         internal fun calculateNumberOfVessels(from: Int, until: Int): Int {
@@ -35,28 +42,39 @@ abstract class Operator {
         }
 
         /**
-         * Move cargoes around within a vessel in an solution. No change is done to [sol]s [Solution.arr], however [init] will contain the new solution.
+         * Move cargoes around within a vessel in an solution. No change is done to [sol]s [Solution.arr].
+         * Note that this method only guarantees that the vessel subarray is feasible, not the whole solution
          *
          * @param sol The solution we are shuffling
          * @param vIndex The vessel index to use
-         * @param init The original array of this vessel to use.
+         * @param initVesselArr The content of vessel [vIndex]
+         * @param allowEqual If [initVesselArr] is allowed to be returned without change
+         * @param operation How to change the given [initVesselArr]
          *
-         * @return If a feasible solution has been found. (note that this method only guarantees that the vessel subarray is feasible, not the whole solution)
+         * @return If a feasible solution has been found. [initVesselArr] will contain the new solution ONLY if this method returns `true`. If this returns `false` [initVesselArr] will be infeasible.
+         *
+         * @see exchangeOnceTilFeasible
          */
         internal fun operateVesselTilFeasible(
             sol: Solution,
             vIndex: Int,
-            init: IntArray,
+            initVesselArr: IntArray,
             allowEqual: Boolean = false,
             operation: (sub: IntArray) -> Unit
         ): Boolean {
+
+            require(initVesselArr.size % 2 == 0) {
+                "The vessel array is invalid as it contains a odd number of elements: ${initVesselArr.contentToString()}"
+            }
+
             //when empty it is always feasible//restore sub array to make sure we can only reach direct neighbors
             //we're out of tries, restore original
             //we found a new feasible solution, update given solution
             when {
-                init.isEmpty() -> return true
+                //Vessels with zero or one cargoes are special as they cannot be moved around
+                initVesselArr.isEmpty() -> return true //empty always feasible
                 //when there is only one cargo we cannot move it around so we can only return if it is feasible or not
-                init.size == 2 -> return sol.isVesselFeasible(vIndex, init)
+                initVesselArr.size == 2 -> return sol.isVesselFeasible(vIndex, initVesselArr)
                 //The freight cargo is always feasible
                 vIndex == sol.data.nrOfVessels -> return true
 
@@ -66,7 +84,8 @@ abstract class Operator {
                     val maxTries = MAX_TRIES
                     var tryNr = 0
 
-                    val sub = init.clone()
+                    //keep a copy of the vessel array
+                    val sub = initVesselArr.clone()
 
                     //if the initial solution is allowed
                     // check it now to return early
@@ -77,21 +96,20 @@ abstract class Operator {
                     do {
                         operation(sub)
 
-                        if ((allowEqual || !init.contentEquals(sub)) && sol.isVesselFeasible(vIndex, sub)) {
+                        if ((allowEqual || !initVesselArr.contentEquals(sub)) && sol.isVesselFeasible(vIndex, sub)) {
                             //we found a new feasible solution, update given solution
-                            sub.copyInto(init)
+                            sub.copyInto(initVesselArr)
                             return true
                         } else if (tryNr++ >= maxTries) {
                             //we're out of tries, restore original
                             return false
                         } else {
                             //restore sub array to make sure we can only reach direct neighbors
-                            init.copyInto(sub)
+                            initVesselArr.copyInto(sub)
                         }
                     } while (true)
                 }
             }
-
         }
 
         /**

@@ -9,7 +9,8 @@ import no.uib.inf273.processor.SolutionGenerator
 import no.uib.inf273.search.LocalSearchA3
 import no.uib.inf273.search.RandomSearch
 import no.uib.inf273.search.Search
-import no.uib.inf273.search.SimulatedAnnealingSearchA3
+import no.uib.inf273.search.simulatedAnnealing.SimulatedAnnealingSearchA3
+import no.uib.inf273.search.simulatedAnnealing.SimulatedAnnealingSearchA4
 import java.math.BigDecimal
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
@@ -23,7 +24,7 @@ class Main(
     // Required arguments //
     ////////////////////////
 
-    val filePath: String by parser.storing(
+    private val filePath: String by parser.storing(
         "-f",
         "--file",
         help = "Name of file to use."
@@ -40,34 +41,36 @@ class Main(
         help = "Logging level"
     ).default(Logger.INFO)
 
-    val search: Search by parser.mapping(
+    private val search: Search by parser.mapping(
         "--search-local-a3" to LocalSearchA3,
         "--sl3" to LocalSearchA3,
         "--search-random" to RandomSearch,
         "--sr" to RandomSearch,
         "--search-simulated-annealing-a3" to SimulatedAnnealingSearchA3,
         "--ssa3" to SimulatedAnnealingSearchA3,
+        "--search-simulated-annealing-a4" to SimulatedAnnealingSearchA4,
+        "--ssa4" to SimulatedAnnealingSearchA4,
         help = "What search method to use"
     ).default(Search.NoSearch)
 
-    val seed: Long by parser.storing("The random seed to use") { toLong() }.default(Random.nextLong())
+    private val seed: Long by parser.storing("The random seed to use") { toLong() }.default(Random.nextLong())
 
-    val benchmark: Boolean by parser.flagging(
+    private val benchmark: Boolean by parser.flagging(
         "--benchmark-assignment-3",
         help = "Enable benchmarking as specified in Assignment 3. Search option will be ignored."
     ).default(false)
 
-    val tune: Boolean by parser.flagging(
+    private val tune: Boolean by parser.flagging(
         "--tune",
         help = "Use and print the best calculated parameters. Note that a tuning is a VERY heavy operation and will take a long time."
     )
 
-    val samples: Int by parser.storing("How many samples to take") { toInt() }.default { 10 }
+    private val samples: Int by parser.storing("How many samples to take") { toInt() }.default { 10 }
 
     // Generated variables //
 
     val data: DataParser
-    val solgen: SolutionGenerator
+    private val solgen: SolutionGenerator
 
     init {
         log.logLevel = logLevel
@@ -106,12 +109,15 @@ class Main(
      *
      * @return A map of the search mapping to average obj value, best obj val, then running time in ms
      */
-    fun benchmarkA3(): Map<Search, Triple<Double, Solution, Long>> {
+    private fun benchmarkA3(): Map<Search, Triple<Double, Solution, Long>> {
         val map: MutableMap<Search, Triple<Double, Solution, Long>> = HashMap()
         log.log { "Benchmark Assignment 3 " }
 
         val totalTime = measureTimeMillis {
-            for (search in listOf(RandomSearch, LocalSearchA3, SimulatedAnnealingSearchA3)) {
+            for (search in listOf(
+                RandomSearch, LocalSearchA3,
+                SimulatedAnnealingSearchA3
+            )) {
                 log.log { "Running ${search.javaClass.simpleName}" }
                 map[search] = runAlgorithm(search, 10, solgen, tune)
             }
@@ -120,7 +126,7 @@ class Main(
         return map
     }
 
-    fun printResults(search: Search, result: Triple<Double, Solution, Long>, singleLine: Boolean) {
+    private fun printResults(search: Search, result: Triple<Double, Solution, Long>, singleLine: Boolean) {
 
         val defaultObjVal = solgen.generateStandardSolution().objectiveValue(false).toDouble().toBigDecimal()
         val (avg, best, time) = result
@@ -132,7 +138,7 @@ class Main(
         } else {
             log.logs {
                 listOf(
-                    "Searching with algorithm ${search.javaClass}"
+                    "Searching with algorithm $search"
                     , "initial obj val $defaultObjVal"
                     , "Best obj value  ${best.objectiveValue(true)}"
                     , "avg obj value . $avg"
