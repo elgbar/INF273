@@ -1,46 +1,35 @@
-package no.uib.inf273.search
+package no.uib.inf273.search.simulatedAnnealing
 
 import no.uib.inf273.Logger
 import no.uib.inf273.Main
-import no.uib.inf273.operators.MinimizeFreight
-import no.uib.inf273.operators.ReinsertOnceOperator
-import no.uib.inf273.operators.TwoExchangeOperator
+import no.uib.inf273.operators.Operator
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
+import no.uib.inf273.search.Search
 import java.math.BigDecimal
 import kotlin.math.exp
 import kotlin.math.ln
-import kotlin.math.pow
 import kotlin.random.Random
 
-object SimulatedAnnealingSearchA3 : Search {
+/**
+ * @author Elg
+ */
+abstract class SimulatedAnnealingSearch(
+    private vararg val ops: Pair<Double, Operator>,
+    private val fallbackOp: Operator
+) : Search() {
+
+    init {
+        var lastProp = 0.0
+        for ((prob, op) in ops) {
+            require(lastProp <= prob && prob < 1.0) {
+                "Invalid probability $prob for operator $op. Operators must be in acceding order and in range [0,1), last has value of $lastProp. | ops = ${ops.contentToString()}"
+            }
+            lastProp = prob
+        }
+    }
 
     override val log: Logger = Logger()
-
-    ///////////////////////
-    // Manual parameters //
-    ///////////////////////
-
-    var p1 = 0.05
-    var p2 = 0.50
-
-    /**
-     * How many runs we should do to get an average temperature
-     */
-    var testRuns = 10000
-
-    //////////////////////////
-    // Automatic parameters //
-    //////////////////////////
-
-    /**
-     * T0
-     */
-    private var initTemp: Double = 0.0
-        set(value) {
-            require(0 < value) { "Temperature must be a positive number" }
-            field = value
-        }
 
     /**
      * 𝛼
@@ -51,15 +40,45 @@ object SimulatedAnnealingSearchA3 : Search {
             field = value
         }
 
-    override fun search(sol: Solution, iterations: Int): Solution {
-        require(p1 in 0.0..p2 && p2 + p1 < 1) {
-            "Invalid probabilities. They must be in acceding order and in range [0,1). | p1=${p1}, p2=${p2}"
+
+    /**
+     * How many runs we should do to get an average temperature
+     */
+    var testRuns = 10000
+
+    private fun findOperator(): Operator {
+        val percent: Double = Main.rand.nextDouble()
+        for ((prob, op) in ops) {
+            if (percent < prob) {
+                return op
+            }
         }
+        return fallbackOp
+    }
+
+    fun change(sol: Solution) {
+        val op = findOperator()
+        SimulatedAnnealingSearchA4.log.trace { "Using op ${op.javaClass.simpleName}" }
+        op.operate(sol)
+        if (SimulatedAnnealingSearchA4.log.isDebugEnabled()) {
+            check(sol.isFeasible(modified = true, checkValid = true)) {
+                "Solution no long feasible after using operator ${op.javaClass.simpleName}"
+            }
+        }
+    }
+
+    override fun search(sol: Solution, iterations: Int): Solution {
         require(0 < iterations) { "Iteration must be a positive number" }
         require(sol.isFeasible(true)) { "Initial solution is not feasible" }
 
-        calculateTemp(sol = sol, iterations = iterations)
-        log.debugs { listOf("Initial temperature $initTemp", "Cooling factor $coolingFactor") }
+        val initTemp =
+            calculateTemp(sol = sol, iterations = iterations)
+        log.debugs {
+            listOf(
+                "Initial temperature $initTemp",
+                "Cooling factor ${coolingFactor}"
+            )
+        }
 
         //Best known solution
         val best = Solution(sol.data, sol.arr.clone())
@@ -111,7 +130,11 @@ object SimulatedAnnealingSearchA3 : Search {
                     curr.arr.copyInto(best.arr)
                     bestObjVal = currObjVal
                 }
-            } else if (boltzmannProbability(deltaE, temp)) {
+            } else if (boltzmannProbability(
+                    deltaE,
+                    temp
+                )
+            ) {
                 curr.arr.copyInto(incombent.arr)
                 incombentObjVal = currObjVal
                 worse++
@@ -134,29 +157,14 @@ object SimulatedAnnealingSearchA3 : Search {
         }
         log.log { "Warm up done" }
 
-
-        calculateTemp(sol = solgen.generateStandardSolution(), iterations = iterations, tune = true)
-        calcBestP(solgen)
+        calculateTemp(
+            sol = solgen.generateStandardSolution(),
+            iterations = iterations,
+            tune = true
+        )
+//        calcBestP(solgen)
     }
 
-    /**
-     * Run a randomly selected operator on the given solution
-     */
-    private fun change(sol: Solution) {
-        val rsi = Main.rand.nextFloat()
-        val op = when {
-            rsi < p1 -> TwoExchangeOperator
-            rsi < p1 + p2 -> MinimizeFreight
-            else -> ReinsertOnceOperator
-        }
-        log.trace { "Using op ${op.javaClass.simpleName}" }
-        op.operate(sol)
-        if (log.isDebugEnabled()) {
-            check(sol.isFeasible(modified = true, checkValid = true)) {
-                "Solution no long feasible after using operator ${op.javaClass.simpleName}"
-            }
-        }
-    }
 
     /**
      * Calculate the probability of accepting a worse solution
@@ -175,7 +183,7 @@ object SimulatedAnnealingSearchA3 : Search {
         sol: Solution,
         iterations: Int,
         tune: Boolean = false
-    ) {
+    ): Double {
         require(0 < pMin && pMin < pMax)
         require(pMax <= 1)
 
@@ -207,8 +215,10 @@ object SimulatedAnnealingSearchA3 : Search {
         check(deltaE > BigDecimal.ZERO) { "deltaE = $deltaE" }
 
 
-        initTemp = -deltaE.toDouble() / ln(pMax)
+        val initTemp = -deltaE.toDouble() / ln(pMax)
         val endTemp = -deltaE.toDouble() / ln(pMin)
+        require(initTemp > 0) { "Initial temperature must be positive" }
+        require(endTemp > 0) { "End temperature must be positive" }
 
 
         fun calcCoolingFac(div: Int): Double {
@@ -218,8 +228,6 @@ object SimulatedAnnealingSearchA3 : Search {
 
 
         if (tune) {
-
-
             log.log { "Calculating best cooling factor when initial temperature is $initTemp" }
 
             val solgen = SolutionGenerator(sol.data)
@@ -265,76 +273,70 @@ object SimulatedAnnealingSearchA3 : Search {
                 "Maximum objective value $maxObj",
                 "Average objective value $avgObj ($totalObj / $feasibleRuns)",
                 "",
-                "Cooling schedule factor $coolingFactor",
+                "Cooling schedule factor ${coolingFactor}",
                 "",
                 "Test values",
                 "pMax = $pMax | pMin = $pMin",
                 ""
             )
         }
+        return initTemp
     }
 
-    fun calcBestCooling(solgen: SolutionGenerator) {
-        val inc = 0.05
-        val samples = 10
-
-    }
-
-    fun calcBestP(solgen: SolutionGenerator) {
-        val inc = 0.025
-        val maxp2 = 0.5
-        val samples = 10
-
-
-        var bestAvg = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, solgen.generateStandardSolution(), Long.MAX_VALUE))
-        var bestObjVal = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, solgen.generateStandardSolution(), Long.MAX_VALUE))
-        var bestTime = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, solgen.generateStandardSolution(), Long.MAX_VALUE))
-
-        log.logs {
-            listOf(
-                "Calculating best probabilities using increments of $inc and values between 0 and $maxp2 with $samples samples per iterations ",
-                "In total around ${(samples * (maxp2 / inc).pow(2)).toInt()} iterations is expected"
-            )
-        }
-
-        var i = 0
-
-        for (np2 in generateSequence(inc) { if (it < maxp2) it + inc else null }) {
-            //np2 is the outer border for p2. It will be a number between 0 and maxp2
-            // when this is set we need to test all possible values of p1 (which will be between 0 and np2)
-
-            for (np1 in generateSequence(0.0) { if (it + inc < np2 && it + inc + np2 < maxp2) it + inc else null }) {
-
-                //For each p1 and p2 we run a benchmark and log those who are best
-//                println("p1 $np1 | p2 $np2")
-                p1 = np1
-                p2 = np2
-
-                //reset the random seed between each check to make it equal
-                Main.rand = Random(1337)
-
-                i += samples
-                val triple = Main.runAlgorithm(this, samples, solgen, false)
-                if (triple.first < bestAvg.second.first) bestAvg = Pair(np1 to np2, triple)
-                if (triple.second.objectiveValue(true) < bestObjVal.second.second.objectiveValue(false)) bestObjVal =
-                    Pair(np1 to np2, triple)
-                if (triple.third < bestTime.second.third) bestTime = Pair(np1 to np2, triple)
-            }
-
-            log.log { "Calculating probabilities .... ${((np2 / maxp2) * 100).toInt()}% done" }
-        }
-
-        log.log { "Used $i iterations" }
-
-        log.logs {
-            listOf(
-                "Best average objective value. . $bestAvg",
-                "Best absolute objective value . $bestObjVal",
-                "Best total time . . . . . . . . $bestTime"
-            )
-        }
-        val (np1, np2) = bestAvg.first
-        p1 = np1
-        p2 = np2
-    }
+//    fun calcBestP(solgen: SolutionGenerator) {
+//        val inc = 0.025
+//        val maxp2 = 0.5
+//        val samples = 10
+//
+//        var bestAvg = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, solgen.generateStandardSolution(), Long.MAX_VALUE))
+//        var bestObjVal = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, solgen.generateStandardSolution(), Long.MAX_VALUE))
+//        var bestTime = Pair(0.0 to maxp2, Triple(Double.MAX_VALUE, solgen.generateStandardSolution(), Long.MAX_VALUE))
+//
+//        SimulatedAnnealingSearchA3.log.logs {
+//            listOf(
+//                "Calculating best probabilities using increments of $inc and values between 0 and $maxp2 with $samples samples per iterations ",
+//                "In total around ${(samples * (maxp2 / inc).pow(2)).toInt()} iterations is expected"
+//            )
+//        }
+//
+//        var i = 0
+//
+//        for (np2 in generateSequence(inc) { if (it < maxp2) it + inc else null }) {
+//            //np2 is the outer border for p2. It will be a number between 0 and maxp2
+//            // when this is set we need to test all possible values of p1 (which will be between 0 and np2)
+//
+//            for (np1 in generateSequence(0.0) { if (it + inc < np2 && it + inc + np2 < maxp2) it + inc else null }) {
+//
+//                //For each p1 and p2 we run a benchmark and log those who are best
+////                println("p1 $np1 | p2 $np2")
+//                p1 = np1
+//                p2 = np2
+//
+//                //reset the random seed between each check to make it equal
+//                Main.rand = Random(1337)
+//
+//                i += samples
+//                val triple = Main.runAlgorithm(this, samples, solgen, false)
+//                if (triple.first < bestAvg.second.first) bestAvg = Pair(np1 to np2, triple)
+//                if (triple.second.objectiveValue(true) < bestObjVal.second.second.objectiveValue(false)) bestObjVal =
+//                    Pair(np1 to np2, triple)
+//                if (triple.third < bestTime.second.third) bestTime = Pair(np1 to np2, triple)
+//            }
+//
+//            SimulatedAnnealingSearchA3.log.log { "Calculating probabilities .... ${((np2 / maxp2) * 100).toInt()}% done" }
+//        }
+//
+//        SimulatedAnnealingSearchA3.log.log { "Used $i iterations" }
+//
+//        SimulatedAnnealingSearchA3.log.logs {
+//            listOf(
+//                "Best average objective value. . $bestAvg",
+//                "Best absolute objective value . $bestObjVal",
+//                "Best total time . . . . . . . . $bestTime"
+//            )
+//        }
+//        val (np1, np2) = bestAvg.first
+//        p1 = np1
+//        p2 = np2
+//    }
 }
