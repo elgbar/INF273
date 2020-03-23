@@ -4,7 +4,6 @@ import no.uib.inf273.Logger
 import no.uib.inf273.Main
 import no.uib.inf273.extra.filter
 import no.uib.inf273.extra.insert
-import no.uib.inf273.extra.randomizeExchange
 import no.uib.inf273.processor.Solution
 
 abstract class Operator {
@@ -54,7 +53,6 @@ abstract class Operator {
          *
          * @return If a feasible solution has been found. [initVesselArr] will contain the new solution ONLY if this method returns `true`. If this returns `false` [initVesselArr] will be infeasible.
          *
-         * @see exchangeOnceTilFeasible
          */
         internal fun operateVesselTilFeasible(
             sol: Solution,
@@ -114,48 +112,52 @@ abstract class Operator {
         }
 
         /**
-         * Move cargoes around within a vessel in an solution.
+         * Move the given cargo [cargoId] from the vessel [orgVesselIndex] to vessel [destVesselIndex]. How to insert a cargo into the destination vessel is a heuristic problem in it self. To make it easy to change how to insert the [operation] parameter is available
          *
-         * The operation is to call [IntArray.randomizeExchange] once.
-         *
-         *
-         * @param sol The solution we are shuffling
-         * @param vIndex The vessel index to use
-         * @param init The original array of this vessel to use.
-         *
-         * @return A feasible solution for the given vessel (if the [init] solution was feasible). This might be identical to the initial solution given if no new solution has been found.
+         * @param sol The solution to move the cargo with
+         * @param sub The arrays of each vessel in the solution
+         * @param orgVesselIndex Vessel to move cargo from
+         * @param destVesselIndex Vessel to move cargo to
+         * @param cargoId What cargo to move from [orgVesselIndex] to [destVesselIndex]
+         * @param operation How to insert the cargo to the vessel at [destVesselIndex]
          */
-        internal fun exchangeOnceTilFeasible(
-            sol: Solution,
-            vIndex: Int,
-            init: IntArray,
-            allowEqual: Boolean = false
-        ): Boolean {
-            return operateVesselTilFeasible(sol, vIndex, init, allowEqual) {
-                it.randomizeExchange()
-            }
-        }
-
         internal fun moveCargo(
             sol: Solution,
             sub: Array<IntArray>,
             orgVesselIndex: Int,
             destVesselIndex: Int,
-            cargoId: Int
+            cargoId: Int,
+            operation: (sub: IntArray) -> Unit
         ) {
             val orgNew = removeCargo(sol, sub, orgVesselIndex, cargoId) ?: return
             sub[orgVesselIndex] = orgNew
 
-            val destNew = addCargo(sol, sub, destVesselIndex, cargoId) ?: return
+            val destNew = addCargo(sol, sub, destVesselIndex, cargoId, operation) ?: return
             sub[destVesselIndex] = destNew
-
 
             //reassemble the solution with the new vessel-cargo composition
             sol.joinToArray(sub)
         }
 
+        private fun removeCargo(sol: Solution, sub: Array<IntArray>, orgVesselIndex: Int, cargoId: Int): IntArray? {
+            //create new array with two less elements as they will no longer be here
+            val orgNew = sub[orgVesselIndex].filter(cargoId, IntArray(sub[orgVesselIndex].size - 2))
 
-        internal fun addCargo(sol: Solution, sub: Array<IntArray>, destVesselIndex: Int, cargoId: Int): IntArray? {
+            //A vessel will always be feasible when removing a cargo.
+            // All it does in the worst case is force the vessel to wait longer at each port
+            check(sol.isVesselFeasible(orgVesselIndex, orgNew)) {
+                "Origin vessel $orgVesselIndex not feasible after removing a cargo"
+            }
+            return orgNew
+        }
+
+        private fun addCargo(
+            sol: Solution,
+            sub: Array<IntArray>,
+            destVesselIndex: Int,
+            cargoId: Int,
+            operation: (sub: IntArray) -> Unit
+        ): IntArray? {
 
             val destOldSize = sub[destVesselIndex].size
             //the destination array needs to be two element larger for the new cargo to fit
@@ -172,8 +174,7 @@ abstract class Operator {
                 destNew[destNew.size - 2] = cargoId
             }
 
-            val destFeasible = exchangeOnceTilFeasible(sol, destVesselIndex, destNew, true)
-            if (!destFeasible) {
+            if (!operateVesselTilFeasible(sol, destVesselIndex, destNew, true, operation)) {
                 Main.log.trace { "Failed to add cargo $cargoId to vessel $destVesselIndex as no feasible arrangement could be found" }
                 return null
             }
@@ -186,19 +187,11 @@ abstract class Operator {
             return destNew
         }
 
-        internal fun removeCargo(sol: Solution, sub: Array<IntArray>, orgVesselIndex: Int, cargoId: Int): IntArray? {
-            //create new array with two less elements as they will no longer be here
-            val orgNew = sub[orgVesselIndex].filter(cargoId, IntArray(sub[orgVesselIndex].size - 2))
-
-            //A vessel will always be feasible when removing a cargo.
-            // All it does in the worst case is force the vessel to wait longer at each port
-            check(sol.isVesselFeasible(orgVesselIndex, orgNew)) {
-                "Origin vessel $orgVesselIndex not feasible after removing a cargo"
-            }
-            return orgNew
-        }
-
-        //visible in a function for testing
+        /**
+         * Select two random distinct vessels where the first vessel selected is non-empty
+         *
+         * visible in a function for testing
+         */
         internal fun selectTwoRandomVessels(sub: Array<IntArray>): Pair<Int, Int> {
             var orgVesselIndex: Int
             var destVesselIndex: Int
@@ -211,9 +204,9 @@ abstract class Operator {
 
         /**
          * Return the index of a random vessel within [sub]. If [allowFreight] and [minCargo]` > 0` are both `true` this
-         * might return [INVALID_VESSEL]` as no valid vessel could ever be selected. There should not be any need to test for this if either is `false`
+         * might return [INVALID_VESSEL] as no valid vessel could ever be selected. There should not be any need to test for this if either is `false`
          *
-         *@param minCargo The minimum number of cargoes that must exist in the given
+         * @param minCargo The minimum number of cargoes that must exist in the given
          *
          */
         fun selectRandomVessel(sub: Array<IntArray>, minCargo: Int, allowFreight: Boolean): Int {

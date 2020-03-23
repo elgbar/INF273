@@ -83,27 +83,25 @@ internal class ReinsertOnceOperatorTest {
     @Test
     internal fun reinsertOnceOperator_MoveCargoToNonEmpty() {
 
-        val sol = Solution(data, intArrayOf(1, 1, 0, 0, 2, 2, 0, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7))
+        val sol = Solution(data, intArrayOf(1, 1, 0, 0, 7, 7, 0, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6))
         assertTrue(sol.isFeasible(false))
         val sub = sol.splitToSubArray(false)
 
+        Solution.log.logLevel = Logger.DEBUG
 
-        val expect = intArrayOf(0, 0, 1, 2, 1, 2, 0, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7)
+        val expect = intArrayOf(0, 0, 7, 7, 1, 1, 0, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6)
         assertTrue(Solution(data, expect).isFeasible(false))
 
         var s = 0
-        var org: Int
-        var dest: Int
+        var vessels: Pair<Int, Int>
         var moveVessel: Int
         do {
             s++
             Main.rand = Random(s)
-            val indices = Operator.selectTwoRandomVessels(sub)
-            org = indices.first
-            dest = indices.second
-            moveVessel = sub[org].random(Main.rand)
+            vessels = Operator.selectTwoRandomVessels(sub)
+            moveVessel = sub[vessels.first].random(Main.rand)
 
-        } while (org != 3 || dest != 0 || moveVessel != 1)
+        } while (vessels.first != 0 || vessels.second != 2 || moveVessel != 1)
 
         Main.rand = Random(s)
         ReinsertOnceOperator.operate(sol)

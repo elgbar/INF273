@@ -2,6 +2,7 @@ package no.uib.inf273.operators.given
 
 import no.uib.inf273.Logger
 import no.uib.inf273.Main
+import no.uib.inf273.extra.randomizeExchange
 import no.uib.inf273.operators.Operator
 import no.uib.inf273.processor.Solution
 
@@ -17,19 +18,13 @@ object ReinsertOnceOperator : Operator() {
         val sub = sol.splitToSubArray(true)
 
         //select two vessels where the origin vessel have cargoes
-        val (orgVesselIndex, destVesselIndex) = selectTwoRandomVessels(
-            sub
-        )
+        val (orgVesselIndex, destVesselIndex) = selectTwoRandomVessels(sub)
 
         //pick a random cargo within the origin vessel
         val cargo = sub[orgVesselIndex].random(Main.rand)
 
-        moveCargo(
-            sol,
-            sub,
-            orgVesselIndex,
-            destVesselIndex,
-            cargo
-        )
+        moveCargo(sol, sub, orgVesselIndex, destVesselIndex, cargo) {
+            it.randomizeExchange()
+        }
     }
 }

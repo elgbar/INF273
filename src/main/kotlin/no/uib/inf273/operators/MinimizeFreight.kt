@@ -1,6 +1,7 @@
 package no.uib.inf273.operators
 
 import no.uib.inf273.Main
+import no.uib.inf273.extra.randomizeExchange
 import no.uib.inf273.processor.Solution
 
 /**
@@ -22,6 +23,8 @@ object MinimizeFreight : Operator() {
         val orgIndex = subs.size - 1 //origin is always dummy vessel
 
         //move the cargo to the new vessel
-        moveCargo(sol, subs, orgIndex, destIndex, cargo)
+        moveCargo(sol, subs, orgIndex, destIndex, cargo) {
+            it.randomizeExchange()
+        }
     }
 }
