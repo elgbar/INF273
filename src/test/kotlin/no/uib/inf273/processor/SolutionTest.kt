@@ -10,6 +10,7 @@ internal class SolutionTest {
     companion object {
         init {
             Main.log.logLevel = Logger.DEBUG
+            Solution.log.logLevel = Logger.DEBUG
         }
 
         private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
@@ -28,9 +29,15 @@ internal class SolutionTest {
     ////////////////
 
     @Test
-    fun isValid() {
+    fun isValid_verySmallData() {
         val givenData = intArrayOf(1, 1, 0, 2, 2, 0, 3, 4, 5, 6, 4, 5, 3, 6)
         assertTrue(Solution(data2, givenData).isValid(true))
+    }
+
+    @Test
+    fun isValid_SmallDataSet() {
+        val givenData = intArrayOf(1, 1, 3, 3, 0, 0, 0, 2, 4, 6, 7, 2, 5, 4, 7, 6, 5)
+        assertTrue(Solution(data, givenData).isValid(true))
     }
 
     @Test
@@ -49,6 +56,18 @@ internal class SolutionTest {
     fun isValid_InvalidDiffDeliAndPickup_butAlsoUsingFreight() {
         val givenData = intArrayOf(1, 1, 2, 2, 0, 2, 0, 4, 5, 6, 4, 5, 6, 3)
         assertFalse(Solution(data2, givenData).isValid(true))
+    }
+
+    @Test
+    fun isValid_InvalidDuplicateCargoInDifferentVessels() {
+        val givenData = intArrayOf(1, 1, 0, 1, 1, 0, 3, 4, 5, 6, 4, 5, 3, 6)
+        assertFalse(Solution(data2, givenData).isValid(true))
+    }
+
+    @Test
+    fun isValid_InvalidTooManyVessels() {
+        val givenData = intArrayOf(0, 0, 0, 1, 1, 0, 3, 4, 5, 6, 4, 5, 3, 6)
+        assertFalse(Solution(data2, givenData, split = false).isValid(true))
     }
 
     /////////////////

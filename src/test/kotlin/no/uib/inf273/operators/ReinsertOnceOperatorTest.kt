@@ -16,6 +16,7 @@ internal class ReinsertOnceOperatorTest {
     companion object {
         init {
             Main.log.logLevel = Logger.DEBUG
+            Solution.log.logLevel = Logger.DEBUG
             ReinsertOnceOperator.log.logLevel = Logger.TRACE
         }
 

@@ -39,16 +39,37 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
      *
      */
     fun isValid(modified: Boolean): Boolean {
+        val cargoCount = IntArray(data.nrOfCargo + 1)
+        for (value in arr) {
+            cargoCount[value]++
+        }
+
+        if (data.nrOfVessels != cargoCount[0]) {
+            log.debug { "Solution not valid as number of barrier elements is not equal to number if vessels. It is ${cargoCount[0]} expected ${data.nrOfVessels}" }
+            return false
+        }
+
+        for ((cargoId, count) in cargoCount.withIndex()) {
+            if (cargoId != 0 && count != 2) {
+                log.debug { "The cargo $cargoId was seen $count times, they can only appear twice." }
+                return false
+            }
+        }
+
         for (sub in splitToSubArray(modified)) {
             //make sure the sub array actually have an even number of elements
 
             //sets cannot contain duplicate elements so if the size of the set for this subarray is not
             // exactly half size of the original set it contains duplicate elements
-            if (sub.size % 2 != 0 || sub.toHashSet().size * 2 != sub.size) {
-                log.debug { "Size of ${sub.toList()} is odd? ${sub.size % 2 != 0} | as set is _not_ half of sub size? ${sub.toHashSet().size * 2 != sub.size}" }
+            if (sub.size % 2 != 0) {
+                log.debug { "Size of ${sub.toList()} is odd: ${sub.size % 2 != 0}" }
+                return false
+            } else if (sub.toHashSet().size * 2 != sub.size) {
+                log.debug { "as set is _not_ half of sub size: ${sub.toHashSet().size * 2 != sub.size}" }
                 return false
             }
         }
+
         return true
     }
 
@@ -63,7 +84,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
     fun isFeasible(modified: Boolean, checkValid: Boolean = true): Boolean {
         val subroutes: Array<IntArray> = splitToSubArray(modified)
 
-        if (checkValid && !isValid(true)) {
+        if (checkValid && !isValid(false)) {
             log.debug { "Checked validity of solution before feasibility and it is not valid" }
             return false
         }
