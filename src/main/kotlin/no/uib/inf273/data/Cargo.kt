@@ -1,7 +1,7 @@
 package no.uib.inf273.data
 
 data class Cargo(
-    val index: Int,
+    val id: Int,
     val origin_port: Int,
     val destPort: Int,
     val size: Int,
