@@ -41,7 +41,7 @@ internal class ReinsertOnceOperatorTest {
         } while (org != 0 || dest != 3)
 
         Main.rand = Random(s)
-        ReinsertOnceOperator.operate(sol)
+        ReinsertOnceOperator.INST.operate(sol)
 
         val expect = intArrayOf(0, 2, 2, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7, 1, 1)
         assertArrayEquals(expect, sol.arr) {
@@ -74,7 +74,7 @@ internal class ReinsertOnceOperatorTest {
         } while (org != 3 || dest != 0 || moveVessel != 1)
 
         Main.rand = Random(s)
-        ReinsertOnceOperator.operate(sol)
+        ReinsertOnceOperator.INST.operate(sol)
 
         assertArrayEquals(expect, sol.arr) {
             "expect: \n${expect.contentToString()}\nfound:\n${sol.arr.contentToString()}"
@@ -105,7 +105,7 @@ internal class ReinsertOnceOperatorTest {
         } while (vessels.first != 0 || vessels.second != 2 || moveVessel != 1)
 
         Main.rand = Random(s)
-        ReinsertOnceOperator.operate(sol)
+        ReinsertOnceOperator.INST.operate(sol)
 
         assertArrayEquals(expect, sol.arr) {
             "expect: \n${expect.contentToString()}\nfound:\n${sol.arr.contentToString()}"

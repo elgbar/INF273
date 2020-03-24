@@ -23,7 +23,7 @@ object LocalAlgorithmA3 : Algorithm() {
         require(0 < iterations) { "Iteration must be a positive number" }
 
         //Best known solution
-        val best = Solution(sol.data, sol.arr.clone())
+        val best = sol.copy()
         //objective value of the best known solution
         var bestObjVal = best.objectiveValue(false)
 
@@ -37,7 +37,7 @@ object LocalAlgorithmA3 : Algorithm() {
             val op = when {
                 rsi < p1 -> TwoExchangeOperator
                 rsi < p1 + p2 -> ThreeExchangeOperator
-                else -> ReinsertOnceOperator
+                else -> ReinsertOnceOperator.INST
             }
 
             log.trace { "Using op ${op.javaClass.simpleName}" }

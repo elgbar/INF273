@@ -7,5 +7,5 @@ import no.uib.inf273.operators.given.TwoExchangeOperator
 object SimulatedAnnealingAlgorithmA3 : SimulatedAnnealingAlgorithm(
     0.001 to TwoExchangeOperator,
     0.05 to ThreeExchangeOperator,
-    fallbackOp = ReinsertOnceOperator
+    fallbackOp = ReinsertOnceOperator.INST
 ) {}
