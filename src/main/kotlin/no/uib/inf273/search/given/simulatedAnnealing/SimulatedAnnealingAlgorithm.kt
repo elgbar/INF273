@@ -1,6 +1,5 @@
 package no.uib.inf273.search.given.simulatedAnnealing
 
-import no.uib.inf273.Logger
 import no.uib.inf273.Main
 import no.uib.inf273.operators.Operator
 import no.uib.inf273.processor.Solution
@@ -28,8 +27,6 @@ abstract class SimulatedAnnealingAlgorithm(
             lastProp = prob
         }
     }
-
-    override val log: Logger = Logger()
 
     /**
      * 𝛼

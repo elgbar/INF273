@@ -1,6 +1,5 @@
 package no.uib.inf273.operators.given
 
-import no.uib.inf273.Logger
 import no.uib.inf273.extra.randomizeExchange
 import no.uib.inf273.operators.Operator
 import no.uib.inf273.processor.Solution
@@ -9,8 +8,6 @@ import no.uib.inf273.processor.Solution
  * Swap two elements within a vessel range
  */
 object TwoExchangeOperator : Operator() {
-
-    override val log = Logger()
 
     override fun operate(sol: Solution) {
         val (vIndex, from, until) = sol.findNonEmptyVessel(true) ?: return

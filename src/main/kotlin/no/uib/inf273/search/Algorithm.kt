@@ -5,7 +5,7 @@ import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 
 abstract class Algorithm {
-    open val log: Logger = Logger()
+    val log: Logger = Logger(javaClass.simpleName)
 
     /**
      * Search with the given search algorithm, no guarantee is given towards the initial solution [sol] being modified
@@ -20,6 +20,10 @@ abstract class Algorithm {
      * If [report] is `true` this method will print out extra information about the tuned parameters
      */
     abstract fun tune(solgen: SolutionGenerator, iterations: Int, report: Boolean)
+
+    open fun updateLogLevel(level: Int) {
+        log.logLevel = level
+    }
 
     override fun toString(): String {
         return this::class.java.simpleName

@@ -9,7 +9,7 @@ import no.uib.inf273.processor.Solution
 abstract class Operator {
 
 
-    open val log: Logger = Logger()
+    open val log: Logger = Logger(javaClass.simpleName)
 
     /**
      * Run the operator on the given solution. When returning the solution is guaranteed to be [Solution.isFeasible].

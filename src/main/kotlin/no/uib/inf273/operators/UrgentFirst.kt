@@ -9,7 +9,6 @@ import no.uib.inf273.processor.Solution
  */
 object UrgentFirst : Operator() {
 
-    override val log: Logger = Logger()
 
     override fun operate(sol: Solution) {
 

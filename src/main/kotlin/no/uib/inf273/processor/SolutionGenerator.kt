@@ -8,7 +8,7 @@ class SolutionGenerator(val data: DataParser) {
 
     companion object {
 
-        private val log = Logger()
+        private val log = Logger("Sol Gen")
 
         /**
          * The element to use as a barrier element.

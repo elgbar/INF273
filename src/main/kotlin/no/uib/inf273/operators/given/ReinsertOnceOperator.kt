@@ -1,6 +1,5 @@
 package no.uib.inf273.operators.given
 
-import no.uib.inf273.Logger
 import no.uib.inf273.Main
 import no.uib.inf273.extra.randomizeExchange
 import no.uib.inf273.operators.Operator
@@ -11,8 +10,6 @@ import no.uib.inf273.processor.Solution
  */
 object ReinsertOnceOperator : Operator() {
 
-
-    override val log = Logger()
 
     override fun operate(sol: Solution) {
         val sub = sol.splitToSubArray(true)

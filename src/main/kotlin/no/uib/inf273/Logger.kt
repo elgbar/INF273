@@ -1,6 +1,6 @@
 package no.uib.inf273
 
-class Logger(var logLevel: Int = INFO) {
+class Logger(val name: String, var logLevel: Int = INFO) {
 
 
     companion object {
@@ -10,7 +10,7 @@ class Logger(var logLevel: Int = INFO) {
         const val INFO = 0
         const val NONE = -1
     }
-    
+
     fun isTraceEnabled(): Boolean = logLevel >= TRACE
     fun isDebugEnabled(): Boolean = logLevel >= DEBUG
     fun isInfoEnabled(): Boolean = logLevel >= INFO
@@ -26,7 +26,7 @@ class Logger(var logLevel: Int = INFO) {
      */
     fun log(msg: String, e: Throwable? = null) {
         if (logLevel <= NONE) return
-        println(msg)
+        println("[$name] $msg")
         e?.printStackTrace()
     }
 

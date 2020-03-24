@@ -168,6 +168,6 @@ class DataParser(content: String) {
     }
 
     companion object {
-        val log = Logger()
+        val log = Logger("Parser")
     }
 }

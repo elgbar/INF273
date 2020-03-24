@@ -74,7 +74,9 @@ class Main(
 
     init {
         log.logLevel = logLevel
-        if (!benchmark && logLevel != Logger.INFO) algorithm.log.logLevel = logLevel
+        if (!benchmark && logLevel != Logger.INFO) {
+            algorithm.updateLogLevel(logLevel)
+        }
 
         log.log("Random seed = $seed")
         rand = Random(seed)
@@ -138,12 +140,12 @@ class Main(
         } else {
             log.logs {
                 listOf(
-                    "Searching with algorithm $algorithm"
-                    , "initial obj val $defaultObjVal"
-                    , "Best obj value  ${best.objectiveValue(true)}"
-                    , "avg obj value . $avg"
-                    , "Improvement . . $improvement%"
-                    , "Time  . . . . . $time ms"
+                    "Searching with algorithm. . $algorithm"
+                    , "Initial objective value . . $defaultObjVal"
+                    , "Best objective value. . . . ${best.objectiveValue(true)}"
+                    , "Average objective value . . $avg"
+                    , "Improvement . . . . . . . . $improvement%"
+                    , "Time. . . . . . . . . . . . $time ms"
                 )
             }
         }
@@ -151,11 +153,10 @@ class Main(
 
     companion object {
 
-
         /**
          * Global logger
          */
-        val log = Logger()
+        val log = Logger("Main")
 
         lateinit var rand: Random
 
