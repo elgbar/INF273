@@ -31,17 +31,24 @@ abstract class SimulatedAnnealingAlgorithm(
     /**
      * 𝛼
      */
-    private var coolingFactor: Double = 0.995
+    private var coolingFactor: Double = 0.999
         set(value) {
             require(0 < value && value < 1) { "The cooling factor must be between 0 and 1 got $value" }
             field = value
         }
 
-
     /**
      * How many runs we should do to get an average temperature
      */
-    var testRuns = 10000
+    var testRuns = 1000
+
+    override fun updateLogLevel(level: Int) {
+        super.updateLogLevel(level)
+        //make all ops the same logging level as the algorithm
+        for ((_, op) in ops) {
+            op.log.logLevel = log.logLevel
+        }
+    }
 
     private fun findOperator(): Operator {
         val percent: Double = Main.rand.nextDouble()
@@ -53,11 +60,11 @@ abstract class SimulatedAnnealingAlgorithm(
         return fallbackOp
     }
 
-    fun change(sol: Solution) {
+    private fun change(sol: Solution) {
         val op = findOperator()
-        SimulatedAnnealingAlgorithmA4.log.trace { "Using op ${op.javaClass.simpleName}" }
+        log.debug { "Using op $op" }
         op.operate(sol)
-        if (SimulatedAnnealingAlgorithmA4.log.isDebugEnabled()) {
+        if (log.isDebugEnabled()) {
             check(sol.isFeasible(modified = true, checkValid = true)) {
                 "Solution no long feasible after using operator ${op.javaClass.simpleName}"
             }
@@ -68,12 +75,11 @@ abstract class SimulatedAnnealingAlgorithm(
         require(0 < iterations) { "Iteration must be a positive number" }
         require(sol.isFeasible(true)) { "Initial solution is not feasible" }
 
-        val initTemp =
-            calculateTemp(sol = sol, iterations = iterations)
+        val initTemp = calculateTemp(sol = sol, iterations = iterations)
         log.debugs {
             listOf(
                 "Initial temperature $initTemp",
-                "Cooling factor ${coolingFactor}"
+                "Cooling factor $coolingFactor"
             )
         }
 
@@ -95,12 +101,13 @@ abstract class SimulatedAnnealingAlgorithm(
         var worse = 0
 
         log.debug { "---" }
+        log.debug { "neighbor: noChange better worse" }
 
         for (i in 1..iterations) {
             change(curr)
 
             if (i % 1000 == 0) {
-                log.debug { "$noChange $better $worse" }
+                log.debug { "neighbor: $noChange $better $worse" }
                 noChange = 0
                 better = 0
                 worse = 0
@@ -113,28 +120,29 @@ abstract class SimulatedAnnealingAlgorithm(
 
             currObjVal = curr.objectiveValue(true)
 
+
             //update when better, ∆E = currObjVal - incombentObjVal
             val deltaE = currObjVal - incombentObjVal
+
             if (deltaE < 0) {
 
                 better++
-
                 curr.arr.copyInto(incombent.arr)
                 incombentObjVal = currObjVal
 
                 if (currObjVal < bestObjVal) {
-                    log.trace { "New best answer ${best.arr.contentToString()} with objective value $currObjVal. Diff ${currObjVal - bestObjVal} " }
+                    log.trace { "New best answer with objective value $currObjVal. Diff ${currObjVal - bestObjVal} " }
                     curr.arr.copyInto(best.arr)
                     bestObjVal = currObjVal
                 }
-            } else if (boltzmannProbability(
-                    deltaE,
-                    temp
-                )
-            ) {
-                curr.arr.copyInto(incombent.arr)
-                incombentObjVal = currObjVal
+            } else {
+//                log.trace { "prob of worse: ${exp(-deltaE / temp)}" }
                 worse++
+                if (boltzmannProbability(deltaE, temp)) {
+                    log.trace { "Accepted worse solution $currObjVal. Diff ${currObjVal - bestObjVal} " }
+                    curr.arr.copyInto(incombent.arr)
+                    incombentObjVal = currObjVal
+                }
             }
 
             temp *= coolingFactor
@@ -154,11 +162,7 @@ abstract class SimulatedAnnealingAlgorithm(
         }
         log.log { "Warm up done" }
 
-        calculateTemp(
-            sol = solgen.generateStandardSolution(),
-            iterations = iterations,
-            tune = true
-        )
+        calculateTemp(sol = solgen.generateStandardSolution(), iterations = iterations, tune = true)
 //        calcBestP(solgen)
     }
 
@@ -181,8 +185,7 @@ abstract class SimulatedAnnealingAlgorithm(
         iterations: Int,
         tune: Boolean = false
     ): Double {
-        require(0 < pMin && pMin < pMax)
-        require(pMax <= 1)
+        require(0 < pMin && pMin < pMax && pMax <= 1)
 
         val solObj = sol.objectiveValue(false)
         var minObj = solObj

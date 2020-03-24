@@ -1,7 +1,7 @@
 package no.uib.inf273.operators
 
 import no.uib.inf273.Logger
-import no.uib.inf273.Main
+import no.uib.inf273.Main.Companion.rand
 import no.uib.inf273.extra.filter
 import no.uib.inf273.extra.insert
 import no.uib.inf273.processor.Solution
@@ -77,11 +77,7 @@ abstract class Operator {
                 //The freight cargo is always feasible
                 vIndex == sol.data.nrOfVessels -> return true
 
-                //if the initial solution is allowed
-                // check it now to return early
                 else -> {
-                    val maxTries = MAX_TRIES
-                    var tryNr = 0
 
                     //keep a copy of the vessel array
                     val sub = initVesselArr.clone()
@@ -92,6 +88,9 @@ abstract class Operator {
                         return true
                     }
 
+                    val maxTries = MAX_TRIES
+                    var tryNr = 0
+
                     do {
                         operation(sub)
 
@@ -100,7 +99,7 @@ abstract class Operator {
                             sub.copyInto(initVesselArr)
                             return true
                         } else if (tryNr++ >= maxTries) {
-                            //we're out of tries, restore original
+                            //we're out of tries
                             return false
                         } else {
                             //restore sub array to make sure we can only reach direct neighbors
@@ -115,28 +114,31 @@ abstract class Operator {
          * Move the given cargo [cargoId] from the vessel [orgVesselIndex] to vessel [destVesselIndex]. How to insert a cargo into the destination vessel is a heuristic problem in it self. To make it easy to change how to insert the [operation] parameter is available
          *
          * @param sol The solution to move the cargo with
-         * @param sub The arrays of each vessel in the solution
+         * @param subs The arrays of each vessel in the solution
          * @param orgVesselIndex Vessel to move cargo from
          * @param destVesselIndex Vessel to move cargo to
          * @param cargoId What cargo to move from [orgVesselIndex] to [destVesselIndex]
          * @param operation How to insert the cargo to the vessel at [destVesselIndex]
+         *
+         * @return If the cargo was moved, note that [subs] array might have been moved
          */
         internal fun moveCargo(
             sol: Solution,
-            sub: Array<IntArray>,
+            subs: Array<IntArray>,
             orgVesselIndex: Int,
             destVesselIndex: Int,
             cargoId: Int,
             operation: (sub: IntArray) -> Unit
-        ) {
-            val orgNew = removeCargo(sol, sub, orgVesselIndex, cargoId) ?: return
-            sub[orgVesselIndex] = orgNew
+        ): Boolean {
+            val orgNew = removeCargo(sol, subs, orgVesselIndex, cargoId) ?: return false
+            subs[orgVesselIndex] = orgNew
 
-            val destNew = addCargo(sol, sub, destVesselIndex, cargoId, operation) ?: return
-            sub[destVesselIndex] = destNew
+            val destNew = addCargo(sol, subs, destVesselIndex, cargoId, operation) ?: return false
+            subs[destVesselIndex] = destNew
 
             //reassemble the solution with the new vessel-cargo composition
-            sol.joinToArray(sub)
+            sol.joinToArray(subs)
+            return true
         }
 
         private fun removeCargo(sol: Solution, sub: Array<IntArray>, orgVesselIndex: Int, cargoId: Int): IntArray? {
@@ -164,9 +166,9 @@ abstract class Operator {
             val destNew = sub[destVesselIndex].copyOf(destOldSize + 2)
             if (destOldSize > 0 && destVesselIndex != sub.size - 1) {
                 //insert the values randomly
-                destNew.insert(Main.rand.nextInt(destOldSize), cargoId)
+                destNew.insert(rand.nextInt(destOldSize), cargoId)
                 //second time around we need to account for the element we just inserted
-                destNew.insert(Main.rand.nextInt(destOldSize + 1), cargoId)
+                destNew.insert(rand.nextInt(destOldSize + 1), cargoId)
             } else {
                 //no need for randomness when placing cargo into an empty vessel or
                 // when placing it in the freight dummy vessel
@@ -175,11 +177,11 @@ abstract class Operator {
             }
 
             if (!operateVesselTilFeasible(sol, destVesselIndex, destNew, true, operation)) {
-                Main.log.trace { "Failed to add cargo $cargoId to vessel $destVesselIndex as no feasible arrangement could be found" }
+                Solution.log.trace { "Failed to add cargo $cargoId to vessel $destVesselIndex as no feasible arrangement could be found" }
                 return null
             }
 
-            if (Main.log.isDebugEnabled()) {
+            if (Solution.log.isDebugEnabled()) {
                 check(sol.isVesselFeasible(destVesselIndex, destNew)) {
                     "Destination vessel $destVesselIndex not feasible"
                 }
@@ -190,15 +192,24 @@ abstract class Operator {
         /**
          * Select two random distinct vessels where the first vessel selected is non-empty
          *
-         * visible in a function for testing
+         * @param discourageFreightPercent A double in range `[0.0, 1.0]` where `1.0` will never accept destination to be the dummy freight vessel (if it is chosen) and `0.0` will always accept it. Meaning that a value of `0.5` will accept destination to be freight 50% of the time it is selected
          */
-        internal fun selectTwoRandomVessels(sub: Array<IntArray>): Pair<Int, Int> {
+        internal fun selectTwoRandomVessels(
+            sub: Array<IntArray>,
+            discourageFreightPercent: Double = 0.0
+        ): Pair<Int, Int> {
+            require(discourageFreightPercent in 0.0..1.0) { "discourageFreightPercent must be in range [0.0, 1.0] was $discourageFreightPercent" }
+
+            fun allowFreight(): Boolean {
+                return discourageFreightPercent < rand.nextDouble()
+            }
+
             var orgVesselIndex: Int
             var destVesselIndex: Int
             do {
-                orgVesselIndex = Main.rand.nextInt(sub.size)
-                destVesselIndex = Main.rand.nextInt(sub.size)
-            } while (orgVesselIndex == destVesselIndex || sub[orgVesselIndex].isEmpty())
+                orgVesselIndex = selectRandomVessel(sub, 1, true)
+                destVesselIndex = selectRandomVessel(sub, 0, allowFreight())
+            } while (orgVesselIndex == destVesselIndex)
             return orgVesselIndex to destVesselIndex
         }
 
@@ -210,7 +221,7 @@ abstract class Operator {
          *
          */
         fun selectRandomVessel(sub: Array<IntArray>, minCargo: Int, allowFreight: Boolean): Int {
-            require(minCargo >= 0) { "Minimum number of cargoes must be a non-negative number" }
+            require(minCargo >= 0) { "Minimum number of cargoes must be a non-negative number. Given $minCargo" }
             val size = sub.size - if (allowFreight) 0 else 1
 
             fun invalidSize(arr: IntArray): Boolean {
@@ -224,7 +235,7 @@ abstract class Operator {
 
             var vesselIndex: Int
             do {
-                vesselIndex = Main.rand.nextInt(size)
+                vesselIndex = rand.nextInt(size)
             } while (invalidSize(sub[vesselIndex]))
             return vesselIndex
         }

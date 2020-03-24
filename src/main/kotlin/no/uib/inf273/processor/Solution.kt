@@ -43,7 +43,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
          */
         val valid: Boolean,
         /**
-         * How long the vessel waited at each port. A value of zero indicate that no waiting was done (value cannot be negative)
+         * How long the vessel waited at each port. A value of zero indicate that no waiting was done. The value cannot be negative as that indicate we are too late.
          */
         val portTardiness: IntArray
     ) {
@@ -158,6 +158,31 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
             return VesselRouteMetadata(vIndex, valid, portTardiness)
         }
 
+        /**
+         * @return negative number of not valid, new current time if valid
+         */
+        fun checkTime(index: Int, lowerTime: Int, upperTime: Int, portTime: Int, currTime: Int): Int {
+            var time = currTime
+
+            //How long we are we waiting for the port to open?
+            portTardiness[index] = (lowerTime - time).coerceAtLeast(0)
+
+            //we must wait for the port to open
+            if (time < lowerTime) {
+                time = lowerTime
+            }
+
+            //then add how long it takes at the port
+            time += portTime
+
+            //check if we are within the upper time window
+            if (time > upperTime) {
+                //well that failed
+                return -1
+            }
+            return time
+        }
+
         //skip last array as it is only the tramp transports, and always allowed
         if (vIndex == data.nrOfVessels) return createMetadata(true)
 
@@ -185,32 +210,6 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
             //add the sailing time to the current time
             currTime += (data.archs[Triple(vesselId, lastPort, currPort)]
                 ?: error("Failed to find an arch for vessel $vesselId between the ports $lastPort and $currPort")).time
-
-
-            /**
-             * @return negative number of not valid, new current time if valid
-             */
-            fun checkTime(index: Int, lowerTime: Int, upperTime: Int, portTime: Int, currTime: Int): Int {
-                var time = currTime
-
-                //How long we are we waiting for the port to open?
-                portTardiness[index] = (lowerTime - time).coerceAtLeast(0)
-
-                //we must wait for the port to open
-                if (time < lowerTime) {
-                    time = lowerTime
-                }
-
-                //then add how long it takes at the port
-                time += portTime
-
-                //check if we are within the upper time window
-                if (time > upperTime) {
-                    //well that failed
-                    return -1
-                }
-                return time
-            }
 
             if (!seen[cargoIndex]) {
                 seen[cargoIndex] = true
@@ -266,19 +265,22 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
         var value = 0L
         val subroutes: Array<IntArray> = splitToSubArray(modified)
 
-        //false if we are currently picking it up, true if we are delivering
-        val seen = BooleanArray(data.nrOfCargo)
 
         for ((index, sub) in subroutes.withIndex()) {
+            value += objectiveVesselValue(index, sub)
+        }
+        return value
+    }
 
-            //skip last array as it is only the tramp transports, and always allowed
-            if (index == subroutes.size - 1) {
-                //for each cargo not transported add the not transport value
-                for (cargoId in sub.toSet()) {
-                    value += data.cargoFromId(cargoId).ntCost
-                }
-                return value
-            }
+    fun objectiveVesselValue(index: Int, sub: IntArray): Long {
+        var value = 0L
+        //skip last array as it is only the tramp transports, and always allowed
+        if (index == data.vessels.size) {
+            //for each cargo not transported add the not transport value
+            value += sub.toSet().map { data.cargoFromId(it).ntCost }.sum()
+        } else {
+
+            val seen = HashSet<Int>()
 
             val vesselId = index + 1
             val vessel = data.vesselFromId(vesselId)
@@ -288,8 +290,8 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
                 val cargoIndex = cargoId - 1
                 val cargo = data.cargoes[cargoIndex]
 
-                val currPort = if (seen[cargoIndex]) cargo.destPort else cargo.origin_port
-                val vc: VesselCargo = data.vesselCargo[Pair(vesselId, cargoId)] ?: VesselCargo.IncompatibleVesselCargo
+                val currPort = if (seen.contains(cargoIndex)) cargo.destPort else cargo.origin_port
+                val vc: VesselCargo = data.vesselCargo[Pair(vesselId, cargoId)] ?: VesselCargo.incompatibleVesselCargo
 
                 //substitute the dummy home port id with the vessels actual home port
                 if (lastPort == SolutionGenerator.HOME_PORT) {
@@ -300,18 +302,19 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
                 value += (data.archs[Triple(vesselId, lastPort, currPort)]
                     ?: error("Failed to find arch for vessel $vesselId from $lastPort to $currPort")).cost
 
-                if (!seen[cargoIndex]) {
-                    seen[cargoIndex] = true
-                    value += vc.originPortCost
-                } else {
-                    value += vc.destPortCost
-                }
+                value +=
+                    if (seen.contains(cargoIndex)) {
+                        vc.destPortCost
+                    } else {
+                        seen.add(cargoIndex)
+                        vc.originPortCost
+                    }
 
                 //update port for next round
                 lastPort = currPort
             }
         }
-        error("Unexpected exit from objective value function")
+        return value
     }
 
 
@@ -483,7 +486,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
     }
 
     companion object {
-        val log = Logger()
+        val log = Logger("Sol")
         private val EMPTY_SUB = IntArray(0)
     }
 }
