@@ -118,7 +118,7 @@ class DataParser(content: String) {
             val otime = line[2]
 
             val vcc = if (otime == -1) {
-                VesselCargo.IncompatibleVesselCargo
+                VesselCargo.incompatibleVesselCargo
             } else {
                 val ocost = line[3]
                 val dtime = line[4]

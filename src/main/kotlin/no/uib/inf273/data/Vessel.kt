@@ -1,8 +1,12 @@
 package no.uib.inf273.data
 
-class Vessel(val id: Int, val homePort: Int, val startTime: Int, val capacity: Int) {
+data class Vessel(val id: Int, val homePort: Int, val startTime: Int, val capacity: Int) {
 
     lateinit var compatibleCalls: IntArray
+
+    fun index(): Int {
+        return id - 1
+    }
 
     /**
      * If this vessel can take given cargo
