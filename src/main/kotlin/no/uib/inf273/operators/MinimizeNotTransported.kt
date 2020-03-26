@@ -2,7 +2,6 @@ package no.uib.inf273.operators
 
 import no.uib.inf273.Main
 import no.uib.inf273.data.Cargo
-import no.uib.inf273.extra.randomizeExchange
 import no.uib.inf273.processor.DataParser
 import no.uib.inf273.processor.Solution
 
@@ -36,7 +35,7 @@ object MinimizeNotTransported : Operator() {
         for (cargo in sortedCargoes) {
             val cargoId = cargo.id
 
-            //is there anything we can sort this list by?
+            //TODO is there anything we can sort this list by?
             // maybe use the arches somehow, we have the origin at least but not the destination (unless we say that we take it there directly)
             val validDestVessels = sol.data.vessels.filter { it.canTakeCargo(cargoId) }.shuffled(Main.rand)
             for (vessel in validDestVessels) {
@@ -46,12 +45,10 @@ object MinimizeNotTransported : Operator() {
                 val destSubCpy = subs[destIndex].clone()
 
                 //move the cargo to the new vessel
-                val moved = moveCargo(sol, subs, orgIndex, destIndex, cargo.id) {
-                    it.randomizeExchange()
-                }
+                val moved = moveCargo(sol, subs, orgIndex, destIndex, cargo.id)
 
                 if (moved) {
-                    log.debug { "Cargo $cargo can be moved from freight to dest $vessel" }
+                    log.trace { "Cargo $cargo can be moved from freight to dest $vessel" }
                     break@outer
                 } else {
                     //we didn't move so the subarray needs to be restored

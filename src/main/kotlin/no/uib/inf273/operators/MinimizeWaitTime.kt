@@ -21,10 +21,9 @@ object MinimizeWaitTime : Operator() {
             it.portTardiness.max() ?: -1
         } ?: error("Failed to find a vessel")
 
-
-        val maxTardiness = vesselMeta.portTardiness.max()
+        var maxTardiness = vesselMeta.portTardiness.max()
         if (maxTardiness == null) {
-            UrgentFirst.log.debug { "No cargoes have " }
+            log.debug { "No cargoes to optimize" }
             return
         }
 
@@ -41,6 +40,7 @@ object MinimizeWaitTime : Operator() {
         //then try and minimize the waiting time
         do {
             if (operateVesselTilFeasible(solCopy, vIndex, sub) {
+                    
                     it.randomizeExchange()
                 }) {
                 val newMeta = solCopy.generateVesselRouteMetadata(vIndex, sub)
@@ -48,7 +48,7 @@ object MinimizeWaitTime : Operator() {
                     ?: error("Failed to calculate max new tardiness for ${newMeta.portTardiness}")
 
                 if (newMaxTardiness < maxTardiness) {
-                    UrgentFirst.log.debug { "New smaller maximum tardiness found! new = $newMaxTardiness, old = $maxTardiness" }
+                    log.debug { "New smaller maximum tardiness found! new = $newMaxTardiness, old = $maxTardiness" }
                     break
                 }
             }

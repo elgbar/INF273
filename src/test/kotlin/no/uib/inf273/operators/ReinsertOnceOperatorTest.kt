@@ -17,7 +17,6 @@ internal class ReinsertOnceOperatorTest {
         init {
             Main.log.logLevel = Logger.DEBUG
             Solution.log.logLevel = Logger.DEBUG
-            ReinsertOnceOperator.log.logLevel = Logger.TRACE
         }
 
         private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
