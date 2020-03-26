@@ -41,31 +41,34 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
         /**
          * If this route is valid
          */
-        val valid: Boolean,
+        val feasible: Boolean,
         /**
          * How long the vessel waited at each port. A value of zero indicate that no waiting was done. The value cannot be negative as that indicate we are too late.
          */
-        val portTardiness: IntArray
+        val portTardiness: IntArray,
+        val objectiveValue: Long
     ) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
-            if (other !is VesselRouteMetadata) return false
+            if (javaClass != other?.javaClass) return false
+
+            other as VesselRouteMetadata
 
             if (vesselIndex != other.vesselIndex) return false
-            if (valid != other.valid) return false
+            if (feasible != other.feasible) return false
             if (!portTardiness.contentEquals(other.portTardiness)) return false
+            if (objectiveValue != other.objectiveValue) return false
 
             return true
         }
 
         override fun hashCode(): Int {
             var result = vesselIndex
-            result = 31 * result + valid.hashCode()
+            result = 31 * result + feasible.hashCode()
             result = 31 * result + portTardiness.contentHashCode()
+            result = 31 * result + objectiveValue.hashCode()
             return result
         }
-
-
     }
 
     /**
@@ -145,17 +148,23 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
      * check if a vessel is feasible
      * */
     fun isVesselFeasible(vIndex: Int, sub: IntArray): Boolean {
-        return generateVesselRouteMetadata(vIndex, sub).valid
+        return generateVesselRouteMetadata(vIndex, sub).feasible
     }
 
     /**
      * Generate metadata of the vessel route [sub] for index [vIndex]
+     *
+     * @param calculateTime If the time of the metadata should be calculated. If false portTardiness of the meta will not be calculated
      */
-    fun generateVesselRouteMetadata(vIndex: Int, sub: IntArray): VesselRouteMetadata {
+    fun generateVesselRouteMetadata(
+        vIndex: Int,
+        sub: IntArray
+    ): VesselRouteMetadata {
         val portTardiness = IntArray(sub.size) { -1 }
+        var cost = 0L
 
         fun createMetadata(valid: Boolean): VesselRouteMetadata {
-            return VesselRouteMetadata(vIndex, valid, portTardiness)
+            return VesselRouteMetadata(vIndex, valid, portTardiness, cost)
         }
 
         /**
@@ -183,22 +192,29 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
             return time
         }
 
+        if (vIndex == data.vessels.size) {
+            cost += sub.toSet().map { data.cargoFromId(it).ntCost }.sum()
+        }
+
         //skip last array as it is only the tramp transports, and always allowed
         if (vIndex == data.nrOfVessels) return createMetadata(true)
 
         //false if we are currently picking it up, true if we are delivering
-        val seen = BooleanArray(data.nrOfCargo)
+        val seen = HashSet<Int>()
 
         val vesselId = vIndex + 1
         val vessel = data.vesselFromId(vesselId)
+
         var currWeight = 0
         var currTime = vessel.startTime
+
+
         var lastPort = SolutionGenerator.HOME_PORT //vessel start at home port
         for ((index, cargoId) in sub.withIndex()) {
             val cargoIndex = cargoId - 1
             val cargo = data.cargoes[cargoIndex]
 
-            val currPort = if (seen[cargoIndex]) cargo.destPort else cargo.origin_port
+            val currPort = if (seen.contains(cargoIndex)) cargo.destPort else cargo.origin_port
             val vc: VesselCargo = data.vesselCargo[Pair(vesselId, cargoId)]
                 ?: error("Failed to find data connecting vessel $vesselId and cargo $cargoId")
 
@@ -207,12 +223,17 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
                 lastPort = vessel.homePort
             }
 
-            //add the sailing time to the current time
-            currTime += (data.archs[Triple(vesselId, lastPort, currPort)]
-                ?: error("Failed to find an arch for vessel $vesselId between the ports $lastPort and $currPort")).time
+            val arch = data.archs[Triple(vesselId, lastPort, currPort)]
+                ?: error("Failed to find an arch for vessel $vesselId between the ports $lastPort and $currPort")
 
-            if (!seen[cargoIndex]) {
-                seen[cargoIndex] = true
+            //add the sailing time and cost
+            currTime += arch.time
+            cost += arch.cost
+
+            if (!seen.contains(cargoIndex)) {
+                seen.add(cargoIndex)
+
+                cost += vc.originPortCost
 
                 //check compatibility, but only do so for first encounter
                 if (!vessel.canTakeCargo(cargoId)) {
@@ -231,6 +252,8 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
 
             } else {
                 currWeight -= cargo.size //second encounter, unload the cargo
+
+                cost += vc.destPortCost
 
                 //check for cargo delivery time
                 currTime = checkTime(index, cargo.lowerDelivery, cargo.upperDelivery, vc.destPortTime, currTime)
@@ -265,54 +288,8 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
         var value = 0L
         val subroutes: Array<IntArray> = splitToSubArray(modified)
 
-
         for ((index, sub) in subroutes.withIndex()) {
-            value += objectiveVesselValue(index, sub)
-        }
-        return value
-    }
-
-    fun objectiveVesselValue(index: Int, sub: IntArray): Long {
-        var value = 0L
-        //skip last array as it is only the tramp transports, and always allowed
-        if (index == data.vessels.size) {
-            //for each cargo not transported add the not transport value
-            value += sub.toSet().map { data.cargoFromId(it).ntCost }.sum()
-        } else {
-
-            val seen = HashSet<Int>()
-
-            val vesselId = index + 1
-            val vessel = data.vesselFromId(vesselId)
-            var lastPort = SolutionGenerator.HOME_PORT //vessel start at home port
-
-            for (cargoId in sub) {
-                val cargoIndex = cargoId - 1
-                val cargo = data.cargoes[cargoIndex]
-
-                val currPort = if (seen.contains(cargoIndex)) cargo.destPort else cargo.origin_port
-                val vc: VesselCargo = data.vesselCargo[Pair(vesselId, cargoId)] ?: VesselCargo.incompatibleVesselCargo
-
-                //substitute the dummy home port id with the vessels actual home port
-                if (lastPort == SolutionGenerator.HOME_PORT) {
-                    lastPort = vessel.homePort
-                }
-
-                //add the sailing time to the current time
-                value += (data.archs[Triple(vesselId, lastPort, currPort)]
-                    ?: error("Failed to find arch for vessel $vesselId from $lastPort to $currPort")).cost
-
-                value +=
-                    if (seen.contains(cargoIndex)) {
-                        vc.destPortCost
-                    } else {
-                        seen.add(cargoIndex)
-                        vc.originPortCost
-                    }
-
-                //update port for next round
-                lastPort = currPort
-            }
+            value += generateVesselRouteMetadata(index, sub).objectiveValue
         }
         return value
     }
