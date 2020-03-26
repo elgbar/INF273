@@ -122,7 +122,7 @@ abstract class SimulatedAnnealingAlgorithm(
                 log.log {
                     "${identical.format("identical")} ${sameObjVal.format("sameObjVal")} ${better.format(
                         "better"
-                    )} ${worse.format("worse")} ${accWorse.format("acceptedWorse")}"
+                    )} ${worse.format("worse")} ${accWorse.format("acceptedWorse")} (${"%.2f".format(accWorse.toDouble() / worse.toDouble() * 100.0)}%)"
                 }
                 identical = 0
                 better = 0
