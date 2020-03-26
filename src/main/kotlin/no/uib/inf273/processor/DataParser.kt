@@ -58,7 +58,7 @@ class DataParser(content: String) {
             log.trace { "vessel cargo compat $i = $line" }
 
             val vessel = vesselFromId(line[0])
-            vessel.compatibleCalls = line.subList(1, line.size).toIntArray()
+            vessel.compatibleCalls = line.subList(1, line.size).toSet()
         }
 
         cargoes = Array(nrOfCargo) {
@@ -151,6 +151,10 @@ class DataParser(content: String) {
 
     fun cargoFromId(id: Int): Cargo {
         return cargoes[id - 1]
+    }
+
+    fun canVesselTakeCargo(vIndex: Int, cargoId: Int): Boolean {
+        return vIndex == nrOfVessels || vessels[vIndex].canTakeCargo(cargoId)
     }
 
     /**
