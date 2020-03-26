@@ -130,22 +130,28 @@ class Main(
 
     private fun printResults(algorithm: Algorithm, result: Triple<Double, Solution, Long>, singleLine: Boolean) {
 
+        val (avgObjVal, best, time) = result
         val defaultObjVal = solgen.generateStandardSolution().objectiveValue(false).toDouble().toBigDecimal()
-        val (avg, best, time) = result
-        val improvement =
-            100.0.toBigDecimal() * (defaultObjVal - best.objectiveValue(true).toBigDecimal()) / defaultObjVal
+        val bestObjVal = best.objectiveValue(true)
+
+        val improvementAvg =
+            100.0.toBigDecimal() * (defaultObjVal - avgObjVal.toBigDecimal()) / defaultObjVal
+        val improvementBest =
+            100.0.toBigDecimal() * (defaultObjVal - bestObjVal.toBigDecimal()) / defaultObjVal
 
         if (singleLine) {
-            log.log { "${algorithm.javaClass.simpleName}, $avg, ${best.objectiveValue(true)}, $improvement%, $time ms, ${best.arr.contentToString()}" }
+            log.log { "${algorithm.javaClass.simpleName}, $avgObjVal, $bestObjVal, $improvementBest%, $time ms, ${best.arr.contentToString()}" }
         } else {
             log.logs {
                 listOf(
-                    "Searching with algorithm. . $algorithm"
-                    , "Initial objective value . . $defaultObjVal"
-                    , "Best objective value. . . . ${best.objectiveValue(true)}"
-                    , "Average objective value . . $avg"
-                    , "Improvement . . . . . . . . $improvement%"
-                    , "Time. . . . . . . . . . . . $time ms"
+                    "Searching with algorithm. . . $algorithm"
+                    , "Initial objective value . . . $defaultObjVal"
+                    , "Best objective value. . . . . $bestObjVal"
+                    , "Average objective value . . . $avgObjVal"
+                    , "Improvement (best). . . . . . $improvementBest%"
+                    , "Improvement (avg) . . . . . . $improvementAvg%"
+                    , "Diff improvement (best-avg) . ${improvementBest - improvementAvg}%"
+                    , "Average time. . . . . . . . . $time ms"
                 )
             }
         }
@@ -222,5 +228,3 @@ class Main(
 fun main(args: Array<String>) = mainBody {
     ArgParser(args).parseInto(::Main).run { }
 }
-
-
