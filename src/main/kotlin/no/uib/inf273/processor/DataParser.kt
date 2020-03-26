@@ -44,7 +44,10 @@ class DataParser(content: String) {
             val line = lines[currLine++].split(',').map { it.toInt() }
             log.trace { "vessel $it= $line" }
             val id = line[0]
-            val home = checkNodeRange(line[1])
+            val home = line[1]
+            if (home <= 0 || home > nrOfNodes) {
+                throw IllegalArgumentException("Invalid node $home, Min is 1 (inc) max is $nrOfNodes (inc)")
+            }
             val start = line[2]
             val cap = line[3]
             Vessel(id, home, start, cap)
@@ -73,22 +76,11 @@ class DataParser(content: String) {
             val upperPickup = line[6]
             val lowerDelivery = line[7]
             val upperDelivery = line[8]
-            Cargo(
-                index,
-                origin,
-                dest,
-                size,
-                ntCost,
-                lowerPickup,
-                upperPickup,
-                lowerDelivery,
-                upperDelivery
-            )
+            Cargo(index, origin, dest, size, ntCost, lowerPickup, upperPickup, lowerDelivery, upperDelivery)
         }
 
 
-        val archmap = HashMap<Triple<Int, Int, Int>, Arch>()
-        archs = archmap
+        archs = HashMap()
 
         for (i in 1..(nrOfVessels * nrOfNodes * nrOfNodes)) {
             val line = lines[currLine++].split(',').map { it.toInt() }
@@ -100,14 +92,13 @@ class DataParser(content: String) {
 
             log.trace { "arch [$index] = ${line.subList(3, line.size)}" }
 
-            val time = line[3]
-            val cost = line[4]
+            val archTime = line[3]
+            val archCost = line[4]
 
-            archmap[index] = Arch(vessel, origin, dest, time, cost)
+            archs[index] = Arch(vessel, origin, dest, archTime, archCost)
         }
 
-        val vcmap = HashMap<Pair<Int, Int>, VesselCargo>()
-        vesselCargo = vcmap
+        vesselCargo = HashMap()
 
         for (i in 1..(nrOfCargo * nrOfVessels)) {
             val line = lines[currLine++].split(',').map { it.toInt() }
@@ -115,18 +106,17 @@ class DataParser(content: String) {
             val call = line[1]
             val index = Pair(vessel, call)
 
-            val otime = line[2]
+            val originTime = line[2]
+            log.trace { "vcc [$index] = ${line.subList(2, line.size)}" }
 
-            val vcc = if (otime == -1) {
+            vesselCargo[index] = if (originTime == -1) {
                 VesselCargo.incompatibleVesselCargo
             } else {
-                val ocost = line[3]
-                val dtime = line[4]
-                val dcost = line[5]
-                VesselCargo(otime, ocost, dtime, dcost)
+                val originCost = line[3]
+                val destTime = line[4]
+                val destCost = line[5]
+                VesselCargo(originTime, originCost, destTime, destCost)
             }
-            log.trace { "vcc [$index] = ${line.subList(2, line.size)}" }
-            vcmap[index] = vcc
         }
 
         //make sure we read the whole file correctly
@@ -134,15 +124,8 @@ class DataParser(content: String) {
             "Finished loading file, but current line is $currLine while number of lines in the files is ${lines.size}"
         }
 
-        log.log { "Successfully parsed ${lines.size} lines of data (comments excluded) in ${System.currentTimeMillis() - time} ms" }
+        log.log { "Successfully parsed ${lines.size} lines of data in ${System.currentTimeMillis() - time} ms" }
 
-    }
-
-    fun checkNodeRange(node: Int): Int {
-        if (node <= 0 || node > nrOfNodes) {
-            throw IllegalArgumentException("Invalid node $node, Min is 1 (inc) max is $nrOfNodes (inc)")
-        }
-        return node
     }
 
     fun vesselFromId(id: Int): Vessel {
