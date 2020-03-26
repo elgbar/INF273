@@ -65,10 +65,14 @@ abstract class Operator {
         //create new array with two less elements as they will no longer be here
         val orgNew = sub[orgVesselIndex].filter(cargoId, IntArray(sub[orgVesselIndex].size - 2))
 
+        //TODO optimize the new cargo
+
         //A vessel will always be feasible when removing a cargo.
         // All it does in the worst case is force the vessel to wait longer at each port
-        check(sol.isVesselFeasible(orgVesselIndex, orgNew)) {
-            "Origin vessel $orgVesselIndex not feasible after removing a cargo"
+        if (log.isDebugEnabled()) {
+            check(sol.isVesselFeasible(orgVesselIndex, orgNew)) {
+                "Origin vessel $orgVesselIndex not feasible after removing a cargo"
+            }
         }
         return orgNew
     }
@@ -112,7 +116,7 @@ abstract class Operator {
 
         val bestFirstConfigNN = bestFirstConfig
         if (bestFirstConfigNN == null) {
-            log.debug { "Failed to find a place to insert the pickup of cargo $cargoId for vessel $destVesselIndex" }
+            log.trace { "Failed to find a place to insert the pickup of cargo $cargoId for vessel $destVesselIndex" }
             return null
         }
 
