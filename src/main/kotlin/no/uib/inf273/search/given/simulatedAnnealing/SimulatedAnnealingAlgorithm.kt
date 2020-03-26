@@ -31,7 +31,7 @@ abstract class SimulatedAnnealingAlgorithm(
     /**
      * 𝛼
      */
-    private var coolingFactor: Double = 0.999
+    private var coolingFactor: Double = 1.0 - Double.MIN_VALUE
         set(value) {
             require(0 < value && value < 1) { "The cooling factor must be between 0 and 1 got $value" }
             field = value
@@ -40,7 +40,7 @@ abstract class SimulatedAnnealingAlgorithm(
     /**
      * How many runs we should do to get an average temperature
      */
-    var testRuns = 1000
+    var testRuns = 100
 
     override fun updateLogLevel(level: Int) {
         super.updateLogLevel(level)
@@ -96,30 +96,47 @@ abstract class SimulatedAnnealingAlgorithm(
 
         var temp = initTemp
 
-        var noChange = 0
+        var identical = 0
+        var sameObjVal = 0
         var better = 0
         var worse = 0
+        var accWorse = 0
 
         log.debug { "---" }
-        log.debug { "neighbor: noChange better worse" }
+        log.log { "identical sameObjVal better worse acceptedWorse" }
+
+
+        /**
+         * Calculate the probability of accepting a worse solution
+         */
+        fun boltzmannProbability(deltaE: Long, temp: Double): Boolean {
+            return Main.rand.nextDouble() < exp(-deltaE / temp)
+        }
 
         for (i in 1..iterations) {
             change(curr)
 
             if (i % 1000 == 0) {
-                log.debug { "neighbor: $noChange $better $worse" }
-                noChange = 0
+                fun Int.format(nameLen: String) = "%${nameLen.length}s".format(this)
+
+                log.log {
+                    "${identical.format("identical")} ${sameObjVal.format("sameObjVal")} ${better.format(
+                        "better"
+                    )} ${worse.format("worse")} ${accWorse.format("acceptedWorse")}"
+                }
+                identical = 0
                 better = 0
                 worse = 0
+                sameObjVal = 0
+                accWorse = 0
             }
 
             if (curr.arr.contentEquals(best.arr)) {
-                noChange++
+                identical++
                 continue
             }
 
             currObjVal = curr.objectiveValue(true)
-
 
             //update when better, ∆E = currObjVal - incombentObjVal
             val deltaE = currObjVal - incombentObjVal
@@ -135,14 +152,18 @@ abstract class SimulatedAnnealingAlgorithm(
                     curr.arr.copyInto(best.arr)
                     bestObjVal = currObjVal
                 }
-            } else {
-//                log.trace { "prob of worse: ${exp(-deltaE / temp)}" }
+            } else if (deltaE > 0) {
                 worse++
+
+//                println("$i,${exp(-deltaE / temp)}")
                 if (boltzmannProbability(deltaE, temp)) {
+                    accWorse++
                     log.trace { "Accepted worse solution $currObjVal. Diff ${currObjVal - bestObjVal} " }
                     curr.arr.copyInto(incombent.arr)
                     incombentObjVal = currObjVal
                 }
+            } else {
+                sameObjVal++
             }
 
             temp *= coolingFactor
@@ -163,15 +184,6 @@ abstract class SimulatedAnnealingAlgorithm(
         log.log { "Warm up done" }
 
         calculateTemp(sol = solgen.generateStandardSolution(), iterations = iterations, tune = true)
-//        calcBestP(solgen)
-    }
-
-
-    /**
-     * Calculate the probability of accepting a worse solution
-     */
-    private fun boltzmannProbability(deltaE: Long, temp: Double): Boolean {
-        return Main.rand.nextDouble() < exp(-deltaE / temp)
     }
 
     /**
@@ -224,7 +236,7 @@ abstract class SimulatedAnnealingAlgorithm(
         fun calcCoolingFac(div: Int): Double {
             return exp((ln(endTemp) - ln(initTemp)) / (iterations / div))
         }
-        coolingFactor = calcCoolingFac(8)
+        coolingFactor = calcCoolingFac(7)
 
 
         if (tune) {
@@ -273,7 +285,7 @@ abstract class SimulatedAnnealingAlgorithm(
                 "Maximum objective value $maxObj",
                 "Average objective value $avgObj ($totalObj / $feasibleRuns)",
                 "",
-                "Cooling schedule factor ${coolingFactor}",
+                "Cooling schedule factor $coolingFactor",
                 "",
                 "Test values",
                 "pMax = $pMax | pMin = $pMin",
