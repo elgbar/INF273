@@ -24,6 +24,117 @@ abstract class Operator {
         return this::class.java.simpleName
     }
 
+
+    /**
+     * Move the given cargo [cargoId] from the vessel [orgVesselIndex] to vessel [destVesselIndex]. How to insert a cargo into the destination vessel is a heuristic problem in it self. To make it easy to change how to insert the [operation] parameter is available
+     *
+     * @param sol The solution to move the cargo with
+     * @param subs The arrays of each vessel in the solution
+     * @param orgVesselIndex Vessel to move cargo from
+     * @param destVesselIndex Vessel to move cargo to
+     * @param cargoId What cargo to move from [orgVesselIndex] to [destVesselIndex]
+     *
+     * @return If the cargo was moved, note that [subs] array might have been moved
+     */
+    internal fun moveCargo(
+        sol: Solution,
+        subs: Array<IntArray>,
+        orgVesselIndex: Int,
+        destVesselIndex: Int,
+        cargoId: Int
+    ): Boolean {
+
+        if (log.isDebugEnabled()) {
+            require(sol.data.canVesselTakeCargo(destVesselIndex, cargoId)) {
+                "Cannot move the cargo $cargoId to destination vessel $destVesselIndex as it is not compatible"
+            }
+        }
+
+        val orgNew = removeCargo(sol, subs, orgVesselIndex, cargoId) ?: return false
+        subs[orgVesselIndex] = orgNew
+
+        val destNew = addCargo(sol, subs, destVesselIndex, cargoId) ?: return false
+        subs[destVesselIndex] = destNew
+
+        //reassemble the solution with the new vessel-cargo composition
+        sol.joinToArray(subs)
+        return true
+    }
+
+    private fun removeCargo(sol: Solution, sub: Array<IntArray>, orgVesselIndex: Int, cargoId: Int): IntArray? {
+        //create new array with two less elements as they will no longer be here
+        val orgNew = sub[orgVesselIndex].filter(cargoId, IntArray(sub[orgVesselIndex].size - 2))
+
+        //A vessel will always be feasible when removing a cargo.
+        // All it does in the worst case is force the vessel to wait longer at each port
+        check(sol.isVesselFeasible(orgVesselIndex, orgNew)) {
+            "Origin vessel $orgVesselIndex not feasible after removing a cargo"
+        }
+        return orgNew
+    }
+
+    private fun addCargo(
+        sol: Solution,
+        sub: Array<IntArray>,
+        destVesselIndex: Int,
+        cargoId: Int
+    ): IntArray? {
+
+        val destOldSize = sub[destVesselIndex].size
+
+        //nothing fancy to do when destination is empty or the dummy vessel
+        if (destOldSize == 0 || destVesselIndex == sub.size - 1) {
+            //the destination array needs to be two element larger for the new cargo to fit
+            val destNew = sub[destVesselIndex].copyOf(destOldSize + 2)
+            destNew[destNew.size - 1] = cargoId
+            destNew[destNew.size - 2] = cargoId
+            return if (sol.isVesselFeasible(destVesselIndex, destNew)) destNew else null
+        }
+
+        var bestFirstConfig: IntArray? = null
+        var bestFirstObjVal = Long.MAX_VALUE //THE worst
+        var firstInsertedIndex = -1
+
+        //insert origin cargo til we find the best (feasible) insertion location
+        //
+        for (i in 0..destOldSize) {
+            val firstDestMaybe = sub[destVesselIndex].copyOf(destOldSize + 1)
+            firstDestMaybe.insert(i, cargoId)
+            val metadata = sol.generateVesselRouteMetadata(destVesselIndex, firstDestMaybe)
+
+            //Only update when feasible and better
+            if (metadata.feasible && metadata.objectiveValue < bestFirstObjVal) {
+                bestFirstConfig = firstDestMaybe
+                bestFirstObjVal = metadata.objectiveValue
+                firstInsertedIndex = i
+            }
+        }
+
+        val bestFirstConfigNN = bestFirstConfig
+        if (bestFirstConfigNN == null) {
+            log.debug { "Failed to find a place to insert the pickup of cargo $cargoId for vessel $destVesselIndex" }
+            return null
+        }
+
+        var bestConfig: IntArray? = null
+        var bestObjVal = Long.MAX_VALUE
+
+        for (i in firstInsertedIndex + 1 until destOldSize + 2) {
+
+            val destMaybe = bestFirstConfigNN.copyOf(destOldSize + 2)
+            destMaybe.insert(i, cargoId)
+            val metadata = sol.generateVesselRouteMetadata(destVesselIndex, destMaybe)
+
+            //Only update when feasible and better
+            if (metadata.feasible && metadata.objectiveValue < bestObjVal) {
+                bestConfig = destMaybe
+                bestObjVal = metadata.objectiveValue
+            }
+        }
+
+        return bestConfig
+    }
+
     companion object {
 
         /**
@@ -110,84 +221,6 @@ abstract class Operator {
             }
         }
 
-        /**
-         * Move the given cargo [cargoId] from the vessel [orgVesselIndex] to vessel [destVesselIndex]. How to insert a cargo into the destination vessel is a heuristic problem in it self. To make it easy to change how to insert the [operation] parameter is available
-         *
-         * @param sol The solution to move the cargo with
-         * @param subs The arrays of each vessel in the solution
-         * @param orgVesselIndex Vessel to move cargo from
-         * @param destVesselIndex Vessel to move cargo to
-         * @param cargoId What cargo to move from [orgVesselIndex] to [destVesselIndex]
-         * @param operation How to insert the cargo to the vessel at [destVesselIndex]
-         *
-         * @return If the cargo was moved, note that [subs] array might have been moved
-         */
-        internal fun moveCargo(
-            sol: Solution,
-            subs: Array<IntArray>,
-            orgVesselIndex: Int,
-            destVesselIndex: Int,
-            cargoId: Int,
-            operation: (sub: IntArray) -> Unit
-        ): Boolean {
-            val orgNew = removeCargo(sol, subs, orgVesselIndex, cargoId) ?: return false
-            subs[orgVesselIndex] = orgNew
-
-            val destNew = addCargo(sol, subs, destVesselIndex, cargoId, operation) ?: return false
-            subs[destVesselIndex] = destNew
-
-            //reassemble the solution with the new vessel-cargo composition
-            sol.joinToArray(subs)
-            return true
-        }
-
-        private fun removeCargo(sol: Solution, sub: Array<IntArray>, orgVesselIndex: Int, cargoId: Int): IntArray? {
-            //create new array with two less elements as they will no longer be here
-            val orgNew = sub[orgVesselIndex].filter(cargoId, IntArray(sub[orgVesselIndex].size - 2))
-
-            //A vessel will always be feasible when removing a cargo.
-            // All it does in the worst case is force the vessel to wait longer at each port
-            check(sol.isVesselFeasible(orgVesselIndex, orgNew)) {
-                "Origin vessel $orgVesselIndex not feasible after removing a cargo"
-            }
-            return orgNew
-        }
-
-        private fun addCargo(
-            sol: Solution,
-            sub: Array<IntArray>,
-            destVesselIndex: Int,
-            cargoId: Int,
-            operation: (sub: IntArray) -> Unit
-        ): IntArray? {
-
-            val destOldSize = sub[destVesselIndex].size
-            //the destination array needs to be two element larger for the new cargo to fit
-            val destNew = sub[destVesselIndex].copyOf(destOldSize + 2)
-            if (destOldSize > 0 && destVesselIndex != sub.size - 1) {
-                //insert the values randomly
-                destNew.insert(rand.nextInt(destOldSize), cargoId)
-                //second time around we need to account for the element we just inserted
-                destNew.insert(rand.nextInt(destOldSize + 1), cargoId)
-            } else {
-                //no need for randomness when placing cargo into an empty vessel or
-                // when placing it in the freight dummy vessel
-                destNew[destNew.size - 1] = cargoId
-                destNew[destNew.size - 2] = cargoId
-            }
-
-            if (!operateVesselTilFeasible(sol, destVesselIndex, destNew, true, operation)) {
-                Solution.log.trace { "Failed to add cargo $cargoId to vessel $destVesselIndex as no feasible arrangement could be found" }
-                return null
-            }
-
-            if (Solution.log.isDebugEnabled()) {
-                check(sol.isVesselFeasible(destVesselIndex, destNew)) {
-                    "Destination vessel $destVesselIndex not feasible"
-                }
-            }
-            return destNew
-        }
 
         /**
          * Select two random distinct vessels where the first vessel selected is non-empty
@@ -239,6 +272,5 @@ abstract class Operator {
             } while (invalidSize(sub[vesselIndex]))
             return vesselIndex
         }
-
     }
 }
