@@ -6,6 +6,7 @@ import no.uib.inf273.Main.Companion.rand
 import no.uib.inf273.extra.filter
 import no.uib.inf273.extra.forEachPermutation
 import no.uib.inf273.extra.insert
+import no.uib.inf273.processor.DataParser.Companion.ELEMENTS_PER_CARGO
 import no.uib.inf273.processor.Solution
 import kotlin.system.measureTimeMillis
 
@@ -67,9 +68,9 @@ abstract class Operator {
     private fun removeCargo(sol: Solution, sub: Array<IntArray>, orgVesselIndex: Int, cargoId: Int): IntArray? {
         //create new array with two less elements as they will no longer be here
         val orgOld = sub[orgVesselIndex]
-        val orgNew = orgOld.filter(cargoId, IntArray(sub[orgVesselIndex].size - 2))
+        val orgNew = orgOld.filter(cargoId, IntArray(sub[orgVesselIndex].size - ELEMENTS_PER_CARGO))
 
-        if (sol.data.isDummyVessel(orgVesselIndex) || orgNew.size <= 2) {
+        if (sol.data.isDummyVessel(orgVesselIndex) || orgNew.size <= ELEMENTS_PER_CARGO) {
             //nothing to optimize either the vessel is the dummy vessel or
             // it has zero or one cargoes
             return orgNew
@@ -81,8 +82,8 @@ abstract class Operator {
         //
 
         //new size is small enough that we can brute force it
-        if (orgNew.size <= 4 * 2) {
-            log.debug { "Vessel small enough (${orgNew.size / 2} cargoes) to brute force a solution" }
+        if (orgNew.size <= 4 * ELEMENTS_PER_CARGO) {
+            log.debug { "Vessel small enough (${orgNew.size / ELEMENTS_PER_CARGO} cargoes) to brute force a solution" }
             val time = measureTimeMillis {
                 var bestMeta: Solution.VesselRouteMetadata? = null
                 orgNew.forEachPermutation(true) {
@@ -97,7 +98,7 @@ abstract class Operator {
 
             log.debug { "Finish brute forcing vessel. Took $time ms for ${orgNew.size} elements" }
         } else {
-            log.debug { "Vessel too large (${orgNew.size / 2} cargoes) to brute force" }
+            log.debug { "Vessel too large (${orgNew.size / ELEMENTS_PER_CARGO} cargoes) to brute force" }
         }
 //        optimizeVessel(sol, sub[orgVesselIndex], orgVesselIndex)
 
@@ -157,9 +158,9 @@ abstract class Operator {
         var bestConfig: IntArray? = null
         var bestObjVal = Long.MAX_VALUE
 
-        for (i in firstInsertedIndex + 1 until destOldSize + 2) {
+        for (i in firstInsertedIndex + 1 until destOldSize + ELEMENTS_PER_CARGO) {
 
-            val destMaybe = bestFirstConfigNN.copyOf(destOldSize + 2)
+            val destMaybe = bestFirstConfigNN.copyOf(destOldSize + ELEMENTS_PER_CARGO)
             destMaybe.insert(i, cargoId)
             val metadata = sol.generateVesselRouteMetadata(destVesselIndex, destMaybe)
 
@@ -186,7 +187,7 @@ abstract class Operator {
         const val INVALID_VESSEL = -1
 
         internal fun calculateNumberOfVessels(from: Int, until: Int): Int {
-            return (until - from + 1) / 2
+            return (until - from + 1) / ELEMENTS_PER_CARGO
         }
 
 
@@ -224,7 +225,10 @@ abstract class Operator {
                 //Vessels with zero or one cargoes are special as they cannot be moved around
                 initVesselArr.isEmpty() -> return true //empty always feasible
                 //when there is only one cargo we cannot move it around so we can only return if it is feasible or not
-                initVesselArr.size == 2 -> return allowEqual && sol.isVesselFeasible(vIndex, initVesselArr)
+                initVesselArr.size == ELEMENTS_PER_CARGO -> return allowEqual && sol.isVesselFeasible(
+                    vIndex,
+                    initVesselArr
+                )
                 //The freight cargo is always feasible
                 vIndex == sol.data.nrOfVessels -> return true
 
@@ -239,8 +243,8 @@ abstract class Operator {
                         return true
                     }
 
-                    if (sub.size <= maxCargoesToBruteForce * 2) {
-                        log.debug { "Vessel small enough (${sub.size / 2} cargoes) to brute force a solution" }
+                    if (sub.size <= maxCargoesToBruteForce * ELEMENTS_PER_CARGO) {
+                        log.debug { "Vessel small enough (${sub.size / ELEMENTS_PER_CARGO} cargoes) to brute force a solution" }
 
                         var bestMeta: Solution.VesselRouteMetadata? = null
                         sub.forEachPermutation(true) {

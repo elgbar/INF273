@@ -263,11 +263,16 @@ class DataParser(content: String) {
      *
      */
     fun calculateSolutionLength(): Int {
-        return nrOfCargo * 2 + nrOfVessels
+        return nrOfCargo * ELEMENTS_PER_CARGO + nrOfVessels
     }
 
     companion object {
         val log = Logger("Parser")
         const val INCOMPATIBLE = -1
+
+        /**
+         * How many elements there is in the vessel arrays per cargo
+         */
+        const val ELEMENTS_PER_CARGO = 2
     }
 }
