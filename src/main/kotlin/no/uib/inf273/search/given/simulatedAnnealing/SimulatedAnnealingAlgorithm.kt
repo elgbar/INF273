@@ -9,6 +9,7 @@ import java.math.BigDecimal
 import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.random.Random
+import kotlin.system.measureTimeMillis
 
 /**
  * @author Elg
@@ -44,10 +45,13 @@ abstract class SimulatedAnnealingAlgorithm(
 
     override fun updateLogLevel(level: Int) {
         super.updateLogLevel(level)
+
+        log.debug { "Updating operators ${ops.map { it.second }} and fallback $fallbackOp logging level to $level" }
         //make all ops the same logging level as the algorithm
         for ((_, op) in ops) {
             op.log.logLevel = log.logLevel
         }
+        fallbackOp.log.logLevel = log.logLevel
     }
 
     private fun findOperator(): Operator {
@@ -60,10 +64,18 @@ abstract class SimulatedAnnealingAlgorithm(
         return fallbackOp
     }
 
+    val opTimes = HashMap<Operator, Double>()
+
     private fun change(sol: Solution) {
         val op = findOperator()
         log.debug { "Using op $op" }
-        op.operate(sol)
+        val time = measureTimeMillis {
+            op.operate(sol)
+        }
+
+        opTimes[op] = (opTimes[op] ?: 0.0) + time
+
+        log.debug { "Took $time ms to operate" }
         if (log.isDebugEnabled()) {
             check(sol.isFeasible(modified = true, checkValid = true)) {
                 "Solution no long feasible after using operator ${op.javaClass.simpleName}"
@@ -112,8 +124,8 @@ abstract class SimulatedAnnealingAlgorithm(
         fun boltzmannProbability(deltaE: Long, temp: Double): Boolean {
             return Main.rand.nextDouble() < exp(-deltaE / temp)
         }
-
         for (i in 1..iterations) {
+
             change(curr)
 
             if (i % 1000 == 0) {
@@ -131,10 +143,10 @@ abstract class SimulatedAnnealingAlgorithm(
                 accWorse = 0
             }
 
-            if (curr.arr.contentEquals(best.arr)) {
-                identical++
-                continue
-            }
+//            if (curr.arr.contentEquals(best.arr)) {
+//                identical++
+//                continue
+//            }
 
             currObjVal = curr.objectiveValue(true)
 
@@ -172,15 +184,25 @@ abstract class SimulatedAnnealingAlgorithm(
             // this avoids allocating new objects or memory
             incombent.arr.copyInto(curr.arr)
         }
+
+        log.logs {
+            val maxOpName = opTimes.keys.map { it.toString().length }.max()
+            val formatStr = "%-${maxOpName}s"
+            opTimes.toList().sortedByDescending { it.second }.mapTo(ArrayList()) { (op, time) ->
+                "${formatStr.format(op)} $time ms"
+            }.apply {
+                add(0, "${formatStr.format("Operator")} Time (ms)")
+            }
+        }
+        opTimes.clear()
+
         return best
     }
 
     override fun tune(solgen: SolutionGenerator, iterations: Int, report: Boolean) {
         //Calculate the wanted initial temperature
         log.log { "Warming up for tuning" }
-        for (i in 0 until 2) {
-            Main.runAlgorithm(this, 10, solgen, false)
-        }
+        Main.runAlgorithm(this, 5, solgen, false)
         log.log { "Warm up done" }
 
         calculateTemp(sol = solgen.generateStandardSolution(), iterations = iterations, tune = true)

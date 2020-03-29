@@ -1,3 +1,5 @@
+@file:Suppress("LeakingThis")
+
 package no.uib.inf273.search
 
 import no.uib.inf273.Logger
@@ -5,7 +7,7 @@ import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 
 abstract class Algorithm {
-    val log: Logger = Logger(javaClass.simpleName)
+    val log: Logger = Logger(toString())
 
     /**
      * Search with the given search algorithm, no guarantee is given towards the initial solution [sol] being modified
