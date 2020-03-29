@@ -5,6 +5,7 @@ import no.uib.inf273.data.Arch
 import no.uib.inf273.data.Cargo
 import no.uib.inf273.data.Vessel
 import no.uib.inf273.data.VesselCargo
+import kotlin.math.abs
 
 class DataParser(content: String) {
 
@@ -109,7 +110,7 @@ class DataParser(content: String) {
             val originTime = line[2]
             log.trace { "vcc [$index] = ${line.subList(2, line.size)}" }
 
-            vesselCargo[index] = if (originTime == -1) {
+            vesselCargo[index] = if (originTime == INCOMPATIBLE) {
                 VesselCargo.incompatibleVesselCargo
             } else {
                 val originCost = line[3]
@@ -126,6 +127,118 @@ class DataParser(content: String) {
 
         log.log { "Successfully parsed ${lines.size} lines of data in ${System.currentTimeMillis() - time} ms" }
 
+//        val archss = archs.values.filter { it.vessel == 1 }
+//        println("x = ${archss.map { it.ori to it.dest }}")
+//        println("y = ${archss.map {  }}")
+//        println("y = ${archss.map { it.cost }}")
+
+
+        //distance between cargoes origin and dest
+//        println("x = ${cargoes.map { c1 ->
+//            cargoes.map { c2 ->
+//
+//            }
+//        }.flatten()}")
+
+//        calcSimilarity(vessels[0])
+
+//        println("x = ${cargoes.map { c1 ->
+//            cargoes.map { c2 ->
+//                abs(
+//                    archs[Triple(1, c1.destPort, c2.destPort)]!!.time - archs[Triple(
+//                        1,
+//                        c1.originPort,
+//                        c2.originPort
+//                    )]!!.time
+//                )
+//            }
+//        }.flatten()}")
+//
+//        println("y = ${cargoes.map { c1 ->
+//            cargoes.map { c2 ->
+//                abs(
+//                    archs[Triple(1, c1.originPort, c1.destPort)]!!.time -
+//                            archs[Triple(1, c2.originPort, c2.destPort)]!!.time
+//                )
+//            }
+//        }.flatten()}")
+////        println("z = ${cargoes.map { }")
+    }
+
+    private val simCache: MutableMap<Vessel, Map<Pair<Int, Int>, Double>> = HashMap()
+
+    /**
+     * Calculate how similar cargoes are when transported with the given vessel. Any cargo that is not compatiple with the vessel will not be calculated.
+     * The returned lis.
+     *
+     * @return A list of how similar two cargoes the value is normalized to be between `[0, 1]`
+     */
+    private fun calcSimilarity(vessel: Vessel): Map<Pair<Int, Int>, Double> {
+
+        //Distance between each cargo for for the given vessel
+        val dataMap = HashMap<Pair<Int, Int>, Triple<Int, Int, Int>>()
+
+
+        for (c1 in cargoes) {
+            if (!vessel.canTakeCargo(c1.id)) continue
+            for (c2 in cargoes) {
+                if (c1 >= c2 || !vessel.canTakeCargo(c2.id)) continue
+
+                val distance = archs[Triple(vessel.id, c1.originPort, c2.originPort)]!!.time +
+                        archs[Triple(vessel.id, c1.destPort, c2.destPort)]!!.time
+
+                val timeWindowPickup =
+                    abs(c1.lowerPickup - c2.lowerPickup) + abs(c1.upperPickup - c2.upperPickup)
+                val timeWindowDelivery =
+                    abs(c1.lowerDelivery - c2.lowerDelivery) + abs(c1.upperDelivery - c2.upperDelivery)
+                dataMap[c1.id to c2.id] = Triple(distance, timeWindowPickup, timeWindowDelivery)
+            }
+        }
+
+        val maxDist = dataMap.values.map { it.first }.max()!!.toDouble()
+        val maxTimeWindowPickup = dataMap.values.map { it.second }.max()!!.toDouble()
+        val maxTimeWindowDelivery = dataMap.values.map { it.third }.max()!!.toDouble()
+
+        return dataMap.mapValues { (_, it) ->
+            //normalize each component individually
+            val normalizedDist = it.first / maxDist
+            val timeWindowPickup = it.second / maxTimeWindowPickup
+            val timeWindowDelivery = it.third / maxTimeWindowDelivery
+
+            //then normalize all components
+            (normalizedDist + timeWindowPickup + timeWindowDelivery) / 3
+        }
+    }
+
+    /**
+     * @return Map of pairs of cargoes mapped to how similar they are
+     */
+    fun getSimilarityMap(vessel: Vessel): Map<Pair<Int, Int>, Double> {
+        return simCache.getOrPut(vessel) { calcSimilarity(vessel) }
+    }
+
+    /**
+     * @returnList of most to least similar cargo pair
+     */
+    fun getSortedSimilarityList(vessel: Vessel): List<Pair<Int, Int>> {
+        return getSimilarityMap(vessel).toList().sortedBy { it.second }.map { it.first }
+    }
+
+    /**
+     * @return A value in range `[0, 1]` where `0` means identical and `1` means the most dissimilar of all cargoes
+     */
+    fun getSimilarity(vIndex: Int, cargoIdA: Int, cargoIdB: Int): Double {
+        val vessel = vessels[vIndex]
+        if (!vessel.canTakeCargo(cargoIdA) || !vessel.canTakeCargo(cargoIdB)) {
+            error("Vessel $vIndex cannot take cargoes $cargoIdA and/or $cargoIdB")
+        }
+        val sim = getSimilarityMap(vessel)
+
+        return when {
+            cargoIdA == cargoIdB -> 0.0
+            cargoIdA > cargoIdB -> sim[cargoIdB to cargoIdA]!!
+            else -> sim[cargoIdA to cargoIdB]!!
+        }
     }
 
     fun vesselFromId(id: Int): Vessel {
@@ -137,7 +250,43 @@ class DataParser(content: String) {
     }
 
     fun canVesselTakeCargo(vIndex: Int, cargoId: Int): Boolean {
-        return vIndex == nrOfVessels || vessels[vIndex].canTakeCargo(cargoId)
+        return isDummyVessel(vIndex) || vessels[vIndex].canTakeCargo(cargoId)
+    }
+
+    fun isDummyVessel(vIndex: Int): Boolean {
+        return vIndex == nrOfVessels
+    }
+
+    fun getArch(vesselId: Int, orgId: Int, destId: Int): Arch {
+        return archs[Triple(vesselId, orgId, destId)]
+            ?: error("Failed to get arch for vessel id $vesselId from $orgId to $destId")
+    }
+
+
+    /**
+     * @return Map of vessel id with a list of the closest cargoes
+     */
+    fun cluser(): Map<Int, List<Int>> {
+
+
+        /**
+         * @return How similar two cargoes are in the context of [vessel]. If [INCOMPATIBLE] the cargo is incompatible with the vessel
+         */
+        fun similarity(vessel: Vessel, cargoId: Int): Int {
+            if (!vessel.canTakeCargo(cargoId)) return INCOMPATIBLE
+
+            val cargoA = cargoFromId(cargoId)
+
+            return getArch(vessel.id, vessel.homePort, cargoA.originPort).cost +
+                    getArch(vessel.id, vessel.homePort, cargoA.destPort).cost
+        }
+
+        val map = HashMap<Int, List<Int>>()
+
+        for (vessel in vessels) {
+
+        }
+        return map
     }
 
     /**
@@ -156,5 +305,6 @@ class DataParser(content: String) {
 
     companion object {
         val log = Logger("Parser")
+        const val INCOMPATIBLE = -1
     }
 }
