@@ -198,6 +198,7 @@ abstract class Operator {
          * @param vIndex The vessel index to use
          * @param initVesselArr The content of vessel [vIndex]
          * @param allowEqual If [initVesselArr] is allowed to be returned without change
+         * @param maxCargoesToBruteForce Max (inclusive) number of cargoes that can be present in the given vessel to allow brute forcing, setting to 1 or lower will disable brute forcing
          * @param operation How to change the given [initVesselArr]
          *
          * @return If a feasible solution has been found. [initVesselArr] will contain the new solution ONLY if this method returns `true`. If this returns `false` [initVesselArr] will be infeasible.
@@ -208,7 +209,7 @@ abstract class Operator {
             vIndex: Int,
             initVesselArr: IntArray,
             allowEqual: Boolean = false,
-            allowBruteForce: Boolean = true,
+            maxCargoesToBruteForce: Int = 4,
             operation: (sub: IntArray) -> Unit
         ): Boolean {
 
@@ -238,7 +239,7 @@ abstract class Operator {
                         return true
                     }
 
-                    if (allowBruteForce && sub.size <= 4 * 2) {
+                    if (sub.size <= maxCargoesToBruteForce * 2) {
                         log.debug { "Vessel small enough (${sub.size / 2} cargoes) to brute force a solution" }
 
                         var bestMeta: Solution.VesselRouteMetadata? = null
