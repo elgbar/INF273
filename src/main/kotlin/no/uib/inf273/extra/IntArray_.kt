@@ -94,30 +94,3 @@ fun IntArray.forEachPermutation(copy: Boolean = true, action: IntArray.() -> Uni
         }
     }
 }
-
-//fun permute(ind: IntArray, action: (arr: IntArray) -> Unit) {
-////ind is an array of integers
-//
-//    //ind is an array of integers
-////    for (tail in ind.length - 1 downTo 1) {
-//        if (ind[tail - 1] < ind[tail]) { //still increasing
-//
-//            //find last element which does not exceed ind[tail-1]
-//            var s: Int = ind.length - 1
-//            while (ind[tail - 1] >= ind[s]) s--
-//            swap(ind, tail - 1, s)
-//
-//            //reverse order of elements in the tail
-//            var i: Int = tail
-//            var j: Int = ind.length - 1
-//            while (i < j) {
-//                swap(ind, i, j)
-//                i++
-//                j--
-//            }
-//            break
-//        }
-//    }
-//}
-//
-//

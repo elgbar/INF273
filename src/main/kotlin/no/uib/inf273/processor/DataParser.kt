@@ -126,43 +126,6 @@ class DataParser(content: String) {
         }
 
         log.log { "Successfully parsed ${lines.size} lines of data in ${System.currentTimeMillis() - time} ms" }
-
-//        val archss = archs.values.filter { it.vessel == 1 }
-//        println("x = ${archss.map { it.ori to it.dest }}")
-//        println("y = ${archss.map {  }}")
-//        println("y = ${archss.map { it.cost }}")
-
-
-        //distance between cargoes origin and dest
-//        println("x = ${cargoes.map { c1 ->
-//            cargoes.map { c2 ->
-//
-//            }
-//        }.flatten()}")
-
-//        calcSimilarity(vessels[0])
-
-//        println("x = ${cargoes.map { c1 ->
-//            cargoes.map { c2 ->
-//                abs(
-//                    archs[Triple(1, c1.destPort, c2.destPort)]!!.time - archs[Triple(
-//                        1,
-//                        c1.originPort,
-//                        c2.originPort
-//                    )]!!.time
-//                )
-//            }
-//        }.flatten()}")
-//
-//        println("y = ${cargoes.map { c1 ->
-//            cargoes.map { c2 ->
-//                abs(
-//                    archs[Triple(1, c1.originPort, c1.destPort)]!!.time -
-//                            archs[Triple(1, c2.originPort, c2.destPort)]!!.time
-//                )
-//            }
-//        }.flatten()}")
-////        println("z = ${cargoes.map { }")
     }
 
     private val simCache: MutableMap<Vessel, Map<Pair<Int, Int>, Double>> = HashMap()
