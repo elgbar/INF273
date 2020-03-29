@@ -214,7 +214,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
             val cargoIndex = cargoId - 1
             val cargo = data.cargoes[cargoIndex]
 
-            val currPort = if (seen.contains(cargoIndex)) cargo.destPort else cargo.origin_port
+            val currPort = if (seen.contains(cargoIndex)) cargo.destPort else cargo.originPort
             val vc: VesselCargo = data.vesselCargo[Pair(vesselId, cargoId)]
                 ?: error("Failed to find data connecting vessel $vesselId and cargo $cargoId")
 

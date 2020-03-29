@@ -2,7 +2,7 @@ package no.uib.inf273.data
 
 data class Cargo(
     val id: Int,
-    val origin_port: Int,
+    val originPort: Int,
     val destPort: Int,
     val size: Int,
     val ntCost: Int,
@@ -11,6 +11,10 @@ data class Cargo(
     val lowerDelivery: Int,
     val upperDelivery: Int
 ) {
+    operator fun compareTo(c2: Cargo): Int {
+        return id - c2.id
+    }
+
 
 //    param origin_port {C} >= 0, <= ports;   # Origin port
 //    param dest_port {C} >= 0, <= ports;     # Destination port
