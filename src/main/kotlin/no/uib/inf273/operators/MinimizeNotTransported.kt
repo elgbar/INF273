@@ -1,6 +1,5 @@
 package no.uib.inf273.operators
 
-import no.uib.inf273.Main
 import no.uib.inf273.data.Cargo
 import no.uib.inf273.processor.DataParser
 import no.uib.inf273.processor.Solution
@@ -8,7 +7,9 @@ import no.uib.inf273.processor.Solution
 /**
  * Minimize the number of cargoes we use freight to transport.
  * Cost of not transporting is very high compared to even the worst route!
- * If we minimize number of cargoes we do not transport the cost will (hopefully) go down
+ * If we minimize number of cargoes we do not transport the cost will (hopefully) go down.
+ *
+ * This operator helps with diversification as it moves to new vessels
  */
 object MinimizeNotTransported : Operator() {
 
@@ -31,13 +32,14 @@ object MinimizeNotTransported : Operator() {
 //        val sortedCargoes = freights.toHashSet().sortedByDescending { sol.data.cargoFromId(it).ntCost }
         log.debug { "Can move ${sortedCargoes.size} cargoes from dummy!" }
 
+        //we prefer to move cargoes to vessels with fewer cargoes on board
+        val sortedVessels = sol.data.vessels.sortedBy { subs[it.index()].size }
+
         outer@
         for (cargo in sortedCargoes) {
             val cargoId = cargo.id
 
-            //TODO is there anything we can sort this list by?
-            // maybe use the arches somehow, we have the origin at least but not the destination (unless we say that we take it there directly)
-            val validDestVessels = sol.data.vessels.filter { it.canTakeCargo(cargoId) }.shuffled(Main.rand)
+            val validDestVessels = sortedVessels.filter { it.canTakeCargo(cargoId) }
             for (vessel in validDestVessels) {
                 val destIndex = vessel.index()
 
