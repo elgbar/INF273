@@ -38,6 +38,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
          * The vessel used
          */
         val vesselIndex: Int,
+        val arr: IntArray,
         /**
          * If this route is valid
          */
@@ -154,17 +155,21 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
     /**
      * Generate metadata of the vessel route [sub] for index [vIndex]
      *
-     * @param calculateTime If the time of the metadata should be calculated. If false portTardiness of the meta will not be calculated
+     * @param vIndex The vessel index to generate data for
+     * @param sub The vessel sub array to generate the metadata from
+     * @param copyArr If [sub] should be copied when creating [VesselRouteMetadata].
      */
     fun generateVesselRouteMetadata(
         vIndex: Int,
-        sub: IntArray
+        sub: IntArray,
+        copyArr: Boolean = false
     ): VesselRouteMetadata {
         val portTardiness = IntArray(sub.size) { -1 }
         var cost = 0L
 
         fun createMetadata(valid: Boolean): VesselRouteMetadata {
-            return VesselRouteMetadata(vIndex, valid, portTardiness, cost)
+            val arr = if (copyArr) sub.copyOf() else sub
+            return VesselRouteMetadata(vIndex, arr, valid, portTardiness, cost)
         }
 
         /**
