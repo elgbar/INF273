@@ -49,8 +49,9 @@ object MinimizeWaitTime : Operator() {
 
         //then try and minimize the waiting time
         do {
-            if (operateVesselTilFeasible(solCopy, vIndex, sub) { it.randomizeExchange() }) {
+            if (operateVesselTilFeasible(solCopy, vIndex, sub, allowBruteForce = false) { it.randomizeExchange() }) {
                 val newMeta = solCopy.generateVesselRouteMetadata(vIndex, sub)
+
                 val newMaxTardiness = newMeta.portTardiness.max()
                     ?: error("Failed to calculate max new tardiness for ${newMeta.portTardiness}")
 

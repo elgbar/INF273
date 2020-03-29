@@ -1,10 +1,13 @@
 package no.uib.inf273.operators
 
 import no.uib.inf273.Logger
+import no.uib.inf273.Main.Companion.log
 import no.uib.inf273.Main.Companion.rand
 import no.uib.inf273.extra.filter
+import no.uib.inf273.extra.forEachPermutation
 import no.uib.inf273.extra.insert
 import no.uib.inf273.processor.Solution
+import kotlin.system.measureTimeMillis
 
 abstract class Operator {
 
@@ -63,9 +66,40 @@ abstract class Operator {
 
     private fun removeCargo(sol: Solution, sub: Array<IntArray>, orgVesselIndex: Int, cargoId: Int): IntArray? {
         //create new array with two less elements as they will no longer be here
-        val orgNew = sub[orgVesselIndex].filter(cargoId, IntArray(sub[orgVesselIndex].size - 2))
+        val orgOld = sub[orgVesselIndex]
+        val orgNew = orgOld.filter(cargoId, IntArray(sub[orgVesselIndex].size - 2))
 
-        //TODO optimize the new cargo
+        if (sol.data.isDummyVessel(orgVesselIndex) || orgNew.size <= 2) {
+            //nothing to optimize either the vessel is the dummy vessel or
+            // it has zero or one cargoes
+            return orgNew
+        }
+
+        //How can we optimize the vessel after removing a cargo?
+        //What we know
+        // Assuming this was the best configuration before removal we do not need to change anything before the origin of the removed cargo
+        //
+
+        //new size is small enough that we can brute force it
+        if (orgNew.size <= 4 * 2) {
+            log.debug { "Vessel small enough (${orgNew.size / 2} cargoes) to brute force a solution" }
+            val time = measureTimeMillis {
+                var bestMeta: Solution.VesselRouteMetadata? = null
+                orgNew.forEachPermutation(true) {
+                    val meta = sol.generateVesselRouteMetadata(orgVesselIndex, this, true)
+                    if (meta.feasible && (meta.objectiveValue < bestMeta?.objectiveValue ?: Long.MAX_VALUE)) {
+                        bestMeta = meta
+                    }
+                }
+                val bestArr = bestMeta?.arr ?: return null
+                bestArr.copyInto(orgNew)
+            }
+
+            log.debug { "Finish brute forcing vessel. Took $time ms for ${orgNew.size} elements" }
+        } else {
+            log.debug { "Vessel too large (${orgNew.size / 2} cargoes) to brute force" }
+        }
+//        optimizeVessel(sol, sub[orgVesselIndex], orgVesselIndex)
 
         //A vessel will always be feasible when removing a cargo.
         // All it does in the worst case is force the vessel to wait longer at each port
@@ -100,7 +134,7 @@ abstract class Operator {
         var firstInsertedIndex = -1
 
         //insert origin cargo til we find the best (feasible) insertion location
-        //
+
         for (i in 0..destOldSize) {
             val firstDestMaybe = sub[destVesselIndex].copyOf(destOldSize + 1)
             firstDestMaybe.insert(i, cargoId)
@@ -174,6 +208,7 @@ abstract class Operator {
             vIndex: Int,
             initVesselArr: IntArray,
             allowEqual: Boolean = false,
+            allowBruteForce: Boolean = true,
             operation: (sub: IntArray) -> Unit
         ): Boolean {
 
@@ -188,7 +223,7 @@ abstract class Operator {
                 //Vessels with zero or one cargoes are special as they cannot be moved around
                 initVesselArr.isEmpty() -> return true //empty always feasible
                 //when there is only one cargo we cannot move it around so we can only return if it is feasible or not
-                initVesselArr.size == 2 -> return sol.isVesselFeasible(vIndex, initVesselArr)
+                initVesselArr.size == 2 -> return allowEqual && sol.isVesselFeasible(vIndex, initVesselArr)
                 //The freight cargo is always feasible
                 vIndex == sol.data.nrOfVessels -> return true
 
@@ -203,24 +238,43 @@ abstract class Operator {
                         return true
                     }
 
-                    val maxTries = MAX_TRIES
-                    var tryNr = 0
+                    if (allowBruteForce && sub.size <= 4 * 2) {
+                        log.debug { "Vessel small enough (${sub.size / 2} cargoes) to brute force a solution" }
 
-                    do {
-                        operation(sub)
-
-                        if ((allowEqual || !initVesselArr.contentEquals(sub)) && sol.isVesselFeasible(vIndex, sub)) {
-                            //we found a new feasible solution, update given solution
-                            sub.copyInto(initVesselArr)
-                            return true
-                        } else if (tryNr++ >= maxTries) {
-                            //we're out of tries
-                            return false
-                        } else {
-                            //restore sub array to make sure we can only reach direct neighbors
-                            initVesselArr.copyInto(sub)
+                        var bestMeta: Solution.VesselRouteMetadata? = null
+                        sub.forEachPermutation(true) {
+                            val meta = sol.generateVesselRouteMetadata(vIndex, this, true)
+                            if (meta.feasible && (meta.objectiveValue < bestMeta?.objectiveValue ?: Long.MAX_VALUE)) {
+                                bestMeta = meta
+                            }
                         }
-                    } while (true)
+                        val bestArr = bestMeta?.arr ?: return false
+                        bestArr.copyInto(initVesselArr)
+                        return true
+                    } else {
+
+                        val maxTries = MAX_TRIES
+                        var tryNr = 0
+
+                        do {
+                            operation(sub)
+
+                            if ((allowEqual || !initVesselArr.contentEquals(sub)) &&
+                                sol.isVesselFeasible(vIndex, sub)
+                            ) {
+                                //we found a new feasible solution, update given solution
+                                sub.copyInto(initVesselArr)
+                                return true
+                            } else if (tryNr++ >= maxTries) {
+                                //we're out of tries
+                                return false
+                            } else {
+                                //restore sub array to make sure we can only reach direct neighbors
+                                initVesselArr.copyInto(sub)
+                            }
+                        } while (true)
+
+                    }
                 }
             }
         }

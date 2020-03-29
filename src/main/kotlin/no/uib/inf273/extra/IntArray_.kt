@@ -63,3 +63,61 @@ fun IntArray.insert(index: Int, element: Int) {
     this.copyInto(this, index + 1, index, size - 1)
     this[index] = element
 }
+
+fun IntArray.forEachPermutation(copy: Boolean = true, action: IntArray.() -> Unit) {
+    val n = this.size
+    val arr = if (copy) this.copyOf() else this
+
+    val indices = IntArray(this.size) { 0 }
+
+    val seen = HashSet<String>()
+
+    fun runAction() {
+        if (seen.contains(arr.contentToString())) return
+        seen.add(arr.contentToString())
+        action(arr)
+    }
+
+    runAction()
+
+
+    var i = 0
+    while (i < n) {
+        if (indices[i] < i) {
+            arr.exchange(if (i % 2 == 0) 0 else indices[i], i)
+            runAction()
+            indices[i]++
+            i = 0
+        } else {
+            indices[i] = 0
+            i++
+        }
+    }
+}
+
+//fun permute(ind: IntArray, action: (arr: IntArray) -> Unit) {
+////ind is an array of integers
+//
+//    //ind is an array of integers
+////    for (tail in ind.length - 1 downTo 1) {
+//        if (ind[tail - 1] < ind[tail]) { //still increasing
+//
+//            //find last element which does not exceed ind[tail-1]
+//            var s: Int = ind.length - 1
+//            while (ind[tail - 1] >= ind[s]) s--
+//            swap(ind, tail - 1, s)
+//
+//            //reverse order of elements in the tail
+//            var i: Int = tail
+//            var j: Int = ind.length - 1
+//            while (i < j) {
+//                swap(ind, i, j)
+//                i++
+//                j--
+//            }
+//            break
+//        }
+//    }
+//}
+//
+//
