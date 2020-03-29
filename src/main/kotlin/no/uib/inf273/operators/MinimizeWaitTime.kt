@@ -19,12 +19,14 @@ object MinimizeWaitTime : Operator() {
 
         //find the vessel with the greatest waiting time
         // note that we do not select the vessel with the greatest average waiting time just the global max waiting time
-        val vesselMeta = subs.mapIndexed() { index, sub ->
-            sol.generateVesselRouteMetadata(
-                index,
-                sub
-            ) // generate all info we know about this vessel (objval, port tardiness, etc)
-        }.filter { !sol.data.isDummyVessel(it.vesselIndex) && it.arr.size > 2 }.maxBy {
+        val vesselMeta = subs.mapIndexed { index, ints ->
+            index to ints
+        }.filter { (index, sub) ->
+            !sol.data.isDummyVessel(index) && sub.size > 2
+        }.map() { (index, sub) ->
+            // generate all info we know about this vessel (objval, port tardiness, etc)
+            sol.generateVesselRouteMetadata(index, sub)
+        }.maxBy {
             it.portTardiness.max() ?: -1
         }
 
@@ -35,7 +37,6 @@ object MinimizeWaitTime : Operator() {
         }
 
         val maxTardiness = vesselMeta.portTardiness.max() ?: error("Failed to find a cargo in vessel $vesselMeta")
-
         val vIndex = vesselMeta.vesselIndex
 
         //find what cargo is waiting the longest
