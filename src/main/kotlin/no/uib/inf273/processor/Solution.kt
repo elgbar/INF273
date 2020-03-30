@@ -17,8 +17,8 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
     /**
      * Internal array of the current solution split into multiple sub-arrays. This will be updated when calling [splitToSubArray]
      */
-    internal val subRoutes: Array<IntArray>
-    internal val ranges: MutableList<Pair<Int, Int>> = ArrayList()
+    private val subRoutes: Array<IntArray>
+    private val ranges: MutableList<Pair<Int, Int>> = ArrayList()
 
     init {
         require(arr.size == data.calculateSolutionLength()) {

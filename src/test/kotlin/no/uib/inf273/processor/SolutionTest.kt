@@ -244,8 +244,8 @@ internal class SolutionTest {
         val expected = intArrayOf(2, 1, 0, 1, 2, 0, 3, 3, 0, 4, 4, 5, 5, 6, 6, 7, 7)
 
 
-        val oldRanges = ArrayList<Pair<Int, Int>>().also { it.addAll(sol.ranges) }
-        val oldSub = sol.subRoutes.clone()
+        val oldRanges = ArrayList<Pair<Int, Int>>().also { it.addAll(sol.getVesselRanges(false)) }
+        val oldSub = sol.splitToSubArray(false).clone()
 
         sol.joinToArray(sub)
 
@@ -259,6 +259,6 @@ internal class SolutionTest {
         for ((i, arr) in oldSub.withIndex()) {
             assertTrue(arr !== newSub[i])
         }
-        assertTrue(oldRanges == sol.ranges) { "Old ranges = $oldRanges" }
+        assertEquals(oldRanges, sol.getVesselRanges(false)) { "Old ranges = $oldRanges" }
     }
 }

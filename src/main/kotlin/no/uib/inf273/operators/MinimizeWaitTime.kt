@@ -1,7 +1,6 @@
 package no.uib.inf273.operators
 
 import no.uib.inf273.extra.randomizeExchange
-import no.uib.inf273.processor.DataParser.Companion.ELEMENTS_PER_CARGO
 import no.uib.inf273.processor.Solution
 
 /**
@@ -16,20 +15,18 @@ import no.uib.inf273.processor.Solution
 object MinimizeWaitTime : Operator() {
 
     override fun operate(sol: Solution) {
+
         val subs = sol.splitToSubArray(true)
 
         //find the vessel with the greatest waiting time
         // note that we do not select the vessel with the greatest average waiting time just the global max waiting time
-        val vesselMeta = subs.mapIndexed { index, ints ->
-            index to ints
-        }.filter { (index, sub) ->
-            !sol.data.isDummyVessel(index) && sub.size > ELEMENTS_PER_CARGO
-        }.map() { (index, sub) ->
+        val vesselMeta = findVessels(sol, subs).map() { (index, sub) ->
             // generate all info we know about this vessel (objval, port tardiness, etc)
             sol.generateVesselRouteMetadata(index, sub)
         }.maxBy {
             it.portTardiness.max() ?: -1
         }
+
 
         if (vesselMeta == null) {
             //Nothing to do, vessel is either the dummy vessel or has zero or one cargo

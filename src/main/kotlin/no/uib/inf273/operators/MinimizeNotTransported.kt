@@ -20,7 +20,7 @@ object MinimizeNotTransported : Operator() {
         val freights = subs.last().toSet()
         if (freights.isEmpty()) return //freight is empty nothing we can do
 
-        val orgIndex = subs.size - 1 //origin is always dummy vessel
+        val orgIndex = sol.data.dummyVesselIndex//origin is always dummy vessel
 
         val orgSubCpy = subs[orgIndex].clone()
 

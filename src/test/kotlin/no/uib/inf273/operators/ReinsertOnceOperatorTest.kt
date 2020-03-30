@@ -89,7 +89,7 @@ internal class ReinsertOnceOperatorTest {
 
         Solution.log.logLevel = Logger.DEBUG
 
-        val expect = intArrayOf(0, 0, 7, 7, 1, 1, 0, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6)
+        val expect = intArrayOf(0, 0, 7, 1, 7, 1, 0, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6)
         assertTrue(Solution(data, expect).isFeasible(false))
 
         var s = 0

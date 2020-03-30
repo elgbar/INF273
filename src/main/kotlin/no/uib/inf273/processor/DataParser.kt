@@ -152,7 +152,7 @@ class DataParser(content: String) {
 
                 val timeWindow = abs(c1.lowerPickup - c2.lowerPickup) + abs(c1.upperPickup - c2.upperPickup) +
                         abs(c1.lowerDelivery - c2.lowerDelivery) + abs(c1.upperDelivery - c2.upperDelivery)
-                
+
                 dataMap[c1.id to c2.id] = distance to timeWindow
             }
         }
@@ -177,14 +177,10 @@ class DataParser(content: String) {
      * @return A value in range `[0, 1]` where `0` means the cargo is perfectly similar and `1` means the most dissimilar of all cargoes
      */
     fun getRouteSimilarityScore(vIndex: Int, sub: IntArray): Double {
-        val similarities = getRouteSimilarity(vIndex, sub)
-        //is the subarray is empty it is perfectly similar
-        return if (similarities.isEmpty()) return 0.0
-        else similarities.values.sum() / similarities.size
+        return getRouteSimilarity(vIndex, sub).values.average()
     }
 
     /**
-     * Map of each
      *
      * @see getRouteSimilarityScore
      */
@@ -210,9 +206,10 @@ class DataParser(content: String) {
     /**
      * @returnList of most to least similar cargo pair
      */
-    fun getSortedSimilarityList(vessel: Vessel): List<Pair<Int, Int>> {
-        return getSimilarityMap(vessel).toList().sortedBy { it.second }.map { it.first }
+    fun getSortedSimilarityList(vIndex: Int): List<Pair<Int, Int>> {
+        return getSimilarityMap(vessels[vIndex]).toList().sortedBy { it.second }.map { it.first }
     }
+
 
     /**
      * @return A value in range `[0, 1]` where `0` means identical and `1` means the most dissimilar of all cargoes
@@ -244,8 +241,10 @@ class DataParser(content: String) {
     }
 
     fun isDummyVessel(vIndex: Int): Boolean {
-        return vIndex == nrOfVessels
+        return vIndex == dummyVesselIndex
     }
+
+    val dummyVesselIndex = nrOfVessels
 
     fun getArch(vesselId: Int, orgId: Int, destId: Int): Arch {
         return archs[Triple(vesselId, orgId, destId)]
@@ -256,7 +255,7 @@ class DataParser(content: String) {
     /**
      * @return Map of vessel id with a list of the closest cargoes
      */
-    fun cluser(): Map<Int, List<Int>> {
+    fun cluserize(vIndex: Vessel): Map<Int, List<Int>> {
 
 
         /**

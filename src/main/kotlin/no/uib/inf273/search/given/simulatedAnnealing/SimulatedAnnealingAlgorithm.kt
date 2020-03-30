@@ -64,7 +64,7 @@ abstract class SimulatedAnnealingAlgorithm(
         return fallbackOp
     }
 
-    val opTimes = HashMap<Operator, Double>()
+    val opTimes = HashMap<Operator, Pair<Double, Int>>()
 
     private fun change(sol: Solution) {
         val op = findOperator()
@@ -73,7 +73,8 @@ abstract class SimulatedAnnealingAlgorithm(
             op.operate(sol)
         }
 
-        opTimes[op] = (opTimes[op] ?: 0.0) + time
+        val (oldTime, oldCount) = (opTimes[op] ?: 0.0 to 0)
+        opTimes[op] = oldTime + time to oldCount + 1
 
         log.debug { "Took $time ms to operate" }
         if (log.isDebugEnabled()) {
@@ -188,10 +189,17 @@ abstract class SimulatedAnnealingAlgorithm(
         log.logs {
             val maxOpName = opTimes.keys.map { it.toString().length }.max()
             val formatStr = "%-${maxOpName}s"
-            opTimes.toList().sortedByDescending { it.second }.mapTo(ArrayList()) { (op, time) ->
-                "${formatStr.format(op)} $time ms"
+            opTimes.mapValues { (_, it) ->
+                val (time, count) = it
+                val avgTime = if (count == 0) 0.0
+                else time / count
+                avgTime to count
+            }.toList().sortedByDescending {
+                it.second.first
+            }.mapTo(ArrayList()) { (op, time) ->
+                "${formatStr.format(op)} %.3f ms (%4d times)".format(time.first, time.second)
             }.apply {
-                add(0, "${formatStr.format("Operator")} Time (ms)")
+                add(0, "${formatStr.format("Operator")} Average")
             }
         }
         opTimes.clear()
@@ -258,7 +266,7 @@ abstract class SimulatedAnnealingAlgorithm(
         fun calcCoolingFac(div: Int): Double {
             return exp((ln(endTemp) - ln(initTemp)) / (iterations / div))
         }
-        coolingFactor = calcCoolingFac(7)
+        coolingFactor = calcCoolingFac(4)
 
 
         if (tune) {

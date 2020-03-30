@@ -26,4 +26,9 @@ internal class IntArray_KtTest {
         arr.insert(2, -1)
         assertArrayEquals(intArrayOf(0, 1, -1, 2), arr)
     }
+
+    @Test
+    internal fun permutation() {
+        intArrayOf(0, 1, -1, 1).forEachPermutation { println(contentToString()) }
+    }
 }
