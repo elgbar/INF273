@@ -30,19 +30,19 @@ abstract class Operator {
 
 
     /**
-     * Move the given cargo [cargoId] from the vessel [orgVesselIndex] to vessel [destVesselIndex]. How to insert a cargo into the destination vessel is a heuristic problem in it self. To make it easy to change how to insert the [operation] parameter is available
+     * Move the given cargo [cargoId] from the vessel [orgVesselIndex] to vessel [destVesselIndex].
      *
      * @param sol The solution to move the cargo with
      * @param subs The arrays of each vessel in the solution
      * @param orgVesselIndex Vessel to move cargo from
      * @param destVesselIndex Vessel to move cargo to
-     * @param cargoId What cargo to move from [orgVesselIndex] to [destVesselIndex]
+     * @param cargoId What cargo to move from [orgVesselIndex] to [destVesselIndex] ([destVesselIndex] must be able to take [cargoId])
      *
-     * @return If the cargo was moved, note that [subs] array might have been moved
+     * @return If the cargo was moved, note that [subs] array might have been changed even if this is false!
      */
     internal fun moveCargo(
         sol: Solution,
-        subs: Array<IntArray>,
+        subs: Array<IntArray> = sol.splitToSubArray(true),
         orgVesselIndex: Int,
         destVesselIndex: Int,
         cargoId: Int
@@ -52,23 +52,26 @@ abstract class Operator {
             require(sol.data.canVesselTakeCargo(destVesselIndex, cargoId)) {
                 "Cannot move the cargo $cargoId to destination vessel $destVesselIndex as it is not compatible"
             }
+            require(subs[orgVesselIndex].size >= ELEMENTS_PER_CARGO) { "Cannot remove cargo $cargoId from vessel $orgVesselIndex as it does not have any cargoes" }
+            require(subs[orgVesselIndex].contains(cargoId)) { "Cannot remove cargo $cargoId from vessel $orgVesselIndex as it does not contain the cargo | vessel array: ${subs[orgVesselIndex].contentToString()}" }
         }
 
         val orgNew = removeCargo(sol, subs, orgVesselIndex, cargoId) ?: return false
-        subs[orgVesselIndex] = orgNew
-
         val destNew = addCargo(sol, subs, destVesselIndex, cargoId) ?: return false
+
+        subs[orgVesselIndex] = orgNew
         subs[destVesselIndex] = destNew
 
         //reassemble the solution with the new vessel-cargo composition
         sol.joinToArray(subs)
+
         return true
     }
 
     private fun removeCargo(sol: Solution, sub: Array<IntArray>, orgVesselIndex: Int, cargoId: Int): IntArray? {
         //create new array with two less elements as they will no longer be here
         val orgOld = sub[orgVesselIndex]
-        val orgNew = orgOld.filter(cargoId, IntArray(sub[orgVesselIndex].size - ELEMENTS_PER_CARGO))
+        val orgNew = orgOld.filter(cargoId, IntArray(orgOld.size - ELEMENTS_PER_CARGO))
 
         if (sol.data.isDummyVessel(orgVesselIndex) || orgNew.size <= ELEMENTS_PER_CARGO) {
             //nothing to optimize either the vessel is the dummy vessel or
@@ -83,19 +86,9 @@ abstract class Operator {
 
         //new size is small enough that we can brute force it
         if (orgNew.size <= 4 * ELEMENTS_PER_CARGO) {
-            log.debug { "Vessel small enough (${orgNew.size / ELEMENTS_PER_CARGO} cargoes) to brute force a solution" }
             val time = measureTimeMillis {
-                var bestMeta: Solution.VesselRouteMetadata? = null
-                orgNew.forEachPermutation(true) {
-                    val meta = sol.generateVesselRouteMetadata(orgVesselIndex, this, true)
-                    if (meta.feasible && (meta.objectiveValue < bestMeta?.objectiveValue ?: Long.MAX_VALUE)) {
-                        bestMeta = meta
-                    }
-                }
-                val bestArr = bestMeta?.arr ?: return null
-                bestArr.copyInto(orgNew)
+                exactApproach(sol, orgVesselIndex, orgNew)
             }
-
             log.debug { "Finish brute forcing vessel. Took $time ms for ${orgNew.size} elements" }
         } else {
             log.debug { "Vessel too large (${orgNew.size / ELEMENTS_PER_CARGO} cargoes) to brute force" }
@@ -121,13 +114,21 @@ abstract class Operator {
 
         val destOldSize = sub[destVesselIndex].size
 
+
         //nothing fancy to do when destination is empty or the dummy vessel
-        if (destOldSize == 0 || destVesselIndex == sub.size - 1) {
+        if (destOldSize + ELEMENTS_PER_CARGO <= 4 * ELEMENTS_PER_CARGO || sol.data.isDummyVessel(destVesselIndex)) {
             //the destination array needs to be two element larger for the new cargo to fit
             val destNew = sub[destVesselIndex].copyOf(destOldSize + 2)
             destNew[destNew.size - 1] = cargoId
             destNew[destNew.size - 2] = cargoId
-            return if (sol.isVesselFeasible(destVesselIndex, destNew)) destNew else null
+
+            return when {
+                destNew.size == ELEMENTS_PER_CARGO ->
+                    if (sol.isVesselFeasible(destVesselIndex, destNew)) destNew else null
+                sol.data.isDummyVessel(destVesselIndex) -> destNew
+                exactApproach(sol, destVesselIndex, destNew) -> destNew
+                else -> null
+            }
         }
 
         var bestFirstConfig: IntArray? = null
@@ -190,6 +191,20 @@ abstract class Operator {
             return (until - from + 1) / ELEMENTS_PER_CARGO
         }
 
+        fun exactApproach(sol: Solution, vIndex: Int, sub: IntArray): Boolean {
+            log.debug { "Vessel small enough (${sub.size / ELEMENTS_PER_CARGO} cargoes) to brute force a solution" }
+            var bestMeta: Solution.VesselRouteMetadata? = null
+            sub.forEachPermutation(true) {
+                val meta = sol.generateVesselRouteMetadata(vIndex, this, true)
+                if (meta.feasible && (meta.objectiveValue < bestMeta?.objectiveValue ?: Long.MAX_VALUE)) {
+                    bestMeta = meta
+                }
+            }
+            val bestArr = bestMeta?.arr ?: return false
+            bestArr.copyInto(sub)
+            return true
+        }
+
 
         /**
          * Move cargoes around within a vessel in an solution. No change is done to [sol]s [Solution.arr].
@@ -225,10 +240,8 @@ abstract class Operator {
                 //Vessels with zero or one cargoes are special as they cannot be moved around
                 initVesselArr.isEmpty() -> return true //empty always feasible
                 //when there is only one cargo we cannot move it around so we can only return if it is feasible or not
-                initVesselArr.size == ELEMENTS_PER_CARGO -> return allowEqual && sol.isVesselFeasible(
-                    vIndex,
-                    initVesselArr
-                )
+                initVesselArr.size == ELEMENTS_PER_CARGO -> return allowEqual &&
+                        sol.isVesselFeasible(vIndex, initVesselArr)
                 //The freight cargo is always feasible
                 vIndex == sol.data.nrOfVessels -> return true
 
@@ -244,18 +257,7 @@ abstract class Operator {
                     }
 
                     if (sub.size <= maxCargoesToBruteForce * ELEMENTS_PER_CARGO) {
-                        log.debug { "Vessel small enough (${sub.size / ELEMENTS_PER_CARGO} cargoes) to brute force a solution" }
-
-                        var bestMeta: Solution.VesselRouteMetadata? = null
-                        sub.forEachPermutation(true) {
-                            val meta = sol.generateVesselRouteMetadata(vIndex, this, true)
-                            if (meta.feasible && (meta.objectiveValue < bestMeta?.objectiveValue ?: Long.MAX_VALUE)) {
-                                bestMeta = meta
-                            }
-                        }
-                        val bestArr = bestMeta?.arr ?: return false
-                        bestArr.copyInto(initVesselArr)
-                        return true
+                        return exactApproach(sol, vIndex, sub)
                     } else {
 
                         val maxTries = MAX_TRIES
