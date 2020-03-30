@@ -139,7 +139,7 @@ class DataParser(content: String) {
     private fun calcSimilarity(vessel: Vessel): Map<Pair<Int, Int>, Double> {
 
         //Distance between each cargo for for the given vessel
-        val dataMap = HashMap<Pair<Int, Int>, Triple<Int, Int, Int>>()
+        val dataMap = HashMap<Pair<Int, Int>, Pair<Int, Int>>()
 
 
         for (c1 in cargoes) {
@@ -150,26 +150,24 @@ class DataParser(content: String) {
                 val distance = archs[Triple(vessel.id, c1.originPort, c2.originPort)]!!.time +
                         archs[Triple(vessel.id, c1.destPort, c2.destPort)]!!.time
 
-                val timeWindowPickup =
-                    abs(c1.lowerPickup - c2.lowerPickup) + abs(c1.upperPickup - c2.upperPickup)
-                val timeWindowDelivery =
-                    abs(c1.lowerDelivery - c2.lowerDelivery) + abs(c1.upperDelivery - c2.upperDelivery)
-                dataMap[c1.id to c2.id] = Triple(distance, timeWindowPickup, timeWindowDelivery)
+                val timeWindow = abs(c1.lowerPickup - c2.lowerPickup) + abs(c1.upperPickup - c2.upperPickup) +
+                        abs(c1.lowerDelivery - c2.lowerDelivery) + abs(c1.upperDelivery - c2.upperDelivery)
+                
+                dataMap[c1.id to c2.id] = distance to timeWindow
             }
         }
 
         val maxDist = dataMap.values.map { it.first }.max()!!.toDouble()
-        val maxTimeWindowPickup = dataMap.values.map { it.second }.max()!!.toDouble()
-        val maxTimeWindowDelivery = dataMap.values.map { it.third }.max()!!.toDouble()
+        val maxTimeWindow = dataMap.values.map { it.second }.max()!!.toDouble()
 
         return dataMap.mapValues { (_, it) ->
             //normalize each component individually
             val normalizedDist = it.first / maxDist
-            val timeWindowPickup = it.second / maxTimeWindowPickup
-            val timeWindowDelivery = it.third / maxTimeWindowDelivery
+            val timeWindowPickup = it.second / maxTimeWindow
 
             //then normalize all components
-            (normalizedDist + timeWindowPickup + timeWindowDelivery) / 3
+            // distance have equal weight as the two
+            (normalizedDist + timeWindowPickup) / 2
         }
     }
 
