@@ -1,7 +1,18 @@
 package no.uib.inf273
 
-class Logger(val name: String, var logLevel: Int = INFO) {
+class Logger(private val name: String, logLevel: Int = INFO) {
 
+
+    /**
+     * If the logging level is locked (unable to change)
+     */
+    var logLevelLocked: Boolean = false
+
+    var logLevel = logLevel
+        set(value) {
+            if (logLevelLocked) return
+            field = value
+        }
 
     companion object {
 
