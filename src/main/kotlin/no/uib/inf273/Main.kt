@@ -151,7 +151,7 @@ class Main(
                     , "Improvement (best). . . . . . $improvementBest%"
                     , "Improvement (avg) . . . . . . $improvementAvg%"
                     , "Diff improvement (best-avg) . ${improvementBest - improvementAvg}%"
-                    , "Average time. . . . . . . . . $time ms"
+                    , "Average time. . . . . . . . . ${time / 1000.0} seconds"
                 )
             }
         }
