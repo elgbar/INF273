@@ -175,6 +175,29 @@ abstract class Operator {
         return bestConfig
     }
 
+
+    /**
+     * Find initial vessels of interest to a operator
+     *
+     * @param minCargoes Minimum number of cargoes that each vessel must have (inclusive)
+     * @param maxCargoes Maximum number of cargoes that each vessel must have (inclusive)
+     * @param allowDummy If the dummy vessel is allowed
+     *
+     * @return list of pairs where the first value is the vessel index and the second the vessel array
+     */
+    fun findVessels(
+        sol: Solution,
+        subs: Array<IntArray>,
+        minCargoes: Int = 2, // inclusive
+        maxCargoes: Int = Int.MAX_VALUE, //exclusive
+        allowDummy: Boolean = false
+    ): List<Pair<Int, IntArray>> {
+        val range = minCargoes * ELEMENTS_PER_CARGO..maxCargoes * ELEMENTS_PER_CARGO
+        return subs.mapIndexed { vIndex, sub -> vIndex to sub }.filter { (vIndex, sub) ->
+            (allowDummy || !sol.data.isDummyVessel(vIndex)) && sub.size in range
+        }
+    }
+
     companion object {
 
         /**
