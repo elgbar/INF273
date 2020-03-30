@@ -172,6 +172,35 @@ class DataParser(content: String) {
     }
 
     /**
+     * The similarity score for the given route of the vessel [vIndex].
+     *
+     * @return A value in range `[0, 1]` where `0` means the cargo is perfectly similar and `1` means the most dissimilar of all cargoes
+     */
+    fun getRouteSimilarityScore(vIndex: Int, sub: IntArray): Double {
+        val similarities = getRouteSimilarity(vIndex, sub)
+        //is the subarray is empty it is perfectly similar
+        return if (similarities.isEmpty()) return 0.0
+        else similarities.values.sum() / similarities.size
+    }
+
+    /**
+     * Map of each
+     *
+     * @see getRouteSimilarityScore
+     */
+    fun getRouteSimilarity(vIndex: Int, sub: IntArray): Map<Pair<Int, Int>, Double> {
+        val cargoes = sub.toSet()
+        return getSimilarityMap(vIndex).filterKeys { (c1, c2) -> cargoes.contains(c1) && cargoes.contains(c2) }
+    }
+
+    /**
+     * @return Map of pairs of cargoes mapped to how similar they are
+     */
+    fun getSimilarityMap(vIndex: Int): Map<Pair<Int, Int>, Double> {
+        return getSimilarityMap(vessels[vIndex])
+    }
+
+    /**
      * @return Map of pairs of cargoes mapped to how similar they are
      */
     fun getSimilarityMap(vessel: Vessel): Map<Pair<Int, Int>, Double> {
