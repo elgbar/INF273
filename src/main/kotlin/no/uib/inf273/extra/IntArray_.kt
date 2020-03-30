@@ -64,33 +64,59 @@ fun IntArray.insert(index: Int, element: Int) {
     this[index] = element
 }
 
+/**
+ * Adapted from c-code found [here](https://www.geeksforgeeks.org/print-all-permutations-of-a-string-with-duplicates-allowed-in-input-string/)
+ */
 fun IntArray.forEachPermutation(copy: Boolean = true, action: IntArray.() -> Unit) {
-    val n = this.size
     val arr = if (copy) this.copyOf() else this
 
-    val indices = IntArray(this.size) { 0 }
-
-    val seen = HashSet<String>()
-
-    fun runAction() {
-        if (seen.contains(arr.contentToString())) return
-        seen.add(arr.contentToString())
-        action(arr)
+    fun findCeil(arr: IntArray, first: Int, l: Int, h: Int): Int {
+        var ceilIndex = l
+        for (i in l + 1..h) {
+            if (arr[i] > first && arr[i] < arr[ceilIndex]) {
+                ceilIndex = i
+            }
+        }
+        return ceilIndex;
     }
 
-    runAction()
+//    println("finding all permutations of arr size ${arr.size}: ${arr.contentToString()}")
+
+    // Sort the string in increasing order
+    arr.sort()
+
+    // Print permutations one by one
+    var isFinished = false;
+    while (!isFinished) {
+        arr.action()
+
+        var i: Int = size - 2
+        while (i >= 0) {
+            if (arr[i] < arr[i + 1]) break
+            --i
+        }
+
+        // If there is no such character, all
+        // are sorted in decreasing order,
+        // means we just printed the last
+        // permutation and we are done.
+        if (i == -1)
+            isFinished = true;
+        else {
+
+            // Find the ceil of 'first char'
+            // in right of first character.
+            // Ceil of a character is the
+            // smallest character greater
+            // than it
+            val ceilIndex = findCeil(arr, arr[i], i + 1, size - 1);
+
+            // Swap first and second characters
+            arr.exchange(i, ceilIndex)
 
 
-    var i = 0
-    while (i < n) {
-        if (indices[i] < i) {
-            arr.exchange(if (i % 2 == 0) 0 else indices[i], i)
-            runAction()
-            indices[i]++
-            i = 0
-        } else {
-            indices[i] = 0
-            i++
+            // Sort the string on right of 'first char'
+            arr.sort(fromIndex = i + 1)
         }
     }
 }
