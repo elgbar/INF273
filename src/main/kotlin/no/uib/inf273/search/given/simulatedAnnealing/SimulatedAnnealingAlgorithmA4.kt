@@ -7,7 +7,7 @@ import no.uib.inf273.operators.given.ReinsertOnceOperator
 
 object SimulatedAnnealingAlgorithmA4 : SimulatedAnnealingAlgorithm(
     0.25 to MinimizeWaitTime,
-    0.45 to MinimizeNotTransported,
+    0.35 to MinimizeNotTransported,
     0.55 to MoveSimilarCargo,
     fallbackOp = ReinsertOnceOperator(0.75)
 ) {
