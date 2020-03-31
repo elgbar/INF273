@@ -67,6 +67,8 @@ class Main(
 
     private val samples: Int by parser.storing("How many samples to take") { toInt() }.default { 10 }
 
+    private val showSolution: Boolean by parser.flagging("--show-solution", help = "Show the best generated solution")
+
     // Generated variables //
 
     val data: DataParser
@@ -155,6 +157,9 @@ class Main(
                     , "Diff improvement (best-avg) . ${improvementBest - improvementAvg}%"
                     , "Average time. . . . . . . . . ${time / 1000.0} seconds"
                 )
+            }
+            if (showSolution) {
+                log.log(best.arr.contentToString())
             }
         }
     }
