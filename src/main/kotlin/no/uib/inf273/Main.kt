@@ -128,6 +128,7 @@ class Main(
         return map
     }
 
+
     private fun printResults(algorithm: Algorithm, result: Triple<Double, Solution, Long>, singleLine: Boolean) {
 
         val (avgObjVal, best, time) = result
@@ -143,8 +144,9 @@ class Main(
             log.log { "${algorithm.javaClass.simpleName}, $avgObjVal, $bestObjVal, $improvementBest%, $time ms, ${best.arr.contentToString()}" }
         } else {
             log.logs {
-                listOf(
-                    "Searching with algorithm. . . $algorithm"
+                listOf(/*
+                    */"Searching with algorithm. . . $algorithm"
+                    , "File. . . . . . . . . . . . . $filePath"
                     , "Initial objective value . . . $defaultObjVal"
                     , "Best objective value. . . . . $bestObjVal"
                     , "Average objective value . . . $avgObjVal"
