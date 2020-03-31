@@ -85,7 +85,7 @@ abstract class Operator {
         //
 
         //new size is small enough that we can brute force it
-        if (orgNew.size <= 4 * ELEMENTS_PER_CARGO) {
+        if (orgNew.size <= DEFAULT_MAX_NR_CARGOES_TO_BRUTE_FORCE * ELEMENTS_PER_CARGO) {
             val time = measureTimeMillis {
                 exactApproach(sol, orgVesselIndex, orgNew)
             }
@@ -116,7 +116,10 @@ abstract class Operator {
 
 
         //nothing fancy to do when destination is empty or the dummy vessel
-        if (destOldSize + ELEMENTS_PER_CARGO <= 4 * ELEMENTS_PER_CARGO || sol.data.isDummyVessel(destVesselIndex)) {
+        if (destOldSize + ELEMENTS_PER_CARGO <= DEFAULT_MAX_NR_CARGOES_TO_BRUTE_FORCE * ELEMENTS_PER_CARGO || sol.data.isDummyVessel(
+                destVesselIndex
+            )
+        ) {
             //the destination array needs to be two element larger for the new cargo to fit
             val destNew = sub[destVesselIndex].copyOf(destOldSize + 2)
             destNew[destNew.size - 1] = cargoId
@@ -210,6 +213,8 @@ abstract class Operator {
          */
         const val INVALID_VESSEL = -1
 
+        const val DEFAULT_MAX_NR_CARGOES_TO_BRUTE_FORCE = 4
+
         internal fun calculateNumberOfVessels(from: Int, until: Int): Int {
             return (until - from + 1) / ELEMENTS_PER_CARGO
         }
@@ -248,7 +253,7 @@ abstract class Operator {
             vIndex: Int,
             initVesselArr: IntArray,
             allowEqual: Boolean = false,
-            maxCargoesToBruteForce: Int = 4,
+            maxCargoesToBruteForce: Int = DEFAULT_MAX_NR_CARGOES_TO_BRUTE_FORCE,
             operation: (sub: IntArray) -> Unit
         ): Boolean {
 
@@ -303,7 +308,6 @@ abstract class Operator {
                                 initVesselArr.copyInto(sub)
                             }
                         } while (true)
-
                     }
                 }
             }
