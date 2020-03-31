@@ -8,7 +8,7 @@ import no.uib.inf273.processor.Solution
  *
  * The implementation does not satisfy the quality or speed need from the custom operators.
  * It reasonably quickly find what cargoes are misfit in a vessel but this does not mean that those two are actually
- * a bad solution. Consider the following senario: We have three cargoes A, B, and C.
+ * a bad solution. Consider the following scenario: We have three cargoes A, B, and C.
  * Destination of A is close to origin of B and destination of B is close to origin of C. This might then be an okay solution but for this operator
  * A and C are very dissimilar so it tries to remove one of them, resulting in a worse solution.
  *

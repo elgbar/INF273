@@ -4,8 +4,9 @@ import no.uib.inf273.Main
 import no.uib.inf273.processor.Solution
 
 /**
- * Look for similar cargo to be moved to an empty(?) vessel.
- * Find a vessel with high similarity and look for cargoes that will go well there
+ * Find cargoes that are similar (in origin and destination ports, and time frame) and move them into the same vessel.
+ *
+ * This operator helps with diversification as it moves to new vessels.
  *
  * @author Elg
  */
