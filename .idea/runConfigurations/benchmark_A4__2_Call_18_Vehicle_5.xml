@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="benchmark A4 #2 Call_18_Vehicle_5" type="JetRunConfigurationType">
-    <module name="INF273-Assignments.main" />
+    <module name="INF273.main" />
     <option name="VM_PARAMETERS" value="" />
     <option name="PROGRAM_PARAMETERS" value="--file Call_18_Vehicle_5.txt --search-simulated-annealing-a4 --show-solution --samples 10" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />

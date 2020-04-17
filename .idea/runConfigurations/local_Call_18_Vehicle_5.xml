@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="local Call_18_Vehicle_5" type="JetRunConfigurationType" factoryName="Kotlin">
-    <module name="INF273-Assignments.main" />
+    <module name="INF273.main" />
     <option name="VM_PARAMETERS" value="" />
     <option name="PROGRAM_PARAMETERS" value="--file  Call_18_Vehicle_5.txt --search-local-a3" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
