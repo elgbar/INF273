@@ -2,6 +2,7 @@ package no.uib.inf273.search
 
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
+import no.uib.inf273.search.A5.OperatorCharacteristic
 
 /**
  * An algorithm based an Simulated Annealing, Tabu, and performance of operators
@@ -43,6 +44,14 @@ import no.uib.inf273.processor.SolutionGenerator
  *
  * The given operators used are automatically weighted based on their performance in the last iteration segment.
  *
+ * ### Initial Weight & Operator Characteristics
+ *
+ * Each operator will with no other specification be given equal weights.
+ * However for each operator it is possible to specify characteristics that will modify how
+ * the weights will be calculated.
+ *
+ * see [OperatorCharacteristic]
+ *
  * ### Iteration Segment
  *
  * An iteration segment is defined as lasting for 1% of the total iterations.
@@ -56,20 +65,27 @@ import no.uib.inf273.processor.SolutionGenerator
  *
  * For all conditions below change the score accordingly to their weight.
  *
- * * Global best solution       += 2.50 pt (Greater weight if a new global best is found to encourage this)
+ * * Global best solution       += 1.00 pt (Greater weight if a new global best is found to encourage this)
  * * Better solution            += 0.50 pt
  * * Identical solution         += 0.50 pt (No change have was made)
- * * Feasible solution          += 0.50
- * * Worse  solution            += 0.25 pt (At least it is feasible)
- * * Taboo solution             -= 0.50 pt (Discourage taboo solutions, note that C does not count as taboo)
- * * Worse infeasible solution  -= 0.25 pt
+ * * Feasible solution          += 0.50 pt
+ * * Infeasible solution        -= 0.50 pt
+ * * Taboo solution             -= 0.25 pt (Discourage taboo solutions, note that C does not count as taboo)
+ * * Worse solution             -= 0.25 pt (At least it is feasible)
+ *
+ * ### Examples
+ *
+ * * A new global best solution : 1.00 + 0.50 + 0.50 = 2.0
+ * * Better solution            : 0.50 + 0.50 = 1.0
+ * * Worse Taboo infeasible     : -0.25 - 0.25 -0.50 = -1.00 (worst case)
  *
  *  ### Calculating the new Weights
  *
  *  Each operator have a unbiased weight score `u` equal to `max(0, total points scored in the last segment)` divided
- *  by the total time the operator was selected. The old weight from the previous segment is called `o`, `n` is the number of operators.
+ *  by the total time the operator was selected. The old weight from the previous segment is called `o`, initially it
+ *  is specified by the operator characteristic,`modifier` is the operator characteristic modifier, and `n` is the number of operators.
  *
- *  The new relative weight `r` is `(o/2 + u) / n`.
+ *  The new relative weight `r` is `(o/2 + u * modifier) / n`.
  *
  * ## Taboo Solutions
  *
@@ -99,6 +115,37 @@ object A5 : Algorithm() {
 
     override fun tune(solgen: SolutionGenerator, iterations: Int, report: Boolean) {
         TODO("not implemented")
+    }
+
+    /**
+     * @param initialWeight What the initial weight should be of an operator with this Characteristic
+     * @param modifier A function that return a number between `0` and `1` to be multiplied with the calculated weight.  The argument given to the function is a number between 0 and 1 showing percentage of iterations completed.
+     */
+    enum class OperatorCharacteristic(initialWeight: Float, modifier: (progress: Float) -> Float) {
+
+        /**
+         * No characteristic is known about the given operator.
+         *
+         * This is the default option
+         *
+         */
+        NOTHING(1f, { 1f }),
+
+        /**
+         * The operator is good __early__ in the search
+         */
+        INITIATOR(1.5f, { progress: Float ->
+            //op is 100% effective for the first 25% of the search
+            //after that it drops to 75% efficiency
+            if (progress <= 0.25) 1f else 0.75f
+        }),
+
+        /**
+         * The operator is good __late__ in the search
+         */
+        INTENSIFIER(0.75f, { progress: Float ->
+            if (progress <= 0.25) 0.65f else if (progress <= 0.50f) 0.85f else 1f
+        })
     }
 
 }
