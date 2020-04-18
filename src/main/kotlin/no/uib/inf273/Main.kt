@@ -6,6 +6,7 @@ import com.xenomachina.argparser.mainBody
 import no.uib.inf273.processor.DataParser
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
+import no.uib.inf273.search.A5
 import no.uib.inf273.search.Algorithm
 import no.uib.inf273.search.given.LocalAlgorithmA3
 import no.uib.inf273.search.given.RandomAlgorithm
@@ -50,7 +51,8 @@ class Main(
         "--ssa3" to SimulatedAnnealingAlgorithmA3,
         "--search-simulated-annealing-a4" to SimulatedAnnealingAlgorithmA4,
         "--ssa4" to SimulatedAnnealingAlgorithmA4,
-        help = "What search method to use"
+        "--a5" to A5,
+        help = "What search algorithm to use"
     ).default(Algorithm.NoAlgorithm)
 
     private val seed: Long by parser.storing("The random seed to use") { toLong() }.default(Random.nextLong())
@@ -146,16 +148,16 @@ class Main(
             log.log { "${algorithm.javaClass.simpleName}, $avgObjVal, $bestObjVal, $improvementBest%, $time ms, ${best.arr.contentToString()}" }
         } else {
             log.logs {
-                listOf(/*
-                    */"Searching with algorithm. . . $algorithm"
-                    , "File. . . . . . . . . . . . . $filePath"
-                    , "Initial objective value . . . $defaultObjVal"
-                    , "Best objective value. . . . . $bestObjVal"
-                    , "Average objective value . . . $avgObjVal"
-                    , "Improvement (best). . . . . . $improvementBest%"
-                    , "Improvement (avg) . . . . . . $improvementAvg%"
-                    , "Diff improvement (best-avg) . ${improvementBest - improvementAvg}%"
-                    , "Average time. . . . . . . . . ${time / 1000.0} seconds"
+                listOf(
+                    "Searching with algorithm. . . $algorithm",
+                    "File. . . . . . . . . . . . . $filePath",
+                    "Initial objective value . . . $defaultObjVal",
+                    "Best objective value. . . . . $bestObjVal",
+                    "Average objective value . . . $avgObjVal",
+                    "Improvement (best). . . . . . $improvementBest%",
+                    "Improvement (avg) . . . . . . $improvementAvg%",
+                    "Diff improvement (best-avg) . ${improvementBest - improvementAvg}%",
+                    "Average time. . . . . . . . . ${time / 1000.0} seconds"
                 )
             }
             if (showSolution) {
