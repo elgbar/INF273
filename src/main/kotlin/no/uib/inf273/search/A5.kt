@@ -19,11 +19,19 @@ import no.uib.inf273.search.A5.OperatorCharacteristic
  * C -> Current solution
  * T -> Current temperature
  * L -> List of taboo results
+ * J -> number of iteration without an improvement
  *
  * for iter_nr in 0..I:
  *     if iter_nr mod (1% of I) is 0:
- *         Recalculating the operator weights and reset all point counters
- *     O <- Select operator based on weights W
+ *         Recalculating the operator weights and reset all operator point counters
+ *
+ *     #Use taboo length to try and reduce bad runs early
+ *     if J >= 0.5% of I:
+ *          Reduce size of L
+ *     if J >= 2% of I:
+ *          O <- Select an escape operator
+ *     else
+ *          O <- Select operator based on weights W
  *     N <- Operate on C with selected operator O
  *     ∆E <- objective value of N - objective value of B
  *
@@ -33,8 +41,14 @@ import no.uib.inf273.search.A5.OperatorCharacteristic
  *             Set C to be N and update L
  *             if objective value of N < objective value of B
  *                 Set B to be N
+ *             set J to 0
  *         else if rand(0d..1d) < e ^ (-∆E / T):
  *             Set C to be N and update L
+ *             set J to 0
+ *         else:
+ *             Increase J by 1
+ *     else:
+ *        Increase J by 1
  *
  *     Calculate points to give to O based on N
  *     Update T
@@ -65,13 +79,13 @@ import no.uib.inf273.search.A5.OperatorCharacteristic
  *
  * For all conditions below change the score accordingly to their weight.
  *
- * * Global best solution       += 1.00 pt (Greater weight if a new global best is found to encourage this)
- * * Better solution            += 0.50 pt
- * * Identical solution         += 0.50 pt (No change have was made)
- * * Feasible solution          += 0.50 pt
- * * Infeasible solution        -= 0.50 pt
- * * Taboo solution             -= 0.25 pt (Discourage taboo solutions, note that C does not count as taboo)
- * * Worse solution             -= 0.25 pt (At least it is feasible)
+ * * Global best solution . += 1.00 pt (Greater weight if a new global best is found to encourage this)
+ * * Better solution. . . . += 0.50 pt
+ * * Identical solution . . += 0.50 pt (No change have was made)
+ * * Feasible solution. . . += 0.50 pt
+ * * Infeasible solution. . -= 0.50 pt
+ * * Taboo solution . . . . -= 0.25 pt (Discourage taboo solutions, note that C does not count as taboo)
+ * * Worse solution . . . . -= 0.25 pt (At least it is feasible)
  *
  * ### Examples
  *
@@ -105,6 +119,10 @@ import no.uib.inf273.search.A5.OperatorCharacteristic
  * such a way that it is the youngest (ie first) member of the set. This can be done by removing then adding the element.
  * It might be added because two different solutions gives the same hash or it might be added due to the boltzmann probability.
  *
+ * ## Escape operator
+ *
+ * Escape operators are operator intended to do large changes to get the solution out of a local optima. They should
+ * drastically change the solution in the hope that the solution will escape the current local optima.
  *
  * @author Elg
  */
