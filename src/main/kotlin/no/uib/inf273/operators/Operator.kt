@@ -37,6 +37,7 @@ abstract class Operator {
      * @param orgVesselIndex Vessel to move cargo from
      * @param destVesselIndex Vessel to move cargo to
      * @param cargoId What cargo to move from [orgVesselIndex] to [destVesselIndex] ([destVesselIndex] must be able to take [cargoId])
+     * @param maxCargoesToBruteForce Max (inclusive) number of cargoes that can be present in the given vessel to allow brute forcing, setting to 1 or lower will disable brute forcing
      *
      * @return If the cargo was moved, note that [subs] array might have been changed even if this is false!
      */
@@ -45,7 +46,8 @@ abstract class Operator {
         subs: Array<IntArray> = sol.splitToSubArray(true),
         orgVesselIndex: Int,
         destVesselIndex: Int,
-        cargoId: Int
+        cargoId: Int,
+        maxCargoesToBruteForce: Int = DEFAULT_MAX_CARGOES_IN_VESSEL_TO_USE_EXACT_APPROACH
     ): Boolean {
 
         if (log.isDebugEnabled()) {
@@ -56,8 +58,8 @@ abstract class Operator {
             require(subs[orgVesselIndex].contains(cargoId)) { "Cannot remove cargo $cargoId from vessel $orgVesselIndex as it does not contain the cargo | vessel array: ${subs[orgVesselIndex].contentToString()}" }
         }
 
-        val orgNew = removeCargo(sol, subs, orgVesselIndex, cargoId) ?: return false
-        val destNew = addCargo(sol, subs, destVesselIndex, cargoId) ?: return false
+        val orgNew = removeCargo(sol, subs, orgVesselIndex, cargoId, maxCargoesToBruteForce) ?: return false
+        val destNew = addCargo(sol, subs, destVesselIndex, cargoId, maxCargoesToBruteForce) ?: return false
 
         subs[orgVesselIndex] = orgNew
         subs[destVesselIndex] = destNew
@@ -68,7 +70,13 @@ abstract class Operator {
         return true
     }
 
-    private fun removeCargo(sol: Solution, sub: Array<IntArray>, orgVesselIndex: Int, cargoId: Int): IntArray? {
+    private fun removeCargo(
+        sol: Solution,
+        sub: Array<IntArray>,
+        orgVesselIndex: Int,
+        cargoId: Int,
+        maxCargoesToBruteForce: Int
+    ): IntArray? {
         //create new array with two less elements as they will no longer be here
         val orgOld = sub[orgVesselIndex]
         val orgNew = orgOld.filter(cargoId, IntArray(orgOld.size - ELEMENTS_PER_CARGO))
@@ -85,7 +93,7 @@ abstract class Operator {
         //
 
         //new size is small enough that we can brute force it
-        if (orgNew.size <= DEFAULT_MAX_NR_CARGOES_TO_BRUTE_FORCE * ELEMENTS_PER_CARGO) {
+        if (orgNew.size <= maxCargoesToBruteForce * ELEMENTS_PER_CARGO) {
             val time = measureTimeMillis {
                 exactApproach(sol, orgVesselIndex, orgNew)
             }
@@ -109,16 +117,16 @@ abstract class Operator {
         sol: Solution,
         sub: Array<IntArray>,
         destVesselIndex: Int,
-        cargoId: Int
+        cargoId: Int,
+        maxCargoesToBruteForce: Int
     ): IntArray? {
 
         val destOldSize = sub[destVesselIndex].size
 
 
         //nothing fancy to do when destination is empty or the dummy vessel
-        if (destOldSize + ELEMENTS_PER_CARGO <= DEFAULT_MAX_NR_CARGOES_TO_BRUTE_FORCE * ELEMENTS_PER_CARGO || sol.data.isDummyVessel(
-                destVesselIndex
-            )
+        if (destOldSize + ELEMENTS_PER_CARGO <= maxCargoesToBruteForce * ELEMENTS_PER_CARGO ||
+            sol.data.isDummyVessel(destVesselIndex)
         ) {
             //the destination array needs to be two element larger for the new cargo to fit
             val destNew = sub[destVesselIndex].copyOf(destOldSize + 2)
@@ -213,7 +221,10 @@ abstract class Operator {
          */
         const val INVALID_VESSEL = -1
 
-        const val DEFAULT_MAX_NR_CARGOES_TO_BRUTE_FORCE = 4
+        /**
+         * Max number of cargoes in a vessel to use exact approach (brute force)
+         */
+        const val DEFAULT_MAX_CARGOES_IN_VESSEL_TO_USE_EXACT_APPROACH = 4
 
         internal fun calculateNumberOfVessels(from: Int, until: Int): Int {
             return (until - from + 1) / ELEMENTS_PER_CARGO
@@ -253,7 +264,7 @@ abstract class Operator {
             vIndex: Int,
             initVesselArr: IntArray,
             allowEqual: Boolean = false,
-            maxCargoesToBruteForce: Int = DEFAULT_MAX_NR_CARGOES_TO_BRUTE_FORCE,
+            maxCargoesToBruteForce: Int = DEFAULT_MAX_CARGOES_IN_VESSEL_TO_USE_EXACT_APPROACH,
             operation: (sub: IntArray) -> Unit
         ): Boolean {
 
@@ -270,7 +281,7 @@ abstract class Operator {
                 //when there is only one cargo we cannot move it around so we can only return if it is feasible or not
                 initVesselArr.size == ELEMENTS_PER_CARGO -> return allowEqual &&
                         sol.isVesselFeasible(vIndex, initVesselArr)
-                //The freight cargo is always feasible
+                //The spot carrier cargo is always feasible
                 vIndex == sol.data.nrOfVessels -> return true
 
                 else -> {
@@ -317,44 +328,44 @@ abstract class Operator {
         /**
          * Select two random distinct vessels where the first vessel selected is non-empty
          *
-         * @param discourageFreightPercent A double in range `[0.0, 1.0]` where `1.0` will never accept destination to be the dummy freight vessel (if it is chosen) and `0.0` will always accept it. Meaning that a value of `0.5` will accept destination to be freight 50% of the time it is selected
+         * @param discourageSpotCarrierPercent carrierPercent A double in range `[0.0, 1.0]` where `1.0` will never accept destination to be the dummy spot carrier vessel (if it is chosen) and `0.0` will always accept it. Meaning that a value of `0.5` will accept destination to be spot carrier 50% of the time it is selected
          */
         internal fun selectTwoRandomVessels(
             sub: Array<IntArray>,
-            discourageFreightPercent: Double = 0.0
+            discourageSpotCarrierPercent: Double = 0.0
         ): Pair<Int, Int> {
-            require(discourageFreightPercent in 0.0..1.0) { "discourageFreightPercent must be in range [0.0, 1.0] was $discourageFreightPercent" }
+            require(discourageSpotCarrierPercent in 0.0..1.0) { "discourageSpotCarrierPercent must be in range [0.0, 1.0] was $discourageSpotCarrierPercent" }
 
-            fun allowFreight(): Boolean {
-                return discourageFreightPercent < rand.nextDouble()
+            fun allowSpotCarrier(): Boolean {
+                return discourageSpotCarrierPercent < rand.nextDouble()
             }
 
             var orgVesselIndex: Int
             var destVesselIndex: Int
             do {
                 orgVesselIndex = selectRandomVessel(sub, 1, true)
-                destVesselIndex = selectRandomVessel(sub, 0, allowFreight())
+                destVesselIndex = selectRandomVessel(sub, 0, allowSpotCarrier())
             } while (orgVesselIndex == destVesselIndex)
             return orgVesselIndex to destVesselIndex
         }
 
         /**
-         * Return the index of a random vessel within [sub]. If [allowFreight] and [minCargo]` > 0` are both `true` this
+         * Return the index of a random vessel within [sub]. If [allowSpotCarrier] is `false` and [minCargo]` > 0` is `true` this
          * might return [INVALID_VESSEL] as no valid vessel could ever be selected. There should not be any need to test for this if either is `false`
          *
          * @param minCargo The minimum number of cargoes that must exist in the given
          *
          */
-        fun selectRandomVessel(sub: Array<IntArray>, minCargo: Int, allowFreight: Boolean): Int {
+        fun selectRandomVessel(sub: Array<IntArray>, minCargo: Int, allowSpotCarrier: Boolean): Int {
             require(minCargo >= 0) { "Minimum number of cargoes must be a non-negative number. Given $minCargo" }
-            val size = sub.size - if (allowFreight) 0 else 1
+            val size = sub.size - if (allowSpotCarrier) 0 else 1
 
             fun invalidSize(arr: IntArray): Boolean {
                 return arr.size / 2 < minCargo
             }
 
-            if (minCargo > 0 && !allowFreight && sub.toList().subList(0, size).all { invalidSize(it) }) {
-                //can never select any valid vessel (probably every cargo is in freight)
+            if (minCargo > 0 && !allowSpotCarrier && sub.toList().subList(0, size).all { invalidSize(it) }) {
+                //can never select any valid vessel (probably every cargo is in spot carrier)
                 return INVALID_VESSEL
             }
 
