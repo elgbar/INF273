@@ -28,10 +28,12 @@ import no.uib.inf273.search.A5.OperatorCharacteristic
  *     #Use taboo length to try and reduce bad runs early
  *     if J >= 0.5% of I:
  *          Reduce size of L
+ *
  *     if J >= 2% of I:
- *          O <- Select an escape operator
- *     else
- *          O <- Select operator based on weights W
+ *          O' <- Select an escape operator
+ *          C <- Operate on C with selected operator O'
+ *
+ *     O <- Select operator based on weights W
  *     N <- Operate on C with selected operator O
  *     ∆E <- objective value of N - objective value of B
  *
@@ -41,16 +43,11 @@ import no.uib.inf273.search.A5.OperatorCharacteristic
  *             Set C to be N and update L
  *             if objective value of N < objective value of B
  *                 Set B to be N
- *             set J to 0
  *         else if rand(0d..1d) < e ^ (-∆E / T):
  *             Set C to be N and update L
- *             set J to 0
- *         else:
- *             Increase J by 1
- *     else:
- *        Increase J by 1
  *
  *     Calculate points to give to O based on N
+ *     Update J and reset length of L if C was updated
  *     Update T
  * ```
  *
