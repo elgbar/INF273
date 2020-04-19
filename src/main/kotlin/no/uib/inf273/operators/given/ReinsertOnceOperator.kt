@@ -1,13 +1,12 @@
 package no.uib.inf273.operators.given
 
-import no.uib.inf273.Main
 import no.uib.inf273.operators.Operator
 import no.uib.inf273.processor.Solution
 
 /**
- * An operator that picks two unique vessels (including freights) then moves cargo from the origin vessel to the destination vessel.
+ * An operator that picks two unique vessels (including spot carriers) then moves cargo from the origin vessel to the destination vessel.
  */
-class ReinsertOnceOperator(private val discourageFreightPercent: Double = 0.0) : Operator() {
+class ReinsertOnceOperator(private val discourageSpotCarrierPercent: Double = 0.0) : Operator() {
 
     companion object {
         val INST = ReinsertOnceOperator()
@@ -20,14 +19,13 @@ class ReinsertOnceOperator(private val discourageFreightPercent: Double = 0.0) :
         var indices: Pair<Int, Int>
         do {
             //select two vessels where the origin vessel have cargoes
-            indices = selectTwoRandomVessels(sub, discourageFreightPercent)
+            indices = selectTwoRandomVessels(sub, discourageSpotCarrierPercent)
 
             //pick a random cargo within the origin vessel
-            cargo = sub[indices.first].random(Main.rand)
+            cargo = randomCargo(sub, indices.first)
         } while (!sol.data.canVesselTakeCargo(indices.second, cargo))
 
-        val orgVesselIndex = indices.first
-        val destVesselIndex = indices.second
+        val (orgVesselIndex, destVesselIndex) = indices
 
         if (moveCargo(sol, sub, orgVesselIndex, destVesselIndex, cargo)) {
             log.debug {
@@ -35,9 +33,7 @@ class ReinsertOnceOperator(private val discourageFreightPercent: Double = 0.0) :
                         "to dest $destVesselIndex"
             }
         } else {
-            log.debug {
-                "No move made"
-            }
+            log.debug { "No move made" }
         }
     }
 }

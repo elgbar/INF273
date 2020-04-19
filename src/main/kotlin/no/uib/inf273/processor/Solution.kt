@@ -367,7 +367,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
 
 
     /**
-     * Calculate where the cargoes are for each vessel. The last element are those cargoes who are carried by freights.
+     * Calculate where the cargoes are for each vessel. The last element are those cargoes who are carried by spot carriers.
      *
      * All ranges behave like standard ranges, first element is inclusive while last element is exclusive.
      *
@@ -398,7 +398,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
                     else barrierIndices[i - 1] + 1
                 return@mapIndexedTo from to barrierIndex
             }
-            //add the cargoes that travel by freight
+            //add the cargoes that travel by spot carrier
             ranges += barrierIndices[barrierIndices.size - 1] + 1 to arr.size
         }
         return ranges

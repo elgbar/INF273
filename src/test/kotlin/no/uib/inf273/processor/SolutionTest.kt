@@ -53,7 +53,7 @@ internal class SolutionTest {
     }
 
     @Test
-    fun isValid_InvalidDiffDeliAndPickup_butAlsoUsingFreight() {
+    fun isValid_InvalidDiffDeliAndPickup_butAlsoUsingSpotCarrier() {
         val givenData = intArrayOf(1, 1, 2, 2, 0, 2, 0, 4, 5, 6, 4, 5, 6, 3)
         assertFalse(Solution(data2, givenData).isValid(true))
     }

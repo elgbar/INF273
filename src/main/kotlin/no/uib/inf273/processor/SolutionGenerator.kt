@@ -27,7 +27,7 @@ class SolutionGenerator(val data: DataParser) {
      * Generate a non-randomized solution with all barrier elements then two elements of each cargo side by side.
      * The returned solution is guaranteed to be valid, but not necessarily feasible
      *
-     * @return A valid, feasible solution where all cargoes are handled with freight
+     * @return A valid, feasible solution where all cargoes are handled with spot carrier
      */
     fun generateStandardSolution(): Solution {
         if (!::std.isInitialized) {

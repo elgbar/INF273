@@ -5,7 +5,7 @@ import no.uib.inf273.processor.DataParser
 import no.uib.inf273.processor.Solution
 
 /**
- * Minimize the number of cargoes we use freight to transport.
+ * Minimize the number of cargoes we use spot carrier to transport.
  * Cost of not transporting is very high compared to even the worst route!
  * If we minimize number of cargoes we do not transport the cost will (hopefully) go down.
  *
@@ -17,8 +17,8 @@ object MinimizeNotTransported : Operator() {
 
     override fun operate(sol: Solution) {
         val subs = sol.splitToSubArray(true)
-        val freights = subs.last().toSet()
-        if (freights.isEmpty()) return //freight is empty nothing we can do
+        val spotCarriers = subs.last().toSet()
+        if (spotCarriers.isEmpty()) return //spot carrier is empty nothing we can do
 
         val orgIndex = sol.data.dummyVesselIndex//origin is always dummy vessel
 
@@ -27,7 +27,7 @@ object MinimizeNotTransported : Operator() {
         val allSortedNT = cache.computeIfAbsent(sol.data) {
             it.cargoes.toList().sortedByDescending { c -> c.ntCost }
         }
-        val sortedCargoes = allSortedNT.filter { freights.contains(it.id) }
+        val sortedCargoes = allSortedNT.filter { spotCarriers.contains(it.id) }
         //sort the cargoes by how much they cost of not transporting
 //        val sortedCargoes = freights.toHashSet().sortedByDescending { sol.data.cargoFromId(it).ntCost }
         log.debug { "Can move ${sortedCargoes.size} cargoes from dummy!" }
@@ -50,7 +50,7 @@ object MinimizeNotTransported : Operator() {
                 val moved = moveCargo(sol, subs, orgIndex, destIndex, cargo.id)
 
                 if (moved) {
-                    log.trace { "Cargo $cargo can be moved from freight to dest $vessel" }
+                    log.trace { "Cargo $cargo can be moved from spot carrier to dest $vessel" }
                     break@outer
                 } else {
                     //we didn't move so the subarray needs to be restored

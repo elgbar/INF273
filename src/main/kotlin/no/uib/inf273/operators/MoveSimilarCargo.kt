@@ -46,8 +46,6 @@ object MoveSimilarCargo : Operator() {
 //                break
             }
         }
-
         return
     }
-
 }

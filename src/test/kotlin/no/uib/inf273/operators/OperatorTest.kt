@@ -33,13 +33,13 @@ internal class OperatorTest {
     }
 
     @Test
-    fun selectRandomVessel_selectFreightWhenAllowed() {
+    fun selectRandomVessel_selectSpotCarrierWhenAllowed() {
         val retVessel = Operator.selectRandomVessel(arrayOf(IntArray(0), IntArray(2) { 1 }), 1, true)
         assertEquals(1, retVessel)
     }
 
     @Test
-    fun selectRandomVessel_neverSelectFreightWhenDisallowed() {
+    fun selectRandomVessel_neverSelectSpotCarrierWhenDisallowed() {
         val retVessel = Operator.selectRandomVessel(arrayOf(IntArray(2) { 1 }, IntArray(2) { 1 }), 1, false)
         assertEquals(0, retVessel)
     }
