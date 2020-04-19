@@ -375,5 +375,14 @@ abstract class Operator {
             } while (invalidSize(sub[vesselIndex]))
             return vesselIndex
         }
+
+        /**
+         * Select a random cargo from the given vessel
+         *
+         * @return Cargo id
+         */
+        fun randomCargo(sub: Array<IntArray>, vesselIndex: Int): Int {
+            return sub[vesselIndex].random(rand)
+        }
     }
 }
