@@ -72,12 +72,6 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
         }
     }
 
-    /**
-     * @return a deep copy of this solution
-     */
-    fun copy(): Solution {
-        return Solution(data, arr.clone())
-    }
 
     /**
      * Check if a solution is valid (but not necessarily feasible). A solution is valid if for each subsection (split by [BARRIER_ELEMENT]) there are two of each number. This assumes that the given array does not have more than two identical numbers (excluding [BARRIER_ELEMENT])
@@ -289,7 +283,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
      * @return The objective value of this solution
      *
      */
-    fun objectiveValue(modified: Boolean = true): Long {
+    fun objectiveValue(modified: Boolean): Long {
         var value = 0L
         val subroutes: Array<IntArray> = splitToSubArray(modified)
 
@@ -445,6 +439,24 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
             index != data.nrOfVessels && Operator.calculateNumberOfVessels(from, until) >= min
         }
         return if (validVessels.isEmpty()) null else validVessels.random(Main.rand)
+    }
+
+    /**
+     * @return a deep copy of this solution
+     */
+    fun copy(): Solution {
+        return Solution(data, arr.clone())
+    }
+
+    /**
+     * Copy the array content from this solution to the given solution
+     *
+     * @see copyInto
+     */
+    fun copyInto(other: Solution) {
+        require(data === other.data) { "Data of the given solution and this is not the same" }
+        arr.copyInto(other.arr)
+
     }
 
     override fun toString(): String {
