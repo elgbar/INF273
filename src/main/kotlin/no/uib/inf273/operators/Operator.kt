@@ -16,11 +16,9 @@ abstract class Operator {
     open val log: Logger = Logger(javaClass.simpleName)
 
     /**
-     * Run the operator on the given solution. When returning the solution is guaranteed to be [Solution.isFeasible].
+     * Run the operator on the given solution. When returning the solution is __NOT__ guaranteed to be [Solution.isFeasible].
      *
      * @param sol A feasible solution.
-     *
-     *
      */
     abstract fun operate(sol: Solution)
 

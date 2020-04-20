@@ -1,7 +1,6 @@
 package no.uib.inf273.operators.escape
 
 import no.uib.inf273.Main
-import no.uib.inf273.operators.Operator
 import no.uib.inf273.processor.Solution
 import kotlin.math.min
 
@@ -11,9 +10,9 @@ import kotlin.math.min
  * This is an escape operator.
  * @author Elg
  */
-object MoveToSpotCarrierOperator : Operator() {
+object MoveToSpotCarrierOperator : EscapeOperator() {
 
-    override fun operate(sol: Solution) {
+    override fun escape(sol: Solution) {
         val sub = sol.splitToSubArray(true)
 
         val n = Main.rand.nextInt(1, min(4, sol.data.nrOfCargo))
