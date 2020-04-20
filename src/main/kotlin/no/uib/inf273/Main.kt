@@ -68,6 +68,8 @@ class Main(
     )
 
     private val samples: Int by parser.storing("How many samples to take") { toInt() }.default { 10 }
+    private val iterations: Int by parser.storing("How many iteration each algorithm use") { toInt() }
+        .default { 10_000 }
 
     private val showSolution: Boolean by parser.flagging("--show-solution", help = "Show the best generated solution")
 
@@ -102,7 +104,7 @@ class Main(
         } else {
             require(algorithm != Algorithm.NoAlgorithm) { "Search method must be specified when no other option is selected." }
             val time = measureTimeMillis {
-                printResults(algorithm, runAlgorithm(algorithm, samples, solgen, tune), false)
+                printResults(algorithm, runAlgorithm(algorithm, samples, solgen, tune, iterations), false)
             }
             log.log("Running $samples samples took in total $time ms")
         }
@@ -125,7 +127,7 @@ class Main(
                 SimulatedAnnealingAlgorithmA3
             )) {
                 log.log { "Running ${algorithm.javaClass.simpleName}" }
-                map[algorithm] = runAlgorithm(algorithm, 10, solgen, tune)
+                map[algorithm] = runAlgorithm(algorithm, 10, solgen, tune, 10_000)
             }
         }
         log.log("Total benchmarking time took $totalTime ms")
@@ -193,7 +195,8 @@ class Main(
             algorithm: Algorithm,
             samples: Int,
             solgen: SolutionGenerator,
-            tune: Boolean
+            tune: Boolean,
+            iterations: Int
         ): Triple<Double, Solution, Long> {
             log.debug { "Running algorithm ${algorithm.javaClass.simpleName}" }
             var totalObj = BigDecimal.ZERO
@@ -209,7 +212,7 @@ class Main(
             for (i in 0 until samples) {
                 var sol0: Solution? = null
                 val time = measureTimeMillis {
-                    sol0 = algorithm.search(solgen.generateStandardSolution())
+                    sol0 = algorithm.search(solgen.generateStandardSolution(), iterations)
                 }
                 val sol: Solution = sol0!!
                 times += time
