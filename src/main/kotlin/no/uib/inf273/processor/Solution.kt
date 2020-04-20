@@ -475,7 +475,7 @@ class Solution(val data: DataParser, val arr: IntArray, split: Boolean = true) {
 
     override fun hashCode(): Int {
         var result = data.hashCode()
-        result = 31 * result + arr.contentHashCode()
+        for ((i, e) in arr.withIndex()) result = 31 * result + (e * i)
         return result
     }
 
