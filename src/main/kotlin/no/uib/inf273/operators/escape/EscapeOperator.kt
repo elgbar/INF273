@@ -11,12 +11,17 @@ import no.uib.inf273.processor.Solution
 abstract class EscapeOperator : Operator() {
 
     /**
-     * When returning the solution must be feasible
+     * Run the operator on the given solution. When returning the solution must be feasible.
      *
      * @see operate
      */
     abstract fun escape(sol: Solution)
 
+    /**
+     * Run the operator on the given solution. When returning the solution __is__ guaranteed to be [Solution.isFeasible].
+     *
+     * @param sol A feasible solution.
+     */
     final override fun operate(sol: Solution) {
         escape(sol)
         require(sol.isFeasible(modified = true, checkValid = true)) {

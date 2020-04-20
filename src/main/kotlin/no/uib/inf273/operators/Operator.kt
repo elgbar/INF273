@@ -28,7 +28,7 @@ abstract class Operator {
 
 
     /**
-     * Move the given cargo [cargoId] from the vessel [orgVesselIndex] to vessel [destVesselIndex].
+     * Move the given cargo [cargoId] from the vessel [orgVesselIndex] to vessel [destVesselIndex]. This will modify the solution given.
      *
      * @param sol The solution to move the cargo with
      * @param subs The arrays of each vessel in the solution
@@ -229,7 +229,7 @@ abstract class Operator {
         }
 
         fun exactApproach(sol: Solution, vIndex: Int, sub: IntArray): Boolean {
-            log.debug { "Vessel small enough (${sub.size / ELEMENTS_PER_CARGO} cargoes) to brute force a solution" }
+            log.trace { "Vessel small enough (${sub.size / ELEMENTS_PER_CARGO} cargoes) to brute force a solution" }
             var bestMeta: Solution.VesselRouteMetadata? = null
             sub.forEachPermutation(true) {
                 val meta = sol.generateVesselRouteMetadata(vIndex, this, true)
