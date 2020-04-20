@@ -29,15 +29,6 @@ abstract class SimulatedAnnealingAlgorithm(
     }
 
     /**
-     * 𝛼
-     */
-    private var coolingFactor: Double = 1.0 - Double.MIN_VALUE
-        set(value) {
-            require(0 < value && value < 1) { "The cooling factor must be between 0 and 1 got $value" }
-            field = value
-        }
-
-    /**
      * How many runs we should do to get an average temperature
      */
     var testRuns = 100
@@ -87,7 +78,12 @@ abstract class SimulatedAnnealingAlgorithm(
         require(0 < iterations) { "Iteration must be a positive number" }
         require(sol.isFeasible(true)) { "Initial solution is not feasible" }
 
-        val initTemp = calculateTemp(sol = sol, iterations = iterations)
+        val (initTemp, coolingFactor) = calculateParameters(
+            sol = sol,
+            iterations = iterations,
+            testRuns = testRuns,
+            change = this::change
+        )
         log.debugs {
             listOf(
                 "Initial temperature $initTemp",
@@ -209,80 +205,90 @@ abstract class SimulatedAnnealingAlgorithm(
     override fun tune(solgen: SolutionGenerator, iterations: Int, report: Boolean) {
         //Calculate the wanted initial temperature
         log.log { "Warming up for tuning" }
-        Main.runAlgorithm(this, 5, solgen, false)
+        Main.runAlgorithm(this, 5, solgen, false, 10_000)
         log.log { "Warm up done" }
 
-        calculateTemp(sol = solgen.generateStandardSolution(), iterations = iterations, tune = true)
+        calculateParameters(
+            sol = solgen.generateStandardSolution(),
+            iterations = iterations,
+            testRuns = testRuns,
+            change = this::change
+        )
     }
 
-    /**
-     * @param pMin Minimum temperature in range `[0, `[pMax]`)`
-     * @param pMax Maximum temperature in range `(`[pMin]`, 1]`
-     */
-    fun calculateTemp(
-        pMin: Double = 0.01,
-        pMax: Double = 0.80,
-        sol: Solution,
-        iterations: Int,
-        tune: Boolean = false
-    ): Double {
-        require(0 < pMin && pMin < pMax && pMax <= 1)
+    companion object {
 
-        val solObj = sol.objectiveValue(false)
-        var minObj = solObj
-        var maxObj = solObj
-        var totalObj: BigDecimal = BigDecimal.ZERO
-        var feasibleRuns = 0
+        /**
+         * @param pMin Minimum temperature in range `[0, `[pMax]`)`
+         * @param pMax Maximum temperature in range `(`[pMin]`, 1]`
+         */
+        fun calculateParameters(
+            pMin: Double = 0.01,
+            pMax: Double = 0.80,
+            sol: Solution,
+            iterations: Int,
+            testRuns: Int,
+            change: (Solution) -> Unit
+        ): Pair<Double, Double> {
+            require(0 < pMin && pMin < pMax && pMax <= 1)
 
-        val curr = sol.copy()
+            val solObj = sol.objectiveValue(false)
+            var minObj = solObj
+            var maxObj = solObj
+            var totalObj: BigDecimal = BigDecimal.ZERO
+            var feasibleRuns = 0
 
-        for (i in 0 until testRuns) {
-            do {
-                sol.arr.copyInto(curr.arr)
-                change(curr)
-            } while (curr.arr.contentEquals(sol.arr))
+            val curr = sol.copy()
+            val coolingFactor: Double
 
-            check(curr.isFeasible(false))
+            for (i in 0 until testRuns) {
+                do {
+                    sol.arr.copyInto(curr.arr)
+                    change(curr)
+                } while (curr.arr.contentEquals(sol.arr))
 
-            val objVal = curr.objectiveValue(false)
-            if (objVal < minObj) minObj = objVal
-            if (objVal > maxObj) maxObj = objVal
-            totalObj += objVal.toBigDecimal()
-            feasibleRuns++
+                check(curr.isFeasible(false))
+
+                val objVal = curr.objectiveValue(false)
+                if (objVal < minObj) minObj = objVal
+                if (objVal > maxObj) maxObj = objVal
+                totalObj += objVal.toBigDecimal()
+                feasibleRuns++
+            }
+
+            val avgObj = totalObj / feasibleRuns.toBigDecimal()
+            val deltaE = solObj.toBigDecimal() - avgObj
+            check(deltaE > BigDecimal.ZERO) { "deltaE = $deltaE" }
+
+
+            val initTemp = -deltaE.toDouble() / ln(pMax)
+            val endTemp = -deltaE.toDouble() / ln(pMin)
+            require(initTemp > 0) { "Initial temperature must be positive" }
+            require(endTemp > 0) { "End temperature must be positive" }
+
+
+            fun calcCoolingFac(div: Int): Double {
+                return exp((ln(endTemp) - ln(initTemp)) / (iterations / div))
+            }
+            coolingFactor = calcCoolingFac(4)
+
+            Main.log.debugs {
+
+                listOf(
+                    "Calculating temp results",
+                    "",
+                    "Minimum objective value $minObj",
+                    "Maximum objective value $maxObj",
+                    "Average objective value $avgObj ($totalObj / $feasibleRuns)",
+                    "",
+                    "Cooling schedule factor $coolingFactor",
+                    "",
+                    "Test values",
+                    "pMax = $pMax | pMin = $pMin",
+                    ""
+                )
+            }
+            return initTemp to coolingFactor
         }
-
-        val avgObj = totalObj / feasibleRuns.toBigDecimal()
-        val deltaE = solObj.toBigDecimal() - avgObj
-        check(deltaE > BigDecimal.ZERO) { "deltaE = $deltaE" }
-
-
-        val initTemp = -deltaE.toDouble() / ln(pMax)
-        val endTemp = -deltaE.toDouble() / ln(pMin)
-        require(initTemp > 0) { "Initial temperature must be positive" }
-        require(endTemp > 0) { "End temperature must be positive" }
-
-
-        fun calcCoolingFac(div: Int): Double {
-            return exp((ln(endTemp) - ln(initTemp)) / (iterations / div))
-        }
-        coolingFactor = calcCoolingFac(4)
-
-        log.debugs {
-
-            listOf(
-                "Calculating temp results",
-                "",
-                "Minimum objective value $minObj",
-                "Maximum objective value $maxObj",
-                "Average objective value $avgObj ($totalObj / $feasibleRuns)",
-                "",
-                "Cooling schedule factor $coolingFactor",
-                "",
-                "Test values",
-                "pMax = $pMax | pMin = $pMin",
-                ""
-            )
-        }
-        return initTemp
     }
 }
