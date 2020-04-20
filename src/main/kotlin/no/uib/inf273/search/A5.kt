@@ -1,8 +1,22 @@
 package no.uib.inf273.search
 
+import no.uib.inf273.operators.MinimizeNotTransported
+import no.uib.inf273.operators.MinimizeWaitTime
+import no.uib.inf273.operators.MoveSimilarCargo
+import no.uib.inf273.operators.Operator
+import no.uib.inf273.operators.escape.MoveToSpotCarrierOperator
+import no.uib.inf273.operators.escape.ReinsertNOperator
+import no.uib.inf273.operators.given.ReinsertOnceOperator
+import no.uib.inf273.operators.given.ThreeExchangeOperator
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 import no.uib.inf273.search.A5.OperatorCharacteristic
+import no.uib.inf273.search.A5.OperatorCharacteristic.*
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 /**
  * An algorithm based an Simulated Annealing, Tabu, and performance of operators
@@ -124,8 +138,116 @@ import no.uib.inf273.search.A5.OperatorCharacteristic
  * @author Elg
  */
 object A5 : Algorithm() {
+
+    /**
+     * percent each segment takes up
+     */
+    const val SEGMENT_PERCENT = 0.01
+
+    /**
+     * Percentage of total iterators needed for the taboo list length to be reduced
+     */
+    const val TABOO_REDUCTION_THRESHOLD_PERCENT = 0.05
+
+    /**
+     * Minimum length of the taboo list in percent of total iterations.
+     *
+     * Note that it is in reality `max(1, `[MIN_TABOO_LIST_LENGTH_PERCENT]`% of total iterations)`
+     */
+    const val MIN_TABOO_LIST_LENGTH_PERCENT = 0.001
+
+    /**
+     * Maximum length of taboo list in percent of total iterations
+     */
+    const val MAX_TABOO_LIST_LENGTH_PERCENT = 0.01
+
+    /**
+     * Operators to be used in this algorithm together with what characteristic they have
+     */
+    val ops: Map<Operator, OperatorCharacteristic> = mapOf(
+        MinimizeNotTransported to EARLY,
+        MinimizeWaitTime to NOTHING,
+        MoveSimilarCargo to NOTHING,
+        ReinsertOnceOperator(0.75) to NOTHING,
+        ThreeExchangeOperator to LATE
+    )
+
+    /**
+     * The escape operators to be used when stuck in a local optima
+     */
+    val escapeOps: Array<Operator> = arrayOf(MoveToSpotCarrierOperator, ReinsertNOperator)
+
+
+    init {
+
+        weights = ArrayList()
+        for ((op, opChar) in ops) {
+//            weights += op to opChar.initialWeight
+        }
+
+        val sum = weights.sumByDouble { it.second }
+//        weights = weights.map { (op, w) ->
+//            //normalize the weights
+//            op to w / sum
+//        }
+
+        val wsum = weights.map { it.second }.sum()
+        require(wsum in 0.999999999999999..1.0) { "Sum of weights is $wsum expected it to be between 0.999999999999999 and 1.0" }
+    }
+
+    fun normalizeWeights() {
+
+        weights.sortBy { it.second }
+    }
+
+    fun updateOpWeights() {
+//        weights.map { (op, oldWeight) ->
+//
+//        }
+
+//            (o / 2 + u * modifier) / n
+    }
+
+    private fun findOperator(): Operator {
+        val percent: Double = Main.rand.nextDouble()
+        for ((prob, op) in ops) {
+            if (percent < prob) {
+                return op
+            }
+        }
+        return fallbackOp
+    }
+
     override fun search(sol: Solution, iterations: Int): Solution {
-        TODO("not implemented")
+
+        /**
+         * Current weight of each operator
+         */
+        var weights: MutableList<Pair<Operator, Double>>
+
+        /**
+         * Current score of each operator together with how many times they have been selected
+         */
+        val segmentScore = HashMap<Operator, Pair<Double, Int>>()
+
+        val taboo = LinkedHashSet<Int>()
+        val currWantedTabooSize = 0 //TODO
+
+
+        log.debug { "Initial weights: ${weights.contentToString()}" }
+        val iterPerSegment: Int = (iterations * SEGMENT_PERCENT).toInt()
+        log.debug { "Each segment lasts $iterPerSegment iterations" }
+
+
+
+        for (i in 1..iterations) {
+            if (i % iterPerSegment == 0) {
+                log.trace { "End of segment (i: $i)" }
+                updateOpWeights()
+                continue
+            }
+        }
+        return sol
     }
 
     override fun tune(solgen: SolutionGenerator, iterations: Int, report: Boolean) {
@@ -136,7 +258,7 @@ object A5 : Algorithm() {
      * @param initialWeight What the initial weight should be of an operator with this Characteristic
      * @param modifier A function that return a number between `0` and `1` to be multiplied with the calculated weight.  The argument given to the function is a number between 0 and 1 showing percentage of iterations completed.
      */
-    enum class OperatorCharacteristic(initialWeight: Float, modifier: (progress: Float) -> Float) {
+    enum class OperatorCharacteristic(val initialWeight: Double, val modifier: (progress: Double) -> Double) {
 
         /**
          * No characteristic is known about the given operator.
@@ -144,23 +266,20 @@ object A5 : Algorithm() {
          * This is the default option
          *
          */
-        NOTHING(1f, { 1f }),
+        NOTHING(1.0, { 1.0 }),
 
         /**
          * The operator is good __early__ in the search
          */
-        INITIATOR(1.5f, { progress: Float ->
-            //op is 100% effective for the first 25% of the search
-            //after that it drops to 75% efficiency
-            if (progress <= 0.25) 1f else 0.75f
+        EARLY(1.5, { progress: Double ->
+            if (progress <= 0.25) 1.25 - progress else 1.0
         }),
 
         /**
          * The operator is good __late__ in the search
          */
-        INTENSIFIER(0.75f, { progress: Float ->
-            if (progress <= 0.25) 0.65f else if (progress <= 0.50f) 0.85f else 1f
+        LATE(0.75, { progress: Double ->
+            if (progress <= 0.25) 1.0 else 1.0 + progress / 2
         })
     }
-
 }
