@@ -18,7 +18,7 @@ object ReinsertNOperator : EscapeOperator() {
 
     override fun escape(sol: Solution) {
         //how many cargeos to reinsert
-        val n = Main.rand.nextInt(2, min(5, sol.data.nrOfCargo))
+        val n = Main.rand.nextInt(2, min(10, sol.data.nrOfCargo))
 
         for (i in 0..n) {
             r1.operate(sol)

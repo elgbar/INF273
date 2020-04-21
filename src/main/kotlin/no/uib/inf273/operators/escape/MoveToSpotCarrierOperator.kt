@@ -15,7 +15,7 @@ object MoveToSpotCarrierOperator : EscapeOperator() {
     override fun escape(sol: Solution) {
         val sub = sol.splitToSubArray(true)
 
-        val n = Main.rand.nextInt(1, min(4, sol.data.nrOfCargo))
+        val n = Main.rand.nextInt(1, min(7, sol.data.nrOfCargo))
         for (i in 0..n) {
             val vesselIndex = selectRandomVessel(sub, 1, false)
             if (vesselIndex == INVALID_VESSEL) {
