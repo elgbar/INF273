@@ -405,9 +405,9 @@ object A5 : Algorithm() {
                 if (deltaE < 0 && !isTaboo) {
 
                     //increase size of taboo !
-                    //TODO maybe increase by 1 instead of not to max?
-                    nonImprovementIteration = 0
-                    taboo.resetSize()
+                    if (nonImprovementIteration > 10)
+                        nonImprovementIteration -= 10
+                    taboo.increaseSize()
 
 //                  Set C to be N and update L
                     newSol.copyInto(currSol)
@@ -416,6 +416,10 @@ object A5 : Algorithm() {
 
 //                  if objective value of N < objective value of B
                     if (newSolObjVal < bestObjVal) {
+
+                        nonImprovementIteration = 0
+                        taboo.resetSize()
+
                         opScore += GLOBAL_BEST_SCORE
 //                      Set B to be N
                         newSol.copyInto(bestSol)
@@ -504,13 +508,21 @@ object A5 : Algorithm() {
          */
         private val taboo = LinkedHashSet<Int>(currentMaxTabooSize)
 
+        fun increaseSize() {
+            if (currentMaxTabooSize < maxTabooSize) {
+                currentMaxTabooSize += 10
+            }
+        }
+
         fun resetSize() {
-            currentMaxTabooSize = maxTabooSize
+            currentMaxTabooSize = 0
         }
 
         fun reduceSize() {
-            currentMaxTabooSize = (currentMaxTabooSize - 1).coerceAtLeast(minTabooSize)
-            checkSize()
+            if (currentMaxTabooSize > minTabooSize) {
+                currentMaxTabooSize--
+                checkSize()
+            }
         }
 
         /**
