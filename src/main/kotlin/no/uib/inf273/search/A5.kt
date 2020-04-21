@@ -249,7 +249,7 @@ object A5 : Algorithm() {
          * Current score of each operator together with how many times they have been selected
          */
         val segmentScore = HashMap<Operator, Pair<Double, Int>>().also { map ->
-            map.putAll(ops.keys.map { it to Pair(0.0, 0) })
+            map.putAll(ops.keys.map { it to Pair(0.0, 1) })
         }
 
         /**
@@ -344,10 +344,11 @@ object A5 : Algorithm() {
 
                 for ((op, oldWeight) in weights.toList()) {
                     val (score, times) = segmentScore[op] ?: error("Failed to find op ($op) in segment score list")
-                    val relativeScore = (score / times)
                     val characteristic = ops[op] ?: error("Failed to find op ($op) in list of ops")
 
-                    weights[op] = oldWeight / 2 + characteristic.modifier(relativeScore)
+                    val relativeScore = score.coerceAtLeast(0.0) / times
+
+                    weights[op] = oldWeight / 10 + relativeScore * characteristic.modifier(i.toDouble() / iterations)
                 }
 
                 val n = weights.values.sum()
@@ -355,7 +356,7 @@ object A5 : Algorithm() {
 
                 recalculateSearchWeights()
                 //reset all scores
-                segmentScore.mapValuesInPlace { Pair(0.0, 0) }
+                segmentScore.mapValuesInPlace { Pair(0.0, 1) }
                 continue
             }
 
