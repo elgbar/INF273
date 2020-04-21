@@ -14,7 +14,8 @@ import no.uib.inf273.operators.given.ThreeExchangeOperator
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 import no.uib.inf273.search.A5.OperatorCharacteristic
-import no.uib.inf273.search.A5.OperatorCharacteristic.*
+import no.uib.inf273.search.A5.OperatorCharacteristic.EARLY
+import no.uib.inf273.search.A5.OperatorCharacteristic.NOTHING
 import no.uib.inf273.search.given.simulatedAnnealing.SimulatedAnnealingAlgorithm
 import java.lang.Integer.max
 import kotlin.math.exp
@@ -191,7 +192,7 @@ object A5 : Algorithm() {
         MinimizeWaitTime to NOTHING,
         MoveSimilarCargo to NOTHING,
         ReinsertOnceOperator(0.75) to NOTHING,
-        ThreeExchangeOperator to LATE
+        ThreeExchangeOperator to NOTHING
     )
 
     /**
@@ -339,7 +340,6 @@ object A5 : Algorithm() {
 //          if iter_nr mod (1% of I) is 0:
             if (i % iterPerSegment == 0) {
 //              Recalculating the operator weights and reset all operator point
-                log.debug { "End of segment (i: $i)" }
 
                 //(o / 2 + u * modifier) / n
 
@@ -355,10 +355,20 @@ object A5 : Algorithm() {
                 val n = weights.values.sum()
                 weights.mapValuesInPlace { (_, weight) -> weight / n }
 
+                if (i % (iterPerSegment * 10) == 0) {
+
+                    log.debug { "---\n\nEnd of segment (i: $i)" }
+                    log.debug { "new weights $weights" }
+                    log.debug { "non-improvement iters = $nonImprovementIteration" }
+                    log.debug { "Taboo size ${taboo.currentMaxTabooSize}" }
+                    log.debug { "Op scores $segmentScore" }
+                    log.debug { "Taboots hit = $tabooHits" }
+                }
+                tabooHits = 0
+
                 recalculateSearchWeights()
                 //reset all scores
                 segmentScore.mapValuesInPlace { Pair(0.0, 1) }
-                continue
             }
 
 //          if J >= 0.5% of I:
@@ -449,7 +459,6 @@ object A5 : Algorithm() {
 //          Update T
             temperature *= coolingFactor
         }
-        require(bestSol.isFeasible(true, true))
         return bestSol
     }
 
@@ -478,7 +487,7 @@ object A5 : Algorithm() {
          * The operator is good __early__ in the search
          */
         EARLY(1.25, { progress: Double ->
-            if (progress <= 0.25) 1.25 - progress else 0.9
+            1.0//if (progress <= 0.25) 2.0 else 0.50
         }),
 
         /**
