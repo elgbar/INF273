@@ -173,19 +173,10 @@ object A5 : Algorithm() {
     // Scores //
     ////////////
 
-    /*
- * * Global best solution . += 1.00 pt (Greater weight if a new global best is found to encourage this)
- * * Better solution. . . . += 0.50 pt
- * * Identical solution . . += 0.50 pt (No change have was made)
- * * Feasible solution. . . += 0.50 pt
- * * Infeasible solution. . -= 0.50 pt
- * * Taboo solution . . . . -= 0.25 pt (Discourage taboo solutions, note that C does not count as taboo)
- * * Worse solution . . . . -= 0.25 pt (At least it is feasible)*/
-
-    private const val GLOBAL_BEST_SCORE = 1.0
-    private const val BETTER_SCORE = 0.5
-    private const val FEASIBLE_SCORE = 0.5
-    private const val INFEASIBLE_SCORE = -0.5
+    private const val GLOBAL_BEST_SCORE = 2.0
+    private const val BETTER_SCORE = 1.0
+    private const val FEASIBLE_SCORE = 1.0
+    private const val INFEASIBLE_SCORE = -1.0
     private const val TABOO_SCORE = -0.25
     private const val WORSE_SCORE = -0.25
 
