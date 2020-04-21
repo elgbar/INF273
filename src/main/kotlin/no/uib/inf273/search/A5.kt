@@ -140,6 +140,9 @@ import kotlin.math.exp
  */
 object A5 : Algorithm() {
 
+    private const val MAX_TIME_SECONDS = 598
+
+
     /**
      * percent each segment takes up
      */
@@ -197,6 +200,8 @@ object A5 : Algorithm() {
     private val escapeOps: Array<EscapeOperator> = arrayOf(MoveToSpotCarrierOperator, ReinsertNOperator)
 
     override fun search(sol: Solution, iterations: Int): Solution {
+
+        val startTime = System.currentTimeMillis()
 
         ///////////////
         // Constants //
@@ -323,6 +328,11 @@ object A5 : Algorithm() {
         ///////////////
 
         for (i in 1..iterations) {
+            if (System.currentTimeMillis() >= startTime + MAX_TIME_SECONDS * 1000) {
+                log.log { "timeout! after $i iterations" }
+                return bestSol
+            }
+
 //          if iter_nr mod (1% of I) is 0:
             if (i % iterPerSegment == 0) {
 //              Recalculating the operator weights and reset all operator point
