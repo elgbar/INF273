@@ -144,7 +144,7 @@ class Main(
         val improvementAvg =
             100.0.toBigDecimal() * (defaultObjVal - avgObjVal.toBigDecimal()) / defaultObjVal
         val improvementBest =
-            100.0.toBigDecimal() * (defaultObjVal - bestObjVal.toBigDecimal()) / defaultObjVal
+            100.0.toBigDecimal() * (defaultObjVal - bestObjVal.toDouble().toBigDecimal()) / defaultObjVal
 
         if (singleLine) {
             log.log { "${algorithm.javaClass.simpleName}, $avgObjVal, $bestObjVal, $improvementBest%, $time ms, ${best.arr.contentToString()}" }
