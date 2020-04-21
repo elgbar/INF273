@@ -1,8 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="a5 Call_035_Vehicle_07 debug  ONCE" type="JetRunConfigurationType" factoryName="Kotlin">
+  <configuration default="false" name="a5 Call_130_Vehicle_40 debug 10K iter" type="JetRunConfigurationType">
     <module name="INF273.main" />
     <option name="VM_PARAMETERS" value="" />
-    <option name="PROGRAM_PARAMETERS" value="--file Call_035_Vehicle_07.txt --a5 --debug --samples 1" />
+    <option name="PROGRAM_PARAMETERS" value="--file Call_130_Vehicle_40.txt --a5 --debug --iterations 10000" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" />
     <option name="PASS_PARENT_ENVS" value="true" />
