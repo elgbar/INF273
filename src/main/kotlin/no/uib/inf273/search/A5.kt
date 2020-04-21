@@ -300,7 +300,8 @@ object A5 : Algorithm() {
         val (initTemperature, coolingFactor) = SimulatedAnnealingAlgorithm.calculateParameters(
             sol = sol,
             iterations = iterations,
-            testRuns = 100
+            testRuns = 100,
+            coolFacDiv = 2
         ) { findOperator().operate(it) }
 
         log.debugs {

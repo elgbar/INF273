@@ -228,6 +228,7 @@ abstract class SimulatedAnnealingAlgorithm(
             sol: Solution,
             iterations: Int,
             testRuns: Int,
+            coolFacDiv: Int = 4,
             change: (Solution) -> Unit
         ): Pair<Double, Double> {
             require(0 < pMin && pMin < pMax && pMax <= 1)
@@ -270,7 +271,7 @@ abstract class SimulatedAnnealingAlgorithm(
             fun calcCoolingFac(div: Int): Double {
                 return exp((ln(endTemp) - ln(initTemp)) / (iterations / div))
             }
-            coolingFactor = calcCoolingFac(4)
+            coolingFactor = calcCoolingFac(coolFacDiv)
 
             Main.log.debugs {
 
