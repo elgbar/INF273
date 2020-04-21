@@ -256,6 +256,12 @@ object A5 : Algorithm() {
         // Internal function //
         ///////////////////////
 
+        fun applyEscapeOperators() {
+            //operate directly on the current solution
+            escapeOps.random(rand).operate(currSol)
+            currObjVal = currSol.objectiveValue(true)
+        }
+
         fun findOperator(): Operator {
             val percent: Double = rand.nextDouble()
             for ((op, prob) in searchWeights) {
@@ -350,10 +356,8 @@ object A5 : Algorithm() {
 //          if J mod (2% of I) is 0:
             if (nonImprovementIteration % escapeThreshold == 0) {
 //              O' <- Select an escape operator
-                val escOp = escapeOps.random(rand)
 //              C <- Operate on C with selected operator O'
-                //operate directly on the current solution
-                escOp.operate(currSol)
+                applyEscapeOperators()
             }
 
 //          O <- Select operator based on weights W
