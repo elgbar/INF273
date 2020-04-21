@@ -275,15 +275,11 @@ object A5 : Algorithm() {
             return searchWeights.last().first
         }
 
-        /////////////////////
-        // Operator Weights //
-        //////////////////////
-
         fun recalculateSearchWeights() {
             var acc = 0.0
             searchWeights.clear()
             for ((op, weight) in weights) {
-                searchWeights += op to acc
+                searchWeights += op to weight + acc
                 acc += weight
             }
         }
