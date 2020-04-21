@@ -14,12 +14,14 @@ import kotlin.math.min
  */
 object ReinsertNOperator : EscapeOperator() {
 
+    private val r1 = ReinsertOnceOperator(maxCargoesToBruteForce = 0)
+
     override fun escape(sol: Solution) {
         //how many cargeos to reinsert
         val n = Main.rand.nextInt(2, min(5, sol.data.nrOfCargo))
 
         for (i in 0..n) {
-            ReinsertOnceOperator.INST.operate(sol)
+            r1.operate(sol)
         }
     }
 }

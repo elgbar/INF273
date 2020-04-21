@@ -6,7 +6,10 @@ import no.uib.inf273.processor.Solution
 /**
  * An operator that picks two unique vessels (including spot carriers) then moves cargo from the origin vessel to the destination vessel.
  */
-class ReinsertOnceOperator(private val discourageSpotCarrierPercent: Double = 0.0) : Operator() {
+class ReinsertOnceOperator(
+    private val discourageSpotCarrierPercent: Double = 0.0,
+    private val maxCargoesToBruteForce: Int = DEFAULT_MAX_CARGOES_IN_VESSEL_TO_USE_EXACT_APPROACH
+) : Operator() {
 
     companion object {
         val INST = ReinsertOnceOperator()
@@ -27,7 +30,7 @@ class ReinsertOnceOperator(private val discourageSpotCarrierPercent: Double = 0.
 
         val (orgVesselIndex, destVesselIndex) = indices
 
-        if (moveCargo(sol, sub, orgVesselIndex, destVesselIndex, cargo)) {
+        if (moveCargo(sol, sub, orgVesselIndex, destVesselIndex, cargo, maxCargoesToBruteForce)) {
             log.debug {
                 "Cargo ${sol.data.cargoFromId(cargo)} can be moved from $orgVesselIndex " +
                         "to dest $destVesselIndex"
