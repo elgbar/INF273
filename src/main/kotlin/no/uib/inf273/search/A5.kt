@@ -322,6 +322,8 @@ object A5 : Algorithm() {
             return rand.nextDouble() < exp(-deltaE / temperature)
         }
 
+        var tabooHits = 0
+
 
         ///////////////
         // Main loop //
@@ -359,12 +361,14 @@ object A5 : Algorithm() {
 
 //          if J >= 0.5% of I:
             if (nonImprovementIteration >= tabooSizeReductionThreshold) {
+                log.trace { "reducing size of taboo" }
 //              Reduce size of L
                 taboo.reduceSize()
             }
 
 //          if J mod (2% of I) is 0:
-            if (nonImprovementIteration % escapeThreshold == 0) {
+            if (nonImprovementIteration % escapeThreshold == 0 || tabooHits % (iterPerSegment * (2 / 3)) == 0) {
+                log.trace { "Trying to escape optima | nonImprovementIteration=$nonImprovementIteration" }
 //              O' <- Select an escape operator
 //              C <- Operate on C with selected operator O'
                 applyEscapeOperators()
@@ -372,7 +376,6 @@ object A5 : Algorithm() {
 
 //          O <- Select operator based on weights W
             val op = findOperator()
-
             var (opScore, amountSel) = segmentScore[op] ?: error("Operator $op not in segment scores")
 
 //          N <- Operate on C a copy of with selected operator O
@@ -384,6 +387,7 @@ object A5 : Algorithm() {
             val isTaboo = taboo.checkTaboo(newSol)
 
             if (isTaboo) {
+                tabooHits++
                 opScore += TABOO_SCORE
             }
 
