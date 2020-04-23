@@ -514,7 +514,7 @@ object A5 : Algorithm() {
             temperature *= coolingFactor
         }
 
-        log.logs {
+        log.debugs {
             listOf(
                 "",
                 "Post run stats",
