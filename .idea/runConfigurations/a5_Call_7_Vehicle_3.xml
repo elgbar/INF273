@@ -1,8 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="a5 Call_130_Vehicle_40 ONCE 2b iter" type="JetRunConfigurationType">
+  <configuration default="false" name="a5 Call_7_Vehicle_3" type="JetRunConfigurationType">
     <module name="INF273.main" />
     <option name="VM_PARAMETERS" value="" />
-    <option name="PROGRAM_PARAMETERS" value="--file Call_130_Vehicle_40.txt --a5 --samples 1 --iterations 2147483647" />
+    <option name="PROGRAM_PARAMETERS" value="--file Call_7_Vehicle_3.txt --a5" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" />
     <option name="PASS_PARENT_ENVS" value="true" />

@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="a5 Call_035_Vehicle_07 debug  100K iter ONCE" type="JetRunConfigurationType">
+  <configuration default="false" name="a5 Call_035_Vehicle_07 debug 100K iter ONCE" type="JetRunConfigurationType">
     <module name="INF273.main" />
     <option name="VM_PARAMETERS" value="" />
     <option name="PROGRAM_PARAMETERS" value="--file Call_035_Vehicle_07.txt --a5 --debug --samples 1 --iterations 100000" />
