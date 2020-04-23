@@ -14,11 +14,11 @@ import no.uib.inf273.operators.given.ThreeExchangeOperator
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 import no.uib.inf273.search.A5.OperatorCharacteristic
-import no.uib.inf273.search.A5.OperatorCharacteristic.EARLY
-import no.uib.inf273.search.A5.OperatorCharacteristic.NOTHING
+import no.uib.inf273.search.A5.OperatorCharacteristic.*
 import no.uib.inf273.search.given.simulatedAnnealing.SimulatedAnnealingAlgorithm
-import java.lang.Integer.max
+import java.lang.Integer.min
 import kotlin.math.exp
+import kotlin.math.max
 
 /**
  * An algorithm based an Simulated Annealing, Tabu, and performance of operators
@@ -141,7 +141,10 @@ import kotlin.math.exp
  */
 object A5 : Algorithm() {
 
-    private const val MAX_TIME_SECONDS = 598
+    /**
+     * Maximum time in seconds this algorithm will take before returning
+     */
+    var maxTimeSeconds = 300
 
 
     /**
@@ -152,26 +155,26 @@ object A5 : Algorithm() {
     /**
      * Percentage of total iterators needed for the taboo list length to be reduced
      */
-    private const val TABOO_REDUCTION_THRESHOLD_PERCENT = 0.005
+//    private const val TABOO_REDUCTION_THRESHOLD_PERCENT = 0.005
 
     /**
-     * Percentage of total iterators needed for escape operators to be used
+     * Percentage of segment iterations needed for escape operators to be used
      */
-    private const val ESCAPE_THRESHOLD_PERCENT = 0.02
+    private const val ESCAPE_THRESHOLD_PERCENT = 0.50
 
     /**
      * Minimum length of the taboo list in percent of total iterations.
      *
      * Note that it is in reality `max(1, `[MIN_TABOO_SIZE_PERCENT]`% of total iterations)`
      */
-    private const val MIN_TABOO_SIZE_PERCENT = 0.001
+//    private const val MIN_TABOO_SIZE_PERCENT = 0.0005
 
     /**
      * Maximum length of taboo list in percent of total iterations
      *
      * Note that it is in reality `max(max(1, `[MIN_TABOO_SIZE_PERCENT]`% of total iterations) + 1, `[MAX_TABOO_SIZE_PERCENT]`% of total iterations)`
      */
-    private const val MAX_TABOO_SIZE_PERCENT = 0.01
+//    private const val MAX_TABOO_SIZE_PERCENT = 0.05
 
     ////////////
     // Scores //
@@ -179,8 +182,8 @@ object A5 : Algorithm() {
 
     private const val GLOBAL_BEST_SCORE = 2.0
     private const val BETTER_SCORE = 1.0
-    private const val FEASIBLE_SCORE = 1.0
-    private const val INFEASIBLE_SCORE = -1.0
+    private const val FEASIBLE_SCORE = 0.5
+    private const val INFEASIBLE_SCORE = 0.0
     private const val TABOO_SCORE = -0.25
     private const val WORSE_SCORE = -0.25
 
@@ -191,8 +194,8 @@ object A5 : Algorithm() {
         MinimizeNotTransported to EARLY,
         MinimizeWaitTime to NOTHING,
         MoveSimilarCargo to NOTHING,
-        ReinsertOnceOperator(0.75) to NOTHING,
-        ThreeExchangeOperator to NOTHING
+        ThreeExchangeOperator to NOTHING,
+        ReinsertOnceOperator(0.80) to LATE
     )
 
     /**
@@ -208,10 +211,9 @@ object A5 : Algorithm() {
         // Constants //
         ///////////////
 
-        val iterPerSegment: Int = (iterations * SEGMENT_PERCENT).toInt()
-        val escapeThreshold = (iterations * ESCAPE_THRESHOLD_PERCENT).toInt()
-        val tabooSizeReductionThreshold = (iterations * TABOO_REDUCTION_THRESHOLD_PERCENT).toInt()
-        val taboo = Taboo(iterations)
+        val iterPerSegment: Int = min((iterations * SEGMENT_PERCENT).toInt(), 1000)
+        val escapeThreshold = (iterPerSegment * ESCAPE_THRESHOLD_PERCENT).toInt()
+        val tabooSizeReductionThreshold = 50//(iterations * TABOO_REDUCTION_THRESHOLD_PERCENT).toInt()
 
         log.debug { "Each segment lasts $iterPerSegment iterations" }
         log.debug { "Size of taboo solutions will be reduced after $tabooSizeReductionThreshold iterations" }
@@ -229,7 +231,6 @@ object A5 : Algorithm() {
 
         /**
          * Current weight of each operator. The sum of all weights must be 1.0
-         *
          */
         val weights = HashMap<Operator, Double>().apply {
             val acc = ops.values.map { it.initialWeight }.sum()
@@ -258,14 +259,31 @@ object A5 : Algorithm() {
          */
         var nonImprovementIteration = 0
 
+        var tabooHits = 0
+
+        ///////////////////
+        // Stat tracking //
+        ///////////////////
+
+        var globalBestSolFound = 0
+        var betterSolFound = 0
+        var feasibleSolFound = 0
+        var infeasibleSolFound = 0
+        var tabooSolFound = 0
+        var worseSolFound = 0
+
+        var escapesApplied = 0
+        var newBestIter = 0
+
         ///////////////////////
         // Internal function //
         ///////////////////////
 
-        fun applyEscapeOperators() {
+        fun applyEscapeOperator() {
             //operate directly on the current solution
             escapeOps.random(rand).operate(currSol)
             currObjVal = currSol.objectiveValue(true)
+            escapesApplied++
         }
 
         fun findOperator(): Operator {
@@ -290,9 +308,6 @@ object A5 : Algorithm() {
         //call it at once as we operate a bit when calculating best temperature
         recalculateSearchWeights()
 
-        log.debug { "initial weights $weights" }
-        log.debug { "initial search weights $searchWeights" }
-
         /////////////////
         // Temperature //
         /////////////////
@@ -302,15 +317,8 @@ object A5 : Algorithm() {
             sol = sol,
             iterations = iterations,
             testRuns = 100,
-            coolFacDiv = 2
+            coolFacDiv = 4
         ) { findOperator().operate(it) }
-
-        log.debugs {
-            listOf(
-                "Initial temperature $initTemperature",
-                "Cooling factor $coolingFactor"
-            )
-        }
 
         /**
          * Current temperature
@@ -324,17 +332,29 @@ object A5 : Algorithm() {
             return rand.nextDouble() < exp(-deltaE / temperature)
         }
 
-        var tabooHits = 0
 
+        log.debugs {
+            listOf(
+                "Initial temperature $initTemperature",
+                "Cooling factor $coolingFactor",
+                "Initial weights $weights",
+                "Initial search weights $searchWeights",
+                "Initial segment score $segmentScore"
+            )
+        }
 
         ///////////////
         // Main loop //
         ///////////////
 
+        val maxTime = startTime + maxTimeSeconds * 1000
+        var totalIter = iterations
         for (i in 1..iterations) {
-            if (System.currentTimeMillis() >= startTime + MAX_TIME_SECONDS * 1000) {
+            val currTime = System.currentTimeMillis()
+            if (currTime >= maxTime) {
                 log.log { "timeout! after $i iterations" }
-                return bestSol
+                totalIter = i
+                break
             }
 
 //          if iter_nr mod (1% of I) is 0:
@@ -343,26 +363,46 @@ object A5 : Algorithm() {
 
                 //(o / 2 + u * modifier) / n
 
-                for ((op, oldWeight) in weights.toList()) {
+                val oldWeights = weights.toMap()
+
+                val iterP = i.toDouble() / iterations
+                val timeP = (currTime.toDouble() - startTime) / (maxTimeSeconds * 1000)
+                val progress = max(iterP, timeP)
+
+                log.traces {
+                    listOf(
+                        "iter progress : $iterP",
+                        "time progress : $timeP (${currTime - startTime} / ${maxTimeSeconds * 1000})",
+                        "avg  progress : $progress"
+                    )
+                }
+
+
+                for ((op, _) in weights.toList()) {
                     val (score, times) = segmentScore[op] ?: error("Failed to find op ($op) in segment score list")
-                    val characteristic = ops[op] ?: error("Failed to find op ($op) in list of ops")
-
-                    val relativeScore = score.coerceAtLeast(0.0) / times
-
-                    weights[op] = oldWeight / 10 + relativeScore * characteristic.modifier(i.toDouble() / iterations)
+                    weights[op] = max((score / times) * ops[op]!!.modifier(progress), 0.0)
                 }
 
                 val n = weights.values.sum()
-                weights.mapValuesInPlace { (_, weight) -> weight / n }
+                weights.mapValuesInPlace { (op, weight) -> ((weight / n) + oldWeights[op]!!) / 2 }
 
-                if (i % (iterPerSegment * 10) == 0) {
+                if (i % (iterPerSegment * 1) == 0) {
 
-                    log.debug { "---\n\nEnd of segment (i: $i)" }
-                    log.debug { "new weights $weights" }
-                    log.debug { "non-improvement iters = $nonImprovementIteration" }
-                    log.debug { "Taboo size ${taboo.currentMaxTabooSize}" }
-                    log.debug { "Op scores $segmentScore" }
-                    log.debug { "Taboots hit = $tabooHits" }
+                    log.debugs {
+                        listOf(
+                            "---",
+                            "",
+                            "End of segment ${100 * i / iterations}% done (i: $i)",
+                            "new weights $weights",
+                            "non-improvement iters = $nonImprovementIteration",
+                            "Taboo size ${Taboo.currentMaxTabooSize}",
+                            "Taboos hit = $tabooHits",
+                            "Op weights $weights",
+                            "Op searchWeights $searchWeights",
+                            "Op scores $segmentScore",
+                            ""
+                        )
+                    }
                 }
                 tabooHits = 0
 
@@ -375,15 +415,17 @@ object A5 : Algorithm() {
             if (nonImprovementIteration >= tabooSizeReductionThreshold) {
                 log.trace { "reducing size of taboo" }
 //              Reduce size of L
-                taboo.reduceSize()
+                Taboo.reduceSize()
             }
 
 //          if J mod (2% of I) is 0:
-            if (nonImprovementIteration % escapeThreshold == 0 || tabooHits % (iterPerSegment * (2 / 3)) == 0) {
+            if (nonImprovementIteration > 0 && nonImprovementIteration % escapeThreshold == 0
+//                || tabooHits % (iterPerSegment * 0.66).toInt() == 0
+            ) {
                 log.trace { "Trying to escape optima | nonImprovementIteration=$nonImprovementIteration" }
 //              O' <- Select an escape operator
 //              C <- Operate on C with selected operator O'
-                applyEscapeOperators()
+                applyEscapeOperator()
             }
 
 //          O <- Select operator based on weights W
@@ -396,41 +438,52 @@ object A5 : Algorithm() {
 
 
             val newSolObjVal = newSol.objectiveValue(false)
-            val isTaboo = taboo.checkTaboo(newSol)
+            val isTaboo = Taboo.checkTaboo(newSol)
 
             if (isTaboo) {
                 tabooHits++
+                tabooSolFound++
                 opScore += TABOO_SCORE
             }
 
 //          ∆E <- objective value of N - objective value of C
             val deltaE = newSolObjVal - currObjVal
 
-            opScore += if (deltaE < 0) BETTER_SCORE else WORSE_SCORE
+            opScore += if (deltaE < 0) {
+                betterSolFound++
+                BETTER_SCORE
+            } else {
+                worseSolFound++
+                WORSE_SCORE
+            }
 
 //          if N is feasible:
             if (newSol.isFeasible(modified = true)) {
 
+                feasibleSolFound++
                 opScore += FEASIBLE_SCORE
 //              if ∆E < 0 and N is not in L:
                 if (deltaE < 0 && !isTaboo) {
 
                     //increase size of taboo !
-                    if (nonImprovementIteration > 10)
-                        nonImprovementIteration -= 10
-                    taboo.increaseSize()
+                    if (nonImprovementIteration > 0)
+                        nonImprovementIteration--
+                    Taboo.increaseSize()
 
 //                  Set C to be N and update L
                     newSol.copyInto(currSol)
                     currObjVal = newSolObjVal
-                    taboo.push(newSol)
+                    Taboo.push(newSol)
 
 //                  if objective value of N < objective value of B
                     if (newSolObjVal < bestObjVal) {
 
-                        nonImprovementIteration = 0
-                        taboo.resetSize()
+                        newBestIter = i
 
+                        nonImprovementIteration = 0
+                        Taboo.resetSize()
+
+                        globalBestSolFound++
                         opScore += GLOBAL_BEST_SCORE
 //                      Set B to be N
                         newSol.copyInto(bestSol)
@@ -442,7 +495,7 @@ object A5 : Algorithm() {
 //                  Set C to be N and update L
                     newSol.copyInto(currSol)
                     currObjVal = newSolObjVal
-                    taboo.push(newSol)
+                    Taboo.push(newSol)
 
 //                  Update J and reset length of L if C was updated
                     nonImprovementIteration++
@@ -451,6 +504,7 @@ object A5 : Algorithm() {
                     nonImprovementIteration++
                 }
             } else {
+                infeasibleSolFound++
                 opScore += INFEASIBLE_SCORE
             }
 //          Calculate points to give to O based on N
@@ -459,6 +513,30 @@ object A5 : Algorithm() {
 //          Update T
             temperature *= coolingFactor
         }
+
+        log.logs {
+            listOf(
+                "",
+                "Post run stats",
+                "Total iterations completed. . $totalIter ${(totalIter / iterations) * 100}%",
+                "Escapes . . . . . . . . . . . $escapesApplied (${(escapesApplied.toDouble() / totalIter) * 100}%)",
+                "Iterations since last best. . ${totalIter - newBestIter}",
+                "Final weights . . . . . . . . $weights",
+                "Final temperature . . . . . . $temperature",
+                "Max run time in seconds . . . $maxTimeSeconds",
+                "",
+                "Score count",
+                "",
+                "Global best solutions . . $globalBestSolFound (${(globalBestSolFound.toDouble() / totalIter) * 100}%)",
+                "Better solutions. . . . . $betterSolFound (${(betterSolFound.toDouble() / totalIter) * 100}%)",
+                "Worse solutions . . . . . $worseSolFound (${(worseSolFound.toDouble() / totalIter) * 100}%)",
+                "Feasible solutions. . . . $feasibleSolFound (${(feasibleSolFound.toDouble() / totalIter) * 100}%)",
+                "Infeasible solutions. . . $infeasibleSolFound (${(infeasibleSolFound.toDouble() / totalIter) * 100}%)",
+                "Taboo solutions . . . . . $tabooSolFound (${(tabooSolFound.toDouble() / totalIter) * 100}%)",
+                ""
+            )
+        }
+
         return bestSol
     }
 
@@ -487,7 +565,7 @@ object A5 : Algorithm() {
          * The operator is good __early__ in the search
          */
         EARLY(1.25, { progress: Double ->
-            1.0//if (progress <= 0.25) 2.0 else 0.50
+            if (progress <= 0.25) 1.0 else if (progress <= 0.5) 1.0 - progress else 0.50
         }),
 
         /**
@@ -498,10 +576,10 @@ object A5 : Algorithm() {
         })
     }
 
-    class Taboo(iterations: Int) {
+    object Taboo {
 
-        val minTabooSize = max(1, (iterations * MIN_TABOO_SIZE_PERCENT).toInt())
-        val maxTabooSize = max(minTabooSize + 1, (iterations * MAX_TABOO_SIZE_PERCENT).toInt())
+        val minTabooSize = 1//max(1, (iterations * MIN_TABOO_SIZE_PERCENT).toInt())
+        val maxTabooSize = 10//max(minTabooSize + 1, (iterations * MAX_TABOO_SIZE_PERCENT).toInt())
 
         init {
             log.debug { "There can be between (inc) $minTabooSize and $maxTabooSize (ex) taboos registered" }
@@ -520,7 +598,7 @@ object A5 : Algorithm() {
 
         fun increaseSize() {
             if (currentMaxTabooSize < maxTabooSize) {
-                currentMaxTabooSize += 10
+                currentMaxTabooSize++
             }
         }
 

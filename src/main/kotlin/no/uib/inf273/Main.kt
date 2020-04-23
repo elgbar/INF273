@@ -1,6 +1,7 @@
 package no.uib.inf273
 
 import com.xenomachina.argparser.ArgParser
+import com.xenomachina.argparser.InvalidArgumentException
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
 import no.uib.inf273.processor.DataParser
@@ -26,10 +27,9 @@ class Main(
     ////////////////////////
 
     private val filePath: String by parser.storing(
-        "-f",
-        "--file",
+        "-f", "--file",
         help = "Name of file to use."
-    )
+    ).default(FILE_C007_V03)
 
     ////////////////////////
     // Optional arguments //
@@ -45,22 +45,39 @@ class Main(
     private val algorithm: Algorithm by parser.mapping(
         "--search-local-a3" to LocalAlgorithmA3,
         "--sl3" to LocalAlgorithmA3,
+
         "--search-random" to RandomAlgorithm,
         "--sr" to RandomAlgorithm,
+
         "--search-simulated-annealing-a3" to SimulatedAnnealingAlgorithmA3,
         "--ssa3" to SimulatedAnnealingAlgorithmA3,
+
         "--search-simulated-annealing-a4" to SimulatedAnnealingAlgorithmA4,
         "--ssa4" to SimulatedAnnealingAlgorithmA4,
+
         "--a5" to A5,
-        help = "What search algorithm to use"
+        help = "Search algorithm to use"
     ).default(Algorithm.NoAlgorithm)
 
     private val seed: Long by parser.storing("The random seed to use") { toLong() }.default(Random.nextLong())
 
-    private val benchmark: Boolean by parser.flagging(
+    private val benchmarkA3: Boolean by parser.flagging(
         "--benchmark-assignment-3",
         help = "Enable benchmarking as specified in Assignment 3. Search option will be ignored."
-    ).default(false)
+    ).default(false).addValidator {
+        if (benchmarkA3 && benchmarkA5) throw InvalidArgumentException(
+            "Cannot benchmark A3 with A5 benchmark enabled"
+        )
+    }
+
+    private val benchmarkA5: Boolean by parser.flagging(
+        "--benchmark-assignment-5",
+        help = "Enable benchmarking as specified in Assignment 5. Search option will be ignored."
+    ).default(false).addValidator {
+        if (benchmarkA5 && benchmarkA3) throw InvalidArgumentException(
+            "Cannot benchmark A5 with A3 benchmark enabled"
+        )
+    }
 
     private val tune: Boolean by parser.flagging(
         "--tune",
@@ -73,14 +90,19 @@ class Main(
 
     private val showSolution: Boolean by parser.flagging("--show-solution", help = "Show the best generated solution")
 
+
+    private var benchmark = benchmarkA3 || benchmarkA5
+
     // Generated variables //
 
-    val data: DataParser
-    private val solgen: SolutionGenerator
+    var data: DataParser
+        private set
+    private var solgen: SolutionGenerator
+        private set
 
     init {
         log.logLevel = logLevel
-        if (!benchmark && logLevel != Logger.INFO) {
+        if (!benchmarkA3 && logLevel != Logger.INFO) {
             algorithm.updateLogLevel(logLevel)
         }
 
@@ -94,19 +116,16 @@ class Main(
         data = DataParser(content)
         solgen = SolutionGenerator(data)
 
-        if (benchmark) {
-            val result = benchmarkA3()
-            log.log { "Results for instance $filePath" }
-
-            for ((alg, triple) in result) {
-                printResults(alg, triple, true)
+        when {
+            benchmarkA3 -> benchmarkA3()
+            benchmarkA5 -> benchmarkA5()
+            else -> {
+                require(algorithm != Algorithm.NoAlgorithm) { "Search method must be specified when no other option is selected." }
+                val time = measureTimeMillis {
+                    printResults(algorithm, runAlgorithm(algorithm, samples, solgen, tune, iterations), false)
+                }
+                log.log("Running $samples samples took in total $time ms")
             }
-        } else {
-            require(algorithm != Algorithm.NoAlgorithm) { "Search method must be specified when no other option is selected." }
-            val time = measureTimeMillis {
-                printResults(algorithm, runAlgorithm(algorithm, samples, solgen, tune, iterations), false)
-            }
-            log.log("Running $samples samples took in total $time ms")
         }
     }
 
@@ -117,7 +136,7 @@ class Main(
      *
      * @return A map of the search mapping to average obj value, best obj val, then running time in ms
      */
-    private fun benchmarkA3(): Map<Algorithm, Triple<Double, Solution, Long>> {
+    private fun benchmarkA3() {
         val map: MutableMap<Algorithm, Triple<Double, Solution, Long>> = HashMap()
         log.log { "Benchmark Assignment 3 " }
 
@@ -131,20 +150,49 @@ class Main(
             }
         }
         log.log("Total benchmarking time took $totalTime ms")
-        return map
+        log.log { "Results for instance $filePath" }
+
+        for ((alg, triple) in map) {
+            printResults(alg, triple, true)
+        }
     }
 
+    private fun benchmarkA5() {
+        log.log { "Benchmark Assignment 5" }
+
+        val totalTime = measureTimeMillis {
+            for (file in listOf(FILE_C007_V03, FILE_C018_V05, FILE_C035_V07, FILE_C080_V20, FILE_C130_V40)) {
+
+                val content = readInternalFile(file)
+                check(!content.isNullOrEmpty()) { "Failed to read file $file as it is null or empty" }
+                data = DataParser(content)
+                solgen = SolutionGenerator(data)
+
+                val iter = data.nrOfCargo * data.nrOfCargo * 100
+                A5.maxTimeSeconds = (data.nrOfCargo * 2.2).toInt()
+
+                log.log { "Running file $file with $iter iterations (max ${A5.maxTimeSeconds} seconds)" }
+
+                val triple = runAlgorithm(A5, samples, solgen, tune, iter)
+                printResults(A5, triple, true)
+            }
+        }
+        log.log { "Total benchmarking time took $totalTime ms" }
+        log.log { "Results for instance $filePath" }
+
+
+    }
 
     private fun printResults(algorithm: Algorithm, result: Triple<Double, Solution, Long>, singleLine: Boolean) {
 
         val (avgObjVal, best, time) = result
         val defaultObjVal = solgen.generateStandardSolution().objectiveValue(false).toDouble().toBigDecimal()
-        val bestObjVal = best.objectiveValue(true)
+        val bestObjVal = best.objectiveValue(true).toDouble()
 
         val improvementAvg =
             100.0.toBigDecimal() * (defaultObjVal - avgObjVal.toBigDecimal()) / defaultObjVal
         val improvementBest =
-            100.0.toBigDecimal() * (defaultObjVal - bestObjVal.toDouble().toBigDecimal()) / defaultObjVal
+            100.0.toBigDecimal() * (defaultObjVal - bestObjVal.toBigDecimal()) / defaultObjVal
 
         if (singleLine) {
             log.log { "${algorithm.javaClass.simpleName}, $avgObjVal, $bestObjVal, $improvementBest%, $time ms, ${best.arr.contentToString()}" }
@@ -154,15 +202,15 @@ class Main(
                     "Searching with algorithm. . . $algorithm",
                     "File. . . . . . . . . . . . . $filePath",
                     "Initial objective value . . . $defaultObjVal",
-                    "Best objective value. . . . . $bestObjVal",
-                    "Average objective value . . . $avgObjVal",
+                    "Best objective value. . . . . ${bestObjVal.toLong()}",
+                    "Average objective value . . . ${avgObjVal.toLong()}",
                     "Improvement (best). . . . . . $improvementBest%",
                     "Improvement (avg) . . . . . . $improvementAvg%",
                     "Diff improvement (best-avg) . ${improvementBest - improvementAvg}%",
                     "Average time. . . . . . . . . ${time / 1000.0} seconds"
                 )
             }
-            if (showSolution) {
+            if (showSolution || benchmark) {
                 log.log(best.arr.contentToString())
             }
         }
@@ -236,6 +284,12 @@ class Main(
         }
     }
 }
+
+const val FILE_C007_V03 = "Call_7_Vehicle_3.txt"
+const val FILE_C018_V05 = "Call_18_Vehicle_5.txt"
+const val FILE_C035_V07 = "Call_035_Vehicle_07.txt"
+const val FILE_C080_V20 = "Call_080_Vehicle_20.txt"
+const val FILE_C130_V40 = "Call_130_Vehicle_40.txt"
 
 fun main(args: Array<String>) = mainBody {
     ArgParser(args).parseInto(::Main).run { }
