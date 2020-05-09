@@ -195,7 +195,7 @@ class Main(
             100.0.toBigDecimal() * (defaultObjVal - bestObjVal.toBigDecimal()) / defaultObjVal
 
         if (singleLine) {
-            log.log { "${algorithm.javaClass.simpleName}, $avgObjVal, $bestObjVal, $improvementBest%, $time ms, ${best.arr.contentToString()}" }
+            log.log { "${algorithm.javaClass.simpleName}, $avgObjVal, $bestObjVal, $improvementBest%, $${time / 1000.0} seconds, ${best.arr.contentToString()}" }
         } else {
             log.logs {
                 listOf(
