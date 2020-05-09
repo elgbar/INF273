@@ -343,7 +343,7 @@ object A5 : Algorithm() {
         for (i in 1..iterations) {
             val currTime = System.currentTimeMillis()
             if (currTime >= maxTime) {
-                log.log { "timeout! after $i iterations" }
+                log.debug { "timeout! after $i iterations" }
                 totalIter = i
                 break
             }
