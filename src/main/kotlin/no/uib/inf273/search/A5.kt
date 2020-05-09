@@ -142,9 +142,9 @@ import kotlin.math.max
 object A5 : Algorithm() {
 
     /**
-     * Maximum time in seconds this algorithm will take before returning
+     * Default maximum time in seconds this algorithm will take before returning
      */
-    var maxTimeSeconds = 300
+    var maxTimeSeconds = 600
 
 
     /**

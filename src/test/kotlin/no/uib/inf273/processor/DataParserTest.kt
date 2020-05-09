@@ -18,7 +18,7 @@ internal class DataParserTest {
             Solution.log.logLevel = Logger.DEBUG
         }
 
-        private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
+        private val data: DataParser = DataParser(Main.readFile("Call_7_Vehicle_3.txt")!!)
     }
 
     @Test
@@ -39,7 +39,7 @@ internal class DataParserTest {
 
         assertTrue(vessel.canTakeCargo(cargoA)) { "Vessel $vessel Can't take cargo $cargoA" }
         assertTrue(vessel.canTakeCargo(cargoB)) { "Vessel $vessel Can't take cargo $cargoB" }
-        
+
         assertEquals(data.getSimilarity(0, cargoA, cargoB), data.getSimilarity(0, cargoB, cargoA))
     }
 }

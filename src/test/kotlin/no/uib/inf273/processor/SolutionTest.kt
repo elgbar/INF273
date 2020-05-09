@@ -13,8 +13,8 @@ internal class SolutionTest {
             Solution.log.logLevel = Logger.DEBUG
         }
 
-        private val data: DataParser = DataParser(Main.readInternalFile("Call_7_Vehicle_3.txt")!!)
-        private val data2: DataParser = DataParser(Main.readInternalFile("Call_6_Vehicle_2.txt")!!)
+        private val data: DataParser = DataParser(Main.readFile("Call_7_Vehicle_3.txt")!!)
+        private val data2: DataParser = DataParser(Main.readFile("Call_6_Vehicle_2.txt")!!)
 
         private fun checkSolution(givenData: IntArray, objVal: Long) {
             val sol = Solution(data, givenData)

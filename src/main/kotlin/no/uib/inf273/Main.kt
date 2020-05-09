@@ -13,6 +13,7 @@ import no.uib.inf273.search.given.LocalAlgorithmA3
 import no.uib.inf273.search.given.RandomAlgorithm
 import no.uib.inf273.search.given.simulatedAnnealing.SimulatedAnnealingAlgorithmA3
 import no.uib.inf273.search.given.simulatedAnnealing.SimulatedAnnealingAlgorithmA4
+import java.io.File
 import java.math.BigDecimal
 import kotlin.random.Random
 import kotlin.system.measureTimeMillis
@@ -85,11 +86,13 @@ class Main(
     )
 
     private val samples: Int by parser.storing("How many samples to take") { toInt() }.default { 10 }
+    private val time: Int by parser.storing("Max time in seconds to use, default is ${Int.MAX_VALUE} aka Int.MAX_VALUE") { toInt() }
+        .default { Int.MAX_VALUE }
     private val iterations: Int by parser.storing("How many iteration each algorithm use") { toInt() }
         .default { 10_000 }
 
     private val showSolution: Boolean by parser.flagging("--show-solution", help = "Show the best generated solution")
-
+    private val singleLine: Boolean by parser.flagging("--single-line", help = "Show result on a single line")
 
     private var benchmark = benchmarkA3 || benchmarkA5
 
@@ -98,7 +101,6 @@ class Main(
     var data: DataParser
         private set
     private var solgen: SolutionGenerator
-        private set
 
     init {
         log.logLevel = logLevel
@@ -106,12 +108,19 @@ class Main(
             algorithm.updateLogLevel(logLevel)
         }
 
+        if (time != Int.MAX_VALUE) {
+            when (algorithm) {
+                A5 -> A5.maxTimeSeconds = this.time
+                else -> error("Algorithm $algorithm does not support maximum time")
+            }
+        }
+
         log.log("Random seed = $seed")
         rand = Random(seed)
 
-        val content = readInternalFile(filePath)
+        val content = readFile(filePath)
 
-        check(!content.isNullOrEmpty()) { "Failed to read file as it is null or empty" }
+        check(!content.isNullOrEmpty()) { "Failed to read file as it is null or empty. File path $filePath" }
 
         data = DataParser(content)
         solgen = SolutionGenerator(data)
@@ -122,7 +131,7 @@ class Main(
             else -> {
                 require(algorithm != Algorithm.NoAlgorithm) { "Search method must be specified when no other option is selected." }
                 val time = measureTimeMillis {
-                    printResults(algorithm, runAlgorithm(algorithm, samples, solgen, tune, iterations), false)
+                    printResults(algorithm, runAlgorithm(algorithm, samples, solgen, tune, iterations), singleLine)
                 }
                 log.log("Running $samples samples took in total $time ms")
             }
@@ -163,8 +172,7 @@ class Main(
         val totalTime = measureTimeMillis {
             for (file in listOf(FILE_C007_V03, FILE_C018_V05, FILE_C035_V07, FILE_C080_V20, FILE_C130_V40)) {
 
-                val content = readInternalFile(file)
-                check(!content.isNullOrEmpty()) { "Failed to read file $file as it is null or empty" }
+                val content = readFile(file)
                 data = DataParser(content)
                 solgen = SolutionGenerator(data)
 
@@ -195,7 +203,7 @@ class Main(
             100.0.toBigDecimal() * (defaultObjVal - bestObjVal.toBigDecimal()) / defaultObjVal
 
         if (singleLine) {
-            log.log { "${algorithm.javaClass.simpleName}, $avgObjVal, $bestObjVal, $improvementBest%, $${time / 1000.0} seconds, ${best.arr.contentToString()}" }
+            log.log { "${algorithm.javaClass.simpleName}, $avgObjVal, $bestObjVal, $improvementBest%, ${time / 1000.0} seconds, ${best.arr.contentToString()}" }
         } else {
             log.logs {
                 listOf(
@@ -230,8 +238,10 @@ class Main(
          *
          * @return The content of the file or `null` if the file cannot be read
          */
-        fun readInternalFile(path: String): String? {
-            return Main::class.java.classLoader.getResource(path)?.readText()
+        fun readFile(path: String): String {
+            val content = Main::class.java.classLoader.getResource(path)?.readText() ?: File(path).readText()
+            check(!content.isBlank()) { "Failed to read file '$path' as it is null or empty" }
+            return content
         }
 
         /**
