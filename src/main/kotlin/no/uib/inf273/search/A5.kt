@@ -146,16 +146,18 @@ object A5 : Algorithm() {
      */
     var maxTimeSeconds = 600
 
-
     /**
-     * percent each segment takes up
+     * percent each segment takes up.
+     *
+     * @see MAX_ITER_PER_SEGMENT
      */
     private const val SEGMENT_PERCENT = 0.01
 
     /**
-     * Percentage of total iterators needed for the taboo list length to be reduced
+     * Maximum number of iterations that a segment can be. If any larger it will not be an effective tool to rebalance the
+     * operators
      */
-//    private const val TABOO_REDUCTION_THRESHOLD_PERCENT = 0.005
+    private const val MAX_ITER_PER_SEGMENT = 1000
 
     /**
      * Percentage of segment iterations needed for escape operators to be used
@@ -163,18 +165,9 @@ object A5 : Algorithm() {
     private const val ESCAPE_THRESHOLD_PERCENT = 0.50
 
     /**
-     * Minimum length of the taboo list in percent of total iterations.
-     *
-     * Note that it is in reality `max(1, `[MIN_TABOO_SIZE_PERCENT]`% of total iterations)`
+     * Number of taboo solutions remembered will be reduced once this threshold is hit.
      */
-//    private const val MIN_TABOO_SIZE_PERCENT = 0.0005
-
-    /**
-     * Maximum length of taboo list in percent of total iterations
-     *
-     * Note that it is in reality `max(max(1, `[MIN_TABOO_SIZE_PERCENT]`% of total iterations) + 1, `[MAX_TABOO_SIZE_PERCENT]`% of total iterations)`
-     */
-//    private const val MAX_TABOO_SIZE_PERCENT = 0.05
+    private const val TABOO_SIZE_REDUCTION_THRESHOLD = 50
 
     ////////////
     // Scores //
@@ -207,16 +200,14 @@ object A5 : Algorithm() {
 
         val startTime = System.currentTimeMillis()
 
-        ///////////////
-        // Constants //
-        ///////////////
+        ///////////////////////////////
+        // Iteration based constants //
+        ///////////////////////////////
 
-        val iterPerSegment: Int = min((iterations * SEGMENT_PERCENT).toInt(), 1000)
+        val iterPerSegment: Int = min((iterations * SEGMENT_PERCENT).toInt(), MAX_ITER_PER_SEGMENT)
         val escapeThreshold = (iterPerSegment * ESCAPE_THRESHOLD_PERCENT).toInt()
-        val tabooSizeReductionThreshold = 50//(iterations * TABOO_REDUCTION_THRESHOLD_PERCENT).toInt()
 
         log.debug { "Each segment lasts $iterPerSegment iterations" }
-        log.debug { "Size of taboo solutions will be reduced after $tabooSizeReductionThreshold iterations" }
         log.debug { "Escape operator will be applied every $escapeThreshold iterations of non-improvement" }
 
         ///////////////
@@ -347,7 +338,7 @@ object A5 : Algorithm() {
         // Main loop //
         ///////////////
 
-        val maxTime = startTime + maxTimeSeconds * 1000
+        val maxTime = startTime + (maxTimeSeconds - 1) * 1000 + 500
         var totalIter = iterations
         for (i in 1..iterations) {
             val currTime = System.currentTimeMillis()
@@ -412,7 +403,7 @@ object A5 : Algorithm() {
             }
 
 //          if J >= 0.5% of I:
-            if (nonImprovementIteration >= tabooSizeReductionThreshold) {
+            if (nonImprovementIteration >= TABOO_SIZE_REDUCTION_THRESHOLD) {
                 log.trace { "reducing size of taboo" }
 //              Reduce size of L
                 Taboo.reduceSize()
