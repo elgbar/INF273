@@ -222,7 +222,7 @@ abstract class Operator {
         /**
          * Max number of cargoes in a vessel to use exact approach (brute force)
          */
-        const val DEFAULT_MAX_CARGOES_IN_VESSEL_TO_USE_EXACT_APPROACH = 4
+        const val DEFAULT_MAX_CARGOES_IN_VESSEL_TO_USE_EXACT_APPROACH = 3
 
         internal fun calculateNumberOfVessels(from: Int, until: Int): Int {
             return (until - from + 1) / ELEMENTS_PER_CARGO
