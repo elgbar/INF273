@@ -509,7 +509,7 @@ object A5 : Algorithm() {
             listOf(
                 "",
                 "Post run stats",
-                "Total iterations completed. . $totalIter ${(totalIter / iterations) * 100}%",
+                "Total iterations completed. . $totalIter (${(totalIter.toDouble() / iterations) * 100}%)",
                 "Escapes . . . . . . . . . . . $escapesApplied (${(escapesApplied.toDouble() / totalIter) * 100}%)",
                 "Iterations since last best. . ${totalIter - newBestIter}",
                 "Final weights . . . . . . . . $weights",
