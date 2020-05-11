@@ -6,11 +6,13 @@ import no.uib.inf273.operators.MinimizeNotTransported
 import no.uib.inf273.operators.MinimizeWaitTime
 import no.uib.inf273.operators.MoveSimilarCargo
 import no.uib.inf273.operators.Operator
+import no.uib.inf273.operators.Operator.Companion.DEFAULT_MAX_CARGOES_IN_VESSEL_TO_USE_EXACT_APPROACH
 import no.uib.inf273.operators.escape.EscapeOperator
 import no.uib.inf273.operators.escape.MoveToSpotCarrierOperator
 import no.uib.inf273.operators.escape.ReinsertNOperator
 import no.uib.inf273.operators.given.ReinsertOnceOperator
 import no.uib.inf273.operators.given.ThreeExchangeOperator
+import no.uib.inf273.processor.DataParser.Companion.ELEMENTS_PER_CARGO
 import no.uib.inf273.processor.Solution
 import no.uib.inf273.processor.SolutionGenerator
 import no.uib.inf273.search.A5.OperatorCharacteristic
@@ -410,9 +412,7 @@ object A5 : Algorithm() {
             }
 
 //          if J mod (2% of I) is 0:
-            if (nonImprovementIteration > 0 && nonImprovementIteration % escapeThreshold == 0
-//                || tabooHits % (iterPerSegment * 0.66).toInt() == 0
-            ) {
+            if (nonImprovementIteration > 0 && nonImprovementIteration % escapeThreshold == 0) {
                 log.trace { "Trying to escape optima | nonImprovementIteration=$nonImprovementIteration" }
 //              O' <- Select an escape operator
 //              C <- Operate on C with selected operator O'
@@ -428,7 +428,7 @@ object A5 : Algorithm() {
             op.operate(newSol)
 
 
-            val newSolObjVal = newSol.objectiveValue(false)
+            val newSolObjVal = newSol.objectiveValue(true)
             val isTaboo = Taboo.checkTaboo(newSol)
 
             if (isTaboo) {
@@ -449,14 +449,14 @@ object A5 : Algorithm() {
             }
 
 //          if N is feasible:
-            if (newSol.isFeasible(modified = true)) {
+            if (newSol.isFeasible(modified = false)) {
 
                 feasibleSolFound++
                 opScore += FEASIBLE_SCORE
 //              if ∆E < 0 and N is not in L:
                 if (deltaE < 0 && !isTaboo) {
 
-                    //increase size of taboo !
+                    //increase size of taboo!
                     if (nonImprovementIteration > 0)
                         nonImprovementIteration--
                     Taboo.increaseSize()
@@ -476,9 +476,29 @@ object A5 : Algorithm() {
 
                         globalBestSolFound++
                         opScore += GLOBAL_BEST_SCORE
+
 //                      Set B to be N
                         newSol.copyInto(bestSol)
                         bestObjVal = newSolObjVal
+
+                        //A better solution has been found!
+                        // Try to brute force it to be even better!
+                        val newSolArr = newSol.splitToSubArray(false)
+                        for ((index, arr) in newSolArr.withIndex()) {
+                            if (arr.size / ELEMENTS_PER_CARGO in 2..(DEFAULT_MAX_CARGOES_IN_VESSEL_TO_USE_EXACT_APPROACH + 2)) {
+                                Operator.exactApproach(newSol, index, arr)
+                            }
+                        }
+                        newSol.joinToArray(newSolArr)
+
+                        val newNewObjVal = newSol.objectiveValue(true)
+                        if (newNewObjVal < bestObjVal && !Taboo.checkTaboo(newSol)) {
+                            //it's even better!
+//                            println("better objval found! Improved by ${newNewObjVal - bestObjVal}")
+
+                            newSol.copyInto(bestSol)
+                            bestObjVal = newNewObjVal
+                        }
                     }
 
 //              else if rand(0d..1d) < e ^ (-∆E / T):
@@ -524,7 +544,8 @@ object A5 : Algorithm() {
                 "Feasible solutions. . . . $feasibleSolFound (${(feasibleSolFound.toDouble() / totalIter) * 100}%)",
                 "Infeasible solutions. . . $infeasibleSolFound (${(infeasibleSolFound.toDouble() / totalIter) * 100}%)",
                 "Taboo solutions . . . . . $tabooSolFound (${(tabooSolFound.toDouble() / totalIter) * 100}%)",
-                ""
+                "",
+                "Best obj val. . . . . . . ${bestSol.objectiveValue(true)}"
             )
         }
 
