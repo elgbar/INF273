@@ -330,7 +330,11 @@ object A5 : Algorithm() {
             listOf(
                 "Initial temperature $initTemperature",
                 "Cooling factor $coolingFactor",
-                "Initial weights $weights",
+                "Initial weights $weights"
+            )
+        }
+        log.debugs {
+            listOf(
                 "Initial search weights $searchWeights",
                 "Initial segment score $segmentScore"
             )
@@ -529,6 +533,7 @@ object A5 : Algorithm() {
             listOf(
                 "",
                 "Post run stats",
+                "",
                 "Total iterations completed. . $totalIter (${(totalIter.toDouble() / iterations) * 100}%)",
                 "Escapes . . . . . . . . . . . $escapesApplied (${(escapesApplied.toDouble() / totalIter) * 100}%)",
                 "Iterations since last best. . ${totalIter - newBestIter}",
@@ -574,14 +579,14 @@ object A5 : Algorithm() {
         NOTHING(1.0, { 1.0 }),
 
         /**
-         * The operator is good __early__ in the search
+         * The operator is good _early_ in the search
          */
         EARLY(1.25, { progress: Double ->
             if (progress <= 0.25) 1.0 else if (progress <= 0.5) 1.0 - progress else 0.50
         }),
 
         /**
-         * The operator is good __late__ in the search
+         * The operator is good _late_ in the search
          */
         LATE(1.0, { progress: Double ->
             if (progress <= 0.25) 1.0 else 1.0 + progress / 2
