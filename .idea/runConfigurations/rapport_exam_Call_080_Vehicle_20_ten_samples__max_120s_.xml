@@ -1,8 +1,8 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="exam Call_7_Vehicle_3 iter once, max 10s " type="JetRunConfigurationType">
+  <configuration default="false" name="rapport exam Call_080_Vehicle_20 ten samples, max 120s " type="JetRunConfigurationType" factoryName="Kotlin">
     <module name="INF273.main" />
     <option name="VM_PARAMETERS" value="" />
-    <option name="PROGRAM_PARAMETERS" value="--file Call_7_Vehicle_3.txt --a5 --samples 1 --time 10 --show-solution --single-line" />
+    <option name="PROGRAM_PARAMETERS" value="--file Call_080_Vehicle_20.txt --a5  --samples 10 --time 120 --iterations 2000000 --show-solution" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" />
     <option name="PASS_PARENT_ENVS" value="true" />
