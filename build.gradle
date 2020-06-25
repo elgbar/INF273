@@ -3,7 +3,7 @@ plugins {
 }
 
 group 'no.uib.273'
-version '1.0-SNAPSHOT'
+version '1.0-FINAL'
 
 repositories {
     mavenCentral()
@@ -28,4 +28,18 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+jar {
+
+    configurations.implementation.setCanBeResolved(true)
+    manifest {
+        attributes(
+                "Class-Path": configurations.implementation.collect { it.getName() }.join(" "),
+                "Main-Class": "no.uib.inf273.MainKt"
+        )
+    }
+    from(configurations.implementation.collect { entry -> zipTree(entry) }) {
+        exclude "META-INF/MANIFEST.MF"
+    }
 }
