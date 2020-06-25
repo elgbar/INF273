@@ -2,7 +2,7 @@
   <configuration default="false" name="exam Call_035_Vehicle_07 one sample, max 50s " type="JetRunConfigurationType" factoryName="Kotlin">
     <module name="INF273.main" />
     <option name="VM_PARAMETERS" value="" />
-    <option name="PROGRAM_PARAMETERS" value="--file Call_035_Vehicle_07.txt --a5 --samples 1 --time 50 --iterations 1500000 --show-solution" />
+    <option name="PROGRAM_PARAMETERS" value="--file New_Call_35.txt --a5 --samples 1 --time 50 --iterations 1500000 --show-solution" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" />
     <option name="PASS_PARENT_ENVS" value="true" />
