@@ -32,6 +32,16 @@ Note 2: For `Call_7_Vehicle_3` an objective value of `1476444` the the global be
 | Call_080_Vehicle_20 | 13966935          | 13464825       | 119.505 seconds      |
 | Call_130_Vehicle_40 | 19614774          | 19203245       | 399.501 seconds      |
 
+#### New instance score from exam
+
+| Instance     | Objective Score |
+|--------------|-----------------|
+| New_Call_7   | 1251961         |
+| New_Call_18  | 2813167         |
+| New_Call_35  | 7216087         |
+| New_Call_80  | 13600943        |
+| New_Call_130 | 22793427        |
+
 #### Best average (robustness) of whole class
 
 | Instance            | Student    | Average Objective | Average running time |
